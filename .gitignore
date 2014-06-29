@@ -1,0 +1,6 @@
+*.suo
+/CalendarApi.ConsoleTest.sln
+packages
+/CalendarApi.ConsoleTest
+obj
+bin
