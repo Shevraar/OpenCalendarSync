@@ -97,6 +97,8 @@
   <ItemGroup>
     <Compile Include="Calendar.cs" />
     <Compile Include="Event.cs" />
+    <Compile Include="GoogleCalendar\GoogleCalendarManager.cs" />
+    <Compile Include="OutlookCalendar\OutlookCalendarManager.cs" />
     <Compile Include="Location.cs" />
     <Compile Include="Manager.cs" />
     <Compile Include="Person.cs" />
