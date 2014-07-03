@@ -80,15 +80,16 @@ namespace Acco.Calendar.Manager
             try
             {
                 DataStore = new FileDataStore(DataStorePath);
-                Credential = await GoogleWebAuthorizationBroker.AuthorizeAsync(new ClientSecrets
-                {
-                    ClientId = _ClientId,
-                    ClientSecret = _ClientSecret
-                },
-                                                                                    new[] { CalendarService.Scope.Calendar },
-                                                                                    "user",
-                                                                                    CancellationToken.None,
-                                                                                    DataStore);
+                Credential = await 
+                    GoogleWebAuthorizationBroker.AuthorizeAsync(new ClientSecrets
+                    {
+                        ClientId = _ClientId,
+                        ClientSecret = _ClientSecret
+                    },
+                    new[] { CalendarService.Scope.Calendar },
+                    "user",
+                    CancellationToken.None,
+                    DataStore);
                 //
                 Service = new CalendarService(new BaseClientService.Initializer()
                 {
