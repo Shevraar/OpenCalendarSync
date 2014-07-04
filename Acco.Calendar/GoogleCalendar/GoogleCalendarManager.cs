@@ -19,8 +19,9 @@ namespace Acco.Calendar.Manager
         UserCredential Credential { get; set; }
         FileDataStore DataStore { get; set; }
         string DataStorePath { get { return "Acco.Calendar.GoogleCalendarManager"; } }
-        string GoogleApplicationName { get { return "Outlook 2007 Calendar Importer"; } }
+        string AppName { get { return "Outlook 2007 Calendar Importer"; } }
         string MyCalendarId { get; set; }
+        string MyCalendarName { get; set; }
         #endregion
 
         #region Singleton directives
@@ -62,12 +63,13 @@ namespace Acco.Calendar.Manager
         }
 
         #region Initialization
-        public async Task<bool> Initialize(string _ClientId, string _ClientSecret)
+        public async Task<bool> Initialize(string _ClientId, string _ClientSecret, string _CalendarName)
         {
             bool res = await Authenticate(_ClientId, _ClientSecret);
             //
             MyCalendarId = await DataStore.GetAsync<string>("MyCalendarId");
-            //
+            MyCalendarName = _CalendarName;
+            // 
             if (MyCalendarId != null)
             {
                 MyCalendarId = (await GetCalendar(MyCalendarId)).Id;
@@ -78,6 +80,8 @@ namespace Acco.Calendar.Manager
                 MyCalendarId = (await CreateCalendar()).Id;
                 await DataStore.StoreAsync<string>("MyCalendarId", MyCalendarId);
             }
+            //
+            await DataStore.StoreAsync<string>("MyCalendarName", _CalendarName);
             //
             return res;
         }
@@ -101,7 +105,7 @@ namespace Acco.Calendar.Manager
                 Service = new CalendarService(new BaseClientService.Initializer()
                 {
                     HttpClientInitializer = Credential,
-                    ApplicationName = GoogleApplicationName
+                    ApplicationName = AppName
                 });
             }
             catch (Exception ex)
@@ -122,7 +126,8 @@ namespace Acco.Calendar.Manager
         {
             return await Service.Calendars.Insert(new Google.Apis.Calendar.v3.Data.Calendar()
             {
-                Summary = GoogleApplicationName,
+                Summary = MyCalendarName,
+                TimeZone = "Europe/Rome", // TODO: configurable
                 Description = "Automatically created: " + DateTime.Now.ToString("g")
             }).ExecuteAsync();
         }

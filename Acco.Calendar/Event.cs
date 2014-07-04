@@ -83,7 +83,7 @@ namespace Acco.Calendar.Event
         string Description { get; set; }
         GenericLocation Location { get; set; }
         GenericRecurrency Recurrency { get; set; }
-        IList<GenericPerson> Attendees { get; set; }
+        List<GenericPerson> Attendees { get; set; }
     }
 
     public class GenericEvent : IEvent
@@ -98,6 +98,6 @@ namespace Acco.Calendar.Event
         public string Description { get; set; }
         public GenericLocation Location { get; set; }
         public GenericRecurrency Recurrency { get; set; }
-        public IList<GenericPerson> Attendees { get; set; }
+        public List<GenericPerson> Attendees { get; set; }
     }
 }
