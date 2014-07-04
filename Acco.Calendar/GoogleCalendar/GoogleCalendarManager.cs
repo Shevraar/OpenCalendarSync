@@ -1,4 +1,5 @@
 ﻿using Acco.Calendar.Event;
+using Acco.Calendar.Location;
 using Acco.Calendar.Person;
 using Google.Apis.Auth.OAuth2;
 using Google.Apis.Calendar.v3;
@@ -19,7 +20,7 @@ namespace Acco.Calendar.Manager
         FileDataStore DataStore { get; set; }
         string DataStorePath { get { return "Acco.Calendar.GoogleCalendarManager"; } }
         string GoogleApplicationName { get { return "Outlook 2007 Calendar Importer"; } }
-        string CalendarId { get; set; }
+        string MyCalendarId { get; set; }
         #endregion
 
         #region Singleton directives
@@ -51,7 +52,13 @@ namespace Acco.Calendar.Manager
 
         public async Task<GenericCalendar> PullAsync()
         {
-            return null;
+            GenericCalendar calendar = new GenericCalendar();
+            calendar.Events = await PullEvents();
+            calendar.Id = MyCalendarId;
+            // TODO: add other stuff to json file
+            // calendar.Name = 
+            // calendar. 
+            return calendar;
         }
 
         #region Initialization
@@ -59,17 +66,17 @@ namespace Acco.Calendar.Manager
         {
             bool res = await Authenticate(_ClientId, _ClientSecret);
             //
-            CalendarId = await DataStore.GetAsync<string>("CalendarId");
+            MyCalendarId = await DataStore.GetAsync<string>("MyCalendarId");
             //
-            if (CalendarId != null)
+            if (MyCalendarId != null)
             {
-                CalendarId = (await GetCalendar(CalendarId)).Id;
+                MyCalendarId = (await GetCalendar(MyCalendarId)).Id;
             }
             //
-            if (res == false || CalendarId == null)
+            if (res == false || MyCalendarId == null)
             {
-                CalendarId = (await CreateCalendar()).Id;
-                await DataStore.StoreAsync<string>("CalendarId", CalendarId);
+                MyCalendarId = (await CreateCalendar()).Id;
+                await DataStore.StoreAsync<string>("MyCalendarId", MyCalendarId);
             }
             //
             return res;
@@ -142,12 +149,19 @@ namespace Acco.Calendar.Manager
             try
             {
                 Google.Apis.Calendar.v3.Data.Event myEvt = new Google.Apis.Calendar.v3.Data.Event();
-                // Creator/Organizer
-                if (evt.Creator != null)
+                // Organizer
+                if (evt.Organizer != null)
                 {
                     myEvt.Organizer = new Google.Apis.Calendar.v3.Data.Event.OrganizerData();
-                    myEvt.Organizer.DisplayName = evt.Creator.Name;
-                    myEvt.Organizer.Email = evt.Creator.Email;
+                    myEvt.Organizer.DisplayName = evt.Organizer.Name;
+                    myEvt.Organizer.Email = evt.Organizer.Email;
+                }
+                // Creator
+                if(evt.Creator != null)
+                {
+                    myEvt.Creator = new Google.Apis.Calendar.v3.Data.Event.CreatorData();
+                    myEvt.Creator.DisplayName = evt.Creator.Name;
+                    myEvt.Creator.Email = evt.Creator.Email;
                 }
                 // Summary
                 if (evt.Summary != "")
@@ -194,6 +208,7 @@ namespace Acco.Calendar.Manager
                     myEvt.Recurrence = new List<string>();
                     myEvt.Recurrence.Add(((GoogleRecurrency)evt.Recurrency).ToString());
                 }
+                // Creation date
                 if (evt.Created.HasValue)
                 {
                     myEvt.Created = evt.Created;
@@ -202,7 +217,7 @@ namespace Acco.Calendar.Manager
                 myEvt.Reminders = new Google.Apis.Calendar.v3.Data.Event.RemindersData();
                 myEvt.Reminders.UseDefault = true;
 
-                await Service.Events.Insert(myEvt, CalendarId).ExecuteAsync();
+                await Service.Events.Insert(myEvt, MyCalendarId).ExecuteAsync();
             }
             catch (Exception ex)
             {
@@ -226,7 +241,89 @@ namespace Acco.Calendar.Manager
 
         private async Task<List<GenericEvent>> PullEvents()
         {
-            return null;
+            List<GenericEvent> myEvts = new List<GenericEvent>();
+            try
+            {
+                Google.Apis.Calendar.v3.Data.Events evts = await Service.Events.List(MyCalendarId).ExecuteAsync();
+                foreach(Google.Apis.Calendar.v3.Data.Event evt in evts.Items)
+                {
+                    GenericEvent myEvt = new GenericEvent();
+                    // Summary
+                    if (evt.Summary != "")
+                    {
+                        myEvt.Summary = evt.Summary;
+                    }
+                    // Description
+                    if (evt.Description != "")
+                    {
+                        myEvt.Description = evt.Description;
+                    }
+                    // Organizer
+                    if (evt.Organizer != null)
+                    {
+                        myEvt.Organizer = new GenericPerson();
+                        myEvt.Organizer.Email = evt.Organizer.Email;
+                        myEvt.Organizer.Name = evt.Organizer.DisplayName;
+                    }
+                    // Creator
+                    if (evt.Creator != null)
+                    {
+                        myEvt.Creator = new GenericPerson();
+                        myEvt.Creator.Email = evt.Creator.Email;
+                        myEvt.Creator.Name = evt.Creator.DisplayName;
+                    }
+                    // Location
+                    if (evt.Location != "")
+                    {
+                        myEvt.Location = new GenericLocation();
+                        myEvt.Location.Name = evt.Location;
+                    }
+                    // Start
+                    if (evt.Start != null)
+                    {
+                        myEvt.Start = evt.Start.DateTime;
+                    }
+                    // End
+                    if (evt.End != null)
+                    {
+                        myEvt.End = evt.End.DateTime;
+                    }
+                    // Creation date
+                    if (evt.Created.HasValue)
+                    {
+                        myEvt.Created = evt.Created;
+                    }
+                    // Recurrency
+                    if (evt.Recurrence != null)
+                    {
+                        // TODO: recurrency is a list of stuff coming from google... how this thing is
+                        // formatted is unknown.
+                        myEvt.Recurrency = new GenericRecurrency();
+                        ((GoogleRecurrency)myEvt.Recurrency).FromString(evt.Recurrence[0]);
+                    }
+                    // Attendees
+                    if (evt.Attendees != null)
+                    {
+                        foreach (Google.Apis.Calendar.v3.Data.EventAttendee attendee in evt.Attendees)
+                        {
+                            myEvt.Attendees = new List<GenericPerson>();
+                            GenericPerson myAttendee = new GenericPerson();
+                            //
+                            myAttendee.Email = attendee.Email;
+                            myAttendee.Name = attendee.DisplayName;
+                            //
+                            myEvt.Attendees.Add(myAttendee);
+                        }
+                    }
+                    //
+                    myEvts.Add(myEvt);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("ERROR {0}", ex.Message);
+            }
+            return myEvts;
         }
 
         #endregion

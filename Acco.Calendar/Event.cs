@@ -37,10 +37,43 @@ namespace Acco.Calendar.Event
             ret = @"RRULE:FREQ=" + Type.ToString() + ";UNTIL=" + Expiry.Value.ToString("yyyymmddThhmmss") + offset;
             return ret;
         }
+
+        public void FromString(string rules)
+        {
+            // guarda un po' cosa viene fuori...
+            string[] details = rules.Split(':');
+            foreach(string detail in details[1].Split(';'))
+            {
+                string attribute = detail.Split('=')[1];
+                if(detail.Contains("FREQ"))
+                {
+                    switch(attribute)
+                    {
+                        case "DAILY":
+                            Type = RecurrencyType.DAILY;
+                            break;
+                        case "WEEKLY":
+                            Type = RecurrencyType.WEEKLY;
+                            break;
+                        case "MONTHLY":
+                            Type = RecurrencyType.MONTHLY;
+                            break;
+                        case "YEARLY":
+                            Type = RecurrencyType.YEARLY;
+                            break;
+                    }
+                }
+                else if(detail.Contains("UNTIL"))
+                {
+                    RFC3339DateTime temporaryExpiryDate = new RFC3339DateTime(attribute);
+                }
+            }
+        }
     }
 
     public interface IEvent
     {
+        GenericPerson Organizer { get; set; }
         GenericPerson Creator { get; set; }
         DateTime? Created { get; set; }
         DateTime? LastModified { get; set; }
@@ -50,11 +83,12 @@ namespace Acco.Calendar.Event
         string Description { get; set; }
         GenericLocation Location { get; set; }
         GenericRecurrency Recurrency { get; set; }
-        List<GenericPerson> Attendees { get; set; }
+        IList<GenericPerson> Attendees { get; set; }
     }
 
     public class GenericEvent : IEvent
     {
+        public GenericPerson Organizer { get; set; }
         public GenericPerson Creator { get; set; }
         public DateTime? Created { get; set; }
         public DateTime? LastModified { get; set; }
@@ -64,6 +98,6 @@ namespace Acco.Calendar.Event
         public string Description { get; set; }
         public GenericLocation Location { get; set; }
         public GenericRecurrency Recurrency { get; set; }
-        public List<GenericPerson> Attendees { get; set; }
+        public IList<GenericPerson> Attendees { get; set; }
     }
 }
