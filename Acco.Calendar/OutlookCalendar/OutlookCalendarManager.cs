@@ -1,14 +1,19 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
+using NetOffice.Outlook;
 
 namespace Acco.Calendar.Manager
 {
 
-    public class OutlookCalendarManager : ICalendarManager
+    public sealed class OutlookCalendarManager : ICalendarManager
     {
+        #region Singleton directives
+        private static readonly OutlookCalendarManager instance = new OutlookCalendarManager();
+        // hidden constructor
+        private OutlookCalendarManager() { }
+
+        public static OutlookCalendarManager Instance { get { return instance; } }
+        #endregion
+
         public bool Push(GenericCalendar calendar)
         {
             return false;
