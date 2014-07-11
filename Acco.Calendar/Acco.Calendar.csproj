@@ -44,8 +44,9 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\Google.Apis.Auth.1.8.2\lib\net40\Google.Apis.Auth.PlatformServices.dll</HintPath>
     </Reference>
-    <Reference Include="Google.Apis.Calendar.v3">
-      <HintPath>..\packages\Google.Apis.Calendar.v3.1.8.1.840\lib\portable-net4+sl4+wp71+win8\Google.Apis.Calendar.v3.dll</HintPath>
+    <Reference Include="Google.Apis.Calendar.v3, Version=1.8.1.85, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\Google.Apis.Calendar.v3.1.8.1.850\lib\portable-net4+sl4+wp71+win8\Google.Apis.Calendar.v3.dll</HintPath>
     </Reference>
     <Reference Include="Google.Apis.Core, Version=1.8.2.23761, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -70,8 +71,16 @@
     <Reference Include="Microsoft.Threading.Tasks.Extensions.Desktop">
       <HintPath>..\packages\Microsoft.Bcl.Async.1.0.168\lib\net40\Microsoft.Threading.Tasks.Extensions.Desktop.dll</HintPath>
     </Reference>
+    <Reference Include="NetOffice">
+      <HintPath>..\packages\NetOffice.Core.1.6.0.0\lib\net45\NetOffice.dll</HintPath>
+      <EmbedInteropTypes>False</EmbedInteropTypes>
+    </Reference>
     <Reference Include="Newtonsoft.Json">
       <HintPath>..\packages\Newtonsoft.Json.6.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="OfficeApi">
+      <HintPath>..\packages\NetOffice.Core.1.6.0.0\lib\net45\OfficeApi.dll</HintPath>
+      <EmbedInteropTypes>False</EmbedInteropTypes>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -89,6 +98,10 @@
       <HintPath>..\packages\Microsoft.Net.Http.2.2.22\lib\net45\System.Net.Http.Primitives.dll</HintPath>
     </Reference>
     <Reference Include="System.Net.Http.WebRequest" />
+    <Reference Include="VBIDEApi">
+      <HintPath>..\packages\NetOffice.Core.1.6.0.0\lib\net45\VBIDEApi.dll</HintPath>
+      <EmbedInteropTypes>False</EmbedInteropTypes>
+    </Reference>
     <Reference Include="Zlib.Portable, Version=1.10.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\Zlib.Portable.1.10.0\lib\portable-net4+sl5+wp8+win8+wpa81+MonoTouch+MonoAndroid\Zlib.Portable.dll</HintPath>

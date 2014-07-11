@@ -21,12 +21,12 @@ namespace Acco.Calendar.Manager
 
         public async Task<bool> PushAsync(GenericCalendar calendar)
         {
-            return false;
+            return Push(calendar);
         }
 
         public async Task<GenericCalendar> PullAsync()
         {
-            return null;
+            return Pull();
         }
     }
 }
