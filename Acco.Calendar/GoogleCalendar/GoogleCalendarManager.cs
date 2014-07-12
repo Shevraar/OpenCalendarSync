@@ -56,9 +56,7 @@ namespace Acco.Calendar.Manager
             GenericCalendar calendar = new GenericCalendar();
             calendar.Events = await PullEvents();
             calendar.Id = MyCalendarId;
-            // TODO: add other stuff to json file
-            // calendar.Name = 
-            // calendar. 
+            calendar.Name = MyCalendarName;
             return calendar;
         }
 
@@ -67,7 +65,7 @@ namespace Acco.Calendar.Manager
         {
             bool res = await Authenticate(_ClientId, _ClientSecret);
             //
-            MyCalendarId = await DataStore.GetAsync<string>("MyCalendarId");
+            MyCalendarId = await DataStore.GetAsync<string>( _CalendarName + "_Id");
             MyCalendarName = _CalendarName;
             // 
             if (MyCalendarId != null)
@@ -78,10 +76,10 @@ namespace Acco.Calendar.Manager
             if (res == false || MyCalendarId == null)
             {
                 MyCalendarId = (await CreateCalendar()).Id;
-                await DataStore.StoreAsync<string>("MyCalendarId", MyCalendarId);
+                await DataStore.StoreAsync<string>(_CalendarName +  "_Id", MyCalendarId);
             }
             //
-            await DataStore.StoreAsync<string>("MyCalendarName", _CalendarName);
+            await DataStore.StoreAsync<string>( _CalendarName + "_Name", _CalendarName);
             //
             return res;
         }
@@ -127,7 +125,7 @@ namespace Acco.Calendar.Manager
             return await Service.Calendars.Insert(new Google.Apis.Calendar.v3.Data.Calendar()
             {
                 Summary = MyCalendarName,
-                TimeZone = "Europe/Rome", // TODO: configurable
+                TimeZone = "Europe/Rome",
                 Description = "Automatically created: " + DateTime.Now.ToString("g")
             }).ExecuteAsync();
         }
@@ -196,12 +194,14 @@ namespace Acco.Calendar.Manager
                 {
                     myEvt.Start = new Google.Apis.Calendar.v3.Data.EventDateTime();
                     myEvt.Start.DateTime = evt.Start;
+                    myEvt.Start.TimeZone = "Europe/Rome";
                 }
                 // End
                 if (evt.End.HasValue)
                 {
                     myEvt.End = new Google.Apis.Calendar.v3.Data.EventDateTime();
                     myEvt.End.DateTime = evt.End;
+                    myEvt.End.TimeZone = "Europe/Rome";
                 }
                 else
                 {
@@ -211,7 +211,12 @@ namespace Acco.Calendar.Manager
                 if (evt.Recurrency != null)
                 {
                     myEvt.Recurrence = new List<string>();
-                    myEvt.Recurrence.Add(((GoogleRecurrency)evt.Recurrency).ToString());
+                    GoogleRecurrency temporaryRecurrency = new GoogleRecurrency();
+                    // this is bad, dunno how to do otherwise..
+                    temporaryRecurrency.Days = evt.Recurrency.Days;
+                    temporaryRecurrency.Expiry = evt.Recurrency.Expiry;
+                    temporaryRecurrency.Type = evt.Recurrency.Type;
+                    myEvt.Recurrence.Add(temporaryRecurrency.ToString());
                 }
                 // Creation date
                 if (evt.Created.HasValue)
@@ -222,11 +227,16 @@ namespace Acco.Calendar.Manager
                 myEvt.Reminders = new Google.Apis.Calendar.v3.Data.Event.RemindersData();
                 myEvt.Reminders.UseDefault = true;
 
-                await Service.Events.Insert(myEvt, MyCalendarId).ExecuteAsync();
+                Google.Apis.Calendar.v3.Data.Event newlyCreatedEvent = await Service.Events.Insert(myEvt, MyCalendarId).ExecuteAsync();
+                if(newlyCreatedEvent != null)
+                {
+                    res = true;
+                }
             }
             catch (Exception ex)
             {
-                Console.WriteLine("ERROR {0}", ex.Message);
+                Console.WriteLine("Exception: [{0}]", ex.Message);
+                res = false;
             }
             //
             return res;
@@ -238,7 +248,11 @@ namespace Acco.Calendar.Manager
             //
             foreach (GenericEvent evt in evts)
             {
-                await PushEvent(evt);
+                res = await PushEvent(evt);
+                if(res == false)
+                {
+                    break;
+                }
             }
             //
             return res;
@@ -326,7 +340,7 @@ namespace Acco.Calendar.Manager
             }
             catch (Exception ex)
             {
-                Console.WriteLine("ERROR {0}", ex.Message);
+                Console.WriteLine("Exception: [{0}]", ex.Message);
             }
             return myEvts;
         }

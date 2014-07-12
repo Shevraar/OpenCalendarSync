@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-
+//
 using Acco.Calendar.Location;
 using Acco.Calendar.Person;
 
 namespace Acco.Calendar.Event
 {
-    public enum RecurrencyType
+    public enum RecurrencyType : ushort
     {
         DAILY = 0,
         WEEKLY,
@@ -14,16 +14,33 @@ namespace Acco.Calendar.Event
         YEARLY
     }
 
+    [FlagsAttribute]
+    public enum DayOfWeek : ushort
+    {
+        None = 0,
+        Monday = 1,
+        Tuesday = 2,
+        Wednesday = 4,
+        Thursday = 8,
+        Friday = 16,
+        Saturday = 32,
+        Sunday = 64
+    }
+
     public interface IRecurrency
     {
         RecurrencyType Type { get; set; }
+        
         DateTime? Expiry { get; set; }
+
+        DayOfWeek Days { get; set; }
     }
 
     public class GenericRecurrency : IRecurrency
     {
         public RecurrencyType Type { get; set; }
         public DateTime? Expiry { get; set; }
+        public DayOfWeek Days { get; set; }
     }
 
     public interface IEvent

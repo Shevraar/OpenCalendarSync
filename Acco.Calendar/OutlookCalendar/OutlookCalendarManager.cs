@@ -54,9 +54,10 @@ namespace Acco.Calendar.Manager
         {
             GenericCalendar myCalendar = new GenericCalendar();
             //
-            myCalendar.Id = CalendarFolder.Name;
+            myCalendar.Id = CalendarFolder.EntryID;
+            myCalendar.Name = CalendarFolder.Name;
             myCalendar.Creator = new GenericPerson();
-            myCalendar.Creator.Name = OutlookApplication.DefaultProfileName;
+            myCalendar.Creator.Email = CalendarFolder.Store.DisplayName;
             //
             myCalendar.Events = new List<GenericEvent>();
             //
@@ -97,46 +98,53 @@ namespace Acco.Calendar.Manager
                 myEvt.Organizer.Name = evt.GetOrganizer().Name;
                 // Attendees
                 myEvt.Attendees = new List<GenericPerson>();
-                string[] requiredAttendees = null;
+                string[] requiredAttendeesEmails = null;
                 if(evt.RequiredAttendees != null)
                 { 
-                    requiredAttendees = evt.RequiredAttendees.Split(';');
+                    requiredAttendeesEmails = evt.RequiredAttendees.Split(';');
                 }
-                string[] optionalAttendees = null;
+                string[] optionalAttendeesEmails = null;
                 if(evt.OptionalAttendees != null)
                 { 
-                    optionalAttendees = evt.OptionalAttendees.Split(';');
+                    optionalAttendeesEmails = evt.OptionalAttendees.Split(';');
                 }
                 //
-                if(requiredAttendees != null)
+                if(requiredAttendeesEmails != null)
                 { 
-                    foreach(string requiredAttendee in requiredAttendees)
+                    foreach(string attendeeEmail in requiredAttendeesEmails)
                     {
                         myEvt.Attendees.Add(new GenericPerson 
                         {
-                            Email = requiredAttendee
+                            Email = attendeeEmail.Trim()
                         });
                     }
                 }
                 //
-                if(optionalAttendees != null)
+                if(optionalAttendeesEmails != null)
                 { 
-                    foreach(string optionalAttendee in optionalAttendees)
+                    foreach(string optionalAttendee in optionalAttendeesEmails)
                     {
                         myEvt.Attendees.Add(new GenericPerson
                         {
-                            Email = optionalAttendee
+                            Email = optionalAttendee.Trim()
                         });
                     }
                 }
-                // Recurrency
-                if (evt.IsRecurring)
-                {
-                    myEvt.Recurrency = new OutlookRecurrency();
-                    RecurrencePattern rp = evt.GetRecurrencePattern();
-                    myEvt.Recurrency.Expiry = rp.EndTime;
-                    ((OutlookRecurrency)myEvt.Recurrency).FromOutlookRecurrencyType(rp.RecurrenceType);
-                }
+                // Recurrency (it seems that on fucking microsoft outlook recurrency is from an alien planet) 
+                //if (evt.IsRecurring)
+                //{
+                //    myEvt.Recurrency = new GenericRecurrency();
+                //    //
+                //    RecurrencePattern rp = evt.GetRecurrencePattern();
+                //    OutlookRecurrency temporaryRecurrency = new OutlookRecurrency();
+                //    temporaryRecurrency.Expiry = rp.PatternEndDate;
+                //    temporaryRecurrency.Parse(rp);
+                //    // this is bad, but I don't know how to do otherwise.
+                //    myEvt.Recurrency.Days = temporaryRecurrency.Days;
+                //    myEvt.Recurrency.Expiry = temporaryRecurrency.Expiry;
+                //    myEvt.Recurrency.Type = temporaryRecurrency.Type;
+                //    //
+                //}
                 // add it to calendar events.
                 myCalendar.Events.Add(myEvt);
             }

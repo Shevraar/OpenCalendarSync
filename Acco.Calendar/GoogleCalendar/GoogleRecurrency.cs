@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace Acco.Calendar.Event
 {
@@ -7,16 +8,54 @@ namespace Acco.Calendar.Event
         public override string ToString()
         {
             string ret = "";
-            string offset = TimeZone.CurrentTimeZone.GetUtcOffset(DateTime.Today).ToString("-hh:mm");
+            string fmt = (TimeZone.CurrentTimeZone.GetUtcOffset(DateTime.Today) < TimeSpan.Zero ? "\\-" : "\\+") + "hh\\:mm";
+            string offset = TimeZone.CurrentTimeZone.GetUtcOffset(DateTime.Today).ToString(fmt);
             // yyyymmddThhmmss-OFFSET
             // 20110701T100000-07:00
-            ret = @"RRULE:FREQ=" + Type.ToString() + ";UNTIL=" + Expiry.Value.ToString("yyyymmddThhmmss") + offset;
+            ret = @"RRULE:FREQ=" + Type.ToString();
+            if(Expiry.HasValue)
+            {
+                ret += ";UNTIL=" + Expiry.Value.ToString("yyyymmddThhmmss") + offset;
+            }
+            if (Days > DayOfWeek.None)
+            {
+                ret += ";BYDAY=";
+                List<string> days = new List<string>();
+                if (Days.HasFlag(DayOfWeek.Monday))
+                {
+                    days.Add("MO");
+                }
+                if (Days.HasFlag(DayOfWeek.Tuesday))
+                {
+                    days.Add("TU");
+                }
+                if (Days.HasFlag(DayOfWeek.Wednesday))
+                {
+                    days.Add("WE");
+                }
+                if (Days.HasFlag(DayOfWeek.Thursday))
+                {
+                    days.Add("TH");
+                }
+                if (Days.HasFlag(DayOfWeek.Friday))
+                {
+                    days.Add("FR");
+                }
+                if (Days.HasFlag(DayOfWeek.Saturday))
+                {
+                    days.Add("SA");
+                }
+                if (Days.HasFlag(DayOfWeek.Sunday))
+                {
+                    days.Add("SU");
+                }
+                ret += string.Join(",", days.ToArray()) + ";";
+            }
             return ret;
         }
 
         public void FromString(string rules)
         {
-            // guarda un po' cosa viene fuori...
             string[] details = rules.Split(':');
             foreach (string detail in details[1].Split(';'))
             {

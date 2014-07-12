@@ -12,6 +12,5 @@ namespace Acco.Calendar
         Task<bool> PushAsync(GenericCalendar calendar);
         GenericCalendar Pull();
         Task<GenericCalendar> PullAsync();
-
     }   
 }
