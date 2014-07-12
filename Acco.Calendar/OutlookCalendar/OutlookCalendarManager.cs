@@ -18,7 +18,6 @@ namespace Acco.Calendar.Manager
         private Application OutlookApplication { get; set; }
         private NameSpace MapiNameSpace { get; set; }
         private MAPIFolder CalendarFolder { get; set; }
-
         #endregion
 
         #region Singleton directives
@@ -26,15 +25,17 @@ namespace Acco.Calendar.Manager
         // hidden constructor
         private OutlookCalendarManager() { Initialize(); }
 
+
+
+        public static OutlookCalendarManager Instance { get { return instance; } }
+        #endregion
+
         private void Initialize()
         {
             OutlookApplication = new Application();
             MapiNameSpace = OutlookApplication.GetNamespace("MAPI");
             CalendarFolder = MapiNameSpace.GetDefaultFolder(OlDefaultFolders.olFolderCalendar);
         }
-
-        public static OutlookCalendarManager Instance { get { return instance; } }
-        #endregion
 
         public bool Push(GenericCalendar calendar)
         {
@@ -59,53 +60,85 @@ namespace Acco.Calendar.Manager
             //
             myCalendar.Events = new List<GenericEvent>();
             //
-            Items appointments = CalendarFolder.Items;
-            foreach(AppointmentItem appointment in appointments)
+            Items evts = CalendarFolder.Items;
+            evts.IncludeRecurrences = true;
+            evts.Sort("[Start]");
+            string filter = "[Start] >= '"
+                + DateTime.Now.ToString("g")
+                + "' AND [End] <= '"
+                + DateTime.Now.Add(new TimeSpan(30 /*days*/, 0 /* hours */, 0 /*minutes*/, 0 /* seconds*/)).ToString("g") + "'";
+            evts = evts.Restrict(filter);
+            foreach (AppointmentItem evt in evts)
             {
+                //
                 GenericEvent myEvt = new GenericEvent();
                 // Start
-                myEvt.Start = appointment.Start;
+                myEvt.Start = evt.Start;
                 // End
-                if(!appointment.AllDayEvent)
+                if(!evt.AllDayEvent)
                 { 
-                    myEvt.End = appointment.End;
+                    myEvt.End = evt.End;
                 }
                 // Description
-                myEvt.Description = appointment.Subject;
+                myEvt.Description = evt.Subject;
+                // Summary
+                myEvt.Summary = evt.Body;
                 // Location
                 myEvt.Location = new GenericLocation();
-                myEvt.Location.Name = appointment.Location;
+                myEvt.Location.Name = evt.Location;
+                // Creator and organizer are the same person.
                 // Creator
-                //todo: understand how to retrieve creator info... otherwise it'll be empty
                 myEvt.Creator = new GenericPerson();
+                myEvt.Creator.Email = evt.GetOrganizer().Address;
+                myEvt.Creator.Name = evt.GetOrganizer().Name;
+                // Organizer
+                myEvt.Organizer = new GenericPerson();
+                myEvt.Organizer.Email = evt.GetOrganizer().Address;
+                myEvt.Organizer.Name = evt.GetOrganizer().Name;
                 // Attendees
                 myEvt.Attendees = new List<GenericPerson>();
-                string[] requiredAttendees = appointment.RequiredAttendees.Split(';');
-                string[] optionalAttendees = appointment.OptionalAttendees.Split(';');
-                //
-                foreach(string requiredAttendee in requiredAttendees)
-                {
-                    myEvt.Attendees.Add(new GenericPerson 
-                    {
-                        Email = requiredAttendee
-                    });
+                string[] requiredAttendees = null;
+                if(evt.RequiredAttendees != null)
+                { 
+                    requiredAttendees = evt.RequiredAttendees.Split(';');
                 }
-                foreach(string optionalAttendee in optionalAttendees)
-                {
-                    myEvt.Attendees.Add(new GenericPerson
+                string[] optionalAttendees = null;
+                if(evt.OptionalAttendees != null)
+                { 
+                    optionalAttendees = evt.OptionalAttendees.Split(';');
+                }
+                //
+                if(requiredAttendees != null)
+                { 
+                    foreach(string requiredAttendee in requiredAttendees)
                     {
-                        Email = optionalAttendee
-                    });
+                        myEvt.Attendees.Add(new GenericPerson 
+                        {
+                            Email = requiredAttendee
+                        });
+                    }
+                }
+                //
+                if(optionalAttendees != null)
+                { 
+                    foreach(string optionalAttendee in optionalAttendees)
+                    {
+                        myEvt.Attendees.Add(new GenericPerson
+                        {
+                            Email = optionalAttendee
+                        });
+                    }
                 }
                 // Recurrency
-                if (appointment.IsRecurring)
+                if (evt.IsRecurring)
                 {
-                    //RecurrencePattern rp = appointment.GetRecurrencePattern();
-                    //DateTime first = new DateTime(1999, 1, 1, appointment.Start.Hour, appointment.Start.Minute, 0);
-                    //DateTime last = DateTime.Now;
-                    ///AppointmentItem recur = null;
-                    myEvt.Recurrency = new GenericRecurrency();
+                    myEvt.Recurrency = new OutlookRecurrency();
+                    RecurrencePattern rp = evt.GetRecurrencePattern();
+                    myEvt.Recurrency.Expiry = rp.EndTime;
+                    ((OutlookRecurrency)myEvt.Recurrency).FromOutlookRecurrencyType(rp.RecurrenceType);
                 }
+                // add it to calendar events.
+                myCalendar.Events.Add(myEvt);
             }
             //
             return myCalendar;
