@@ -1,6 +1,8 @@
 ﻿using System;
 //
 using Microsoft.Office.Interop.Outlook;
+using DDay.iCal;
+using System.Collections.Generic;
 
 namespace Acco.Calendar.Event
 {
@@ -43,67 +45,105 @@ namespace Acco.Calendar.Event
             Changes you make to properties on a RecurrencePattern object take effect when you call the underlying appointment's Send or Update method.
          */
 
-        public void Parse(RecurrencePattern recurrencePattern)
+        public void Parse(Microsoft.Office.Interop.Outlook.RecurrencePattern outlookRecurrencePattern)
         {
-            switch(recurrencePattern.RecurrenceType)
+            switch(outlookRecurrencePattern.RecurrenceType)
             {
                 case OlRecurrenceType.olRecursDaily:
-                    ParseDailyRecurrency(recurrencePattern);
+                    {
+                        //olRecursDaily            |  Duration, EndTime, Interval, NoEndDate, Occurrences, PatternStartDate, PatternEndDate, StartTime
+                        Pattern = new DDay.iCal.RecurrencePattern(FrequencyType.Daily, outlookRecurrencePattern.Interval);
+                        Pattern.FirstDayOfWeek = System.DayOfWeek.Monday; // always monday, c.b.a. to change it for other counties.
+                        Pattern.RestrictionType = RecurrenceRestrictionType.Default;
+                        Pattern.Count = outlookRecurrencePattern.Occurrences; // check if count is intended as duration...
+                        Pattern.Until = outlookRecurrencePattern.PatternEndDate;   
+                    }
                     break;
                 case OlRecurrenceType.olRecursWeekly:
-                    ParseWeeklyRecurrency(recurrencePattern);
+                    {
+                        //olRecursWeekly           |  DayOfWeekMask, Duration, EndTime, Interval, NoEndDate, Occurrences, PatternStartDate, PatternEndDate, StartTime
+                        Pattern = new DDay.iCal.RecurrencePattern(FrequencyType.Weekly, outlookRecurrencePattern.Interval);
+                        Pattern.FirstDayOfWeek = System.DayOfWeek.Monday; // always monday, c.b.a. to change it for other counties.
+                        Pattern.RestrictionType = RecurrenceRestrictionType.Default;
+                        Pattern.Count = outlookRecurrencePattern.Occurrences; // check if count is intended as duration...
+                        Pattern.Until = outlookRecurrencePattern.PatternEndDate;
+                        Pattern.ByDay = new List<IWeekDay>();
+                        // 
+                        if (outlookRecurrencePattern.DayOfWeekMask.HasFlag(OlDaysOfWeek.olMonday))
+                        { 
+                            Pattern.ByDay.Add(new WeekDay() 
+                            { 
+                                DayOfWeek = System.DayOfWeek.Monday
+                            });
+                        }
+                        if (outlookRecurrencePattern.DayOfWeekMask.HasFlag(OlDaysOfWeek.olTuesday))
+                        {
+                            Pattern.ByDay.Add(new WeekDay()
+                            {
+                                DayOfWeek = System.DayOfWeek.Tuesday
+                            });
+                        }
+                        if (outlookRecurrencePattern.DayOfWeekMask.HasFlag(OlDaysOfWeek.olWednesday))
+                        {
+                            Pattern.ByDay.Add(new WeekDay()
+                            {
+                                DayOfWeek = System.DayOfWeek.Wednesday
+                            });
+                        }
+                        if (outlookRecurrencePattern.DayOfWeekMask.HasFlag(OlDaysOfWeek.olThursday))
+                        {
+                            Pattern.ByDay.Add(new WeekDay()
+                            {
+                                DayOfWeek = System.DayOfWeek.Thursday
+                            });
+                        }
+                        if (outlookRecurrencePattern.DayOfWeekMask.HasFlag(OlDaysOfWeek.olFriday))
+                        {
+                            Pattern.ByDay.Add(new WeekDay()
+                            {
+                                DayOfWeek = System.DayOfWeek.Friday
+                            });
+                        }
+                        if (outlookRecurrencePattern.DayOfWeekMask.HasFlag(OlDaysOfWeek.olSaturday))
+                        {
+                            Pattern.ByDay.Add(new WeekDay()
+                            {
+                                DayOfWeek = System.DayOfWeek.Saturday
+                            });
+                        }
+                        if (outlookRecurrencePattern.DayOfWeekMask.HasFlag(OlDaysOfWeek.olSunday))
+                        {
+                            Pattern.ByDay.Add(new WeekDay()
+                            {
+                                DayOfWeek = System.DayOfWeek.Sunday
+                            });
+                        }
+                        //
+                    }
                     break;
                 case OlRecurrenceType.olRecursMonthly:
                 case OlRecurrenceType.olRecursMonthNth:
-                    ParseMonthlyRecurrency(recurrencePattern);
+                    {
+                        //
+                    }
                     break;
                 case OlRecurrenceType.olRecursYearly:
                 case OlRecurrenceType.olRecursYearNth:
-                    ParseYearlyRecurrency(recurrencePattern);
+                    {
+                        //
+                    }
                     break;
             }
         }
 
-        public void ParseDailyRecurrency(RecurrencePattern recurrencePattern)
+        public override string Get()
         {
-            //olRecursDaily            |  Duration, EndTime, Interval, NoEndDate, Occurrences, PatternStartDate, PatternEndDate, StartTime
-            Type = RecurrencyType.DAILY;
+            return Pattern.ToString();
         }
 
-        public void ParseWeeklyRecurrency(RecurrencePattern recurrencePattern)
+        public override void Parse(string format)
         {
-            //olRecursWeekly           |  DayOfWeekMask, Duration, EndTime, Interval, NoEndDate, Occurrences, PatternStartDate, PatternEndDate, StartTime
-            // the weekly pattern is treated as a daily pattern with daysofweek set... fucking microsoft.
-            Type = RecurrencyType.DAILY;
-            Parse(recurrencePattern.DayOfWeekMask);
-        }
-
-        public void ParseMonthlyRecurrency(RecurrencePattern recurrencePattern)
-        {
-            // not yet implemented
-        }
-
-        public void ParseYearlyRecurrency(RecurrencePattern recurrencePattern)
-        {
-            // not yet implemented
-        }
-
-        public void Parse(OlDaysOfWeek daysOfWeek)
-        {
-            if (daysOfWeek.HasFlag(OlDaysOfWeek.olMonday))
-                Days |= DayOfWeek.Monday;
-            if (daysOfWeek.HasFlag(OlDaysOfWeek.olTuesday))
-                Days |= DayOfWeek.Tuesday;
-            if (daysOfWeek.HasFlag(OlDaysOfWeek.olWednesday))
-                Days |= DayOfWeek.Wednesday;
-            if (daysOfWeek.HasFlag(OlDaysOfWeek.olThursday))
-                Days |= DayOfWeek.Thursday;
-            if (daysOfWeek.HasFlag(OlDaysOfWeek.olFriday))
-                Days |= DayOfWeek.Friday;
-            if (daysOfWeek.HasFlag(OlDaysOfWeek.olSaturday))
-                Days |= DayOfWeek.Saturday;
-            if (daysOfWeek.HasFlag(OlDaysOfWeek.olSunday))
-                Days |= DayOfWeek.Sunday;
+            base.Parse(format);
         }
     }
 }

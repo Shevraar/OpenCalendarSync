@@ -56,8 +56,10 @@ namespace Acco.Calendar.Manager
             //
             myCalendar.Id = CalendarFolder.EntryID;
             myCalendar.Name = CalendarFolder.Name;
+#if !OLD_OFFICE_ASSEMBLY
             myCalendar.Creator = new GenericPerson();
             myCalendar.Creator.Email = CalendarFolder.Store.DisplayName;
+#endif
             //
             myCalendar.Events = new List<GenericEvent>();
             //
@@ -101,52 +103,54 @@ namespace Acco.Calendar.Manager
                 myEvt.Organizer.Name = evt.GetOrganizer().Name;
 #endif
                 // Attendees
+                // todo: get the address from exchange... another fucking thing from microsoft!
+                //foreach (Microsoft.Office.Interop.Outlook.Recipient rcpt in evt.Recipients)
+                //{
+                //    Microsoft.Office.Interop.Outlook.AddressEntry rcptAE = rcpt.AddressEntry;
+                //    Console.WriteLine("rcpt {0}", rcptAE.GetExchangeUser().PrimarySmtpAddress);
+                //}
                 myEvt.Attendees = new List<GenericPerson>();
-                string[] requiredAttendeesEmails = null;
+                string[] requiredAttendees = null;
                 if(evt.RequiredAttendees != null)
                 { 
-                    requiredAttendeesEmails = evt.RequiredAttendees.Split(';');
+                    requiredAttendees = evt.RequiredAttendees.Split(';');
                 }
-                string[] optionalAttendeesEmails = null;
+                string[] optionalAttendees = null;
                 if(evt.OptionalAttendees != null)
                 { 
-                    optionalAttendeesEmails = evt.OptionalAttendees.Split(';');
+                    optionalAttendees = evt.OptionalAttendees.Split(';');
                 }
                 //
-                if(requiredAttendeesEmails != null)
+                if(requiredAttendees != null)
                 { 
-                    foreach(string attendeeEmail in requiredAttendeesEmails)
+                    foreach(string attendee in requiredAttendees)
                     {
                         myEvt.Attendees.Add(new GenericPerson 
                         {
-                            Email = attendeeEmail.Trim()
+                            Email = attendee.Trim() // todo: add some validation to test if attendee contains an email or not (regex)
                         });
                     }
                 }
                 //
-                if(optionalAttendeesEmails != null)
+                if(optionalAttendees != null)
                 { 
-                    foreach(string optionalAttendee in optionalAttendeesEmails)
+                    foreach(string optionalAttendee in optionalAttendees)
                     {
                         myEvt.Attendees.Add(new GenericPerson
                         {
-                            Email = optionalAttendee.Trim()
+                            Email = optionalAttendee.Trim() // todo: add some validation to test if attendee contains an email or not (regex)
                         });
                     }
                 }
-                // Recurrency (it seems that on fucking microsoft outlook recurrency is from an alien planet) 
+                // Recurrence (it seems that on fucking microsoft outlook recurrence is from an alien planet) 
                 if (evt.IsRecurring)
                 {
                     myEvt.Recurrence = new GenericRecurrence();
                     //
-                    RecurrencePattern rp = evt.GetRecurrencePattern();
                     OutlookRecurrence temporaryRecurrence = new OutlookRecurrence();
-                    temporaryRecurrence.Expiry = rp.PatternEndDate;
-                    temporaryRecurrence.Parse(rp);
-                    // this is bad, but I don't know how to do otherwise.
-                    myEvt.Recurrence.Days = temporaryRecurrence.Days;
-                    myEvt.Recurrence.Expiry = temporaryRecurrence.Expiry;
-                    myEvt.Recurrence.Type = temporaryRecurrence.Type;
+                    temporaryRecurrence.Parse(evt.GetRecurrencePattern());
+                    // this is bad, but I don't know how to do otherwise. (TODO: fix this somehow)
+                    myEvt.Recurrence.Pattern = temporaryRecurrence.Pattern;
                 }
                 // add it to calendar events.
                 myCalendar.Events.Add(myEvt);
@@ -155,14 +159,67 @@ namespace Acco.Calendar.Manager
             return myCalendar;
         }
 
+        //private string GetSenderSMTPAddress(AppointmentItem item)
+        //{
+        //    string PR_SMTP_ADDRESS =
+        //        @"http://schemas.microsoft.com/mapi/proptag/0x39FE001E";
+        //    if (item == null)
+        //    {
+        //        throw new ArgumentNullException();
+        //    }
+        //    if (item.Recipients == "EX")
+        //    {
+        //        Outlook.AddressEntry sender =
+        //            mail.Sender;
+        //        if (sender != null)
+        //        {
+        //            //Now we have an AddressEntry representing the Sender
+        //            if (sender.AddressEntryUserType ==
+        //                Outlook.OlAddressEntryUserType.
+        //                olExchangeUserAddressEntry
+        //                || sender.AddressEntryUserType ==
+        //                Outlook.OlAddressEntryUserType.
+        //                olExchangeRemoteUserAddressEntry)
+        //            {
+        //                //Use the ExchangeUser object PrimarySMTPAddress
+        //                Outlook.ExchangeUser exchUser =
+        //                    sender.GetExchangeUser();
+        //                if (exchUser != null)
+        //                {
+        //                    return exchUser.PrimarySmtpAddress;
+        //                }
+        //                else
+        //                {
+        //                    return null;
+        //                }
+        //            }
+        //            else
+        //            {
+        //                return sender.PropertyAccessor.GetProperty(
+        //                    PR_SMTP_ADDRESS) as string;
+        //            }
+        //        }
+        //        else
+        //        {
+        //            return null;
+        //        }
+        //    }
+        //    else
+        //    {
+        //        return mail.SenderEmailAddress;
+        //    }
+        //}
+
         public async Task<bool> PushAsync(GenericCalendar calendar)
         {
-            return Push(calendar);
+            Task<bool> push = Task.Factory.StartNew(() => Push(calendar));
+            return await push;
         }
 
         public async Task<GenericCalendar> PullAsync()
         {
-            return Pull();
+            Task<GenericCalendar> pull = Task.Factory.StartNew(() => Pull());
+            return await pull;
         }
     }
 }

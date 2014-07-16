@@ -3,16 +3,21 @@ using System.Collections.Generic;
 //
 using Acco.Calendar.Location;
 using Acco.Calendar.Person;
+//
+using DDay;
+using DDay.iCal;
+using DDay.Collections;
+using DDay.iCal.Serialization;
 
 namespace Acco.Calendar.Event
 {
-    public enum RecurrencyType : ushort
-    {
-        DAILY = 0,
-        WEEKLY,
-        MONTHLY,
-        YEARLY
-    }
+    //public enum RecurrencyType : ushort
+    //{
+    //    DAILY = 0,
+    //    WEEKLY,
+    //    MONTHLY,
+    //    YEARLY
+    //}
 
     [FlagsAttribute]
     public enum DayOfWeek : short
@@ -29,20 +34,19 @@ namespace Acco.Calendar.Event
 
     public interface IRecurrence
     {
-        RecurrencyType Type { get; set; }
-        DateTime? Expiry { get; set; }
-        DayOfWeek Days { get; set; }
-        void Parse(string format);
+        RecurrencePattern Pattern { get; set; }
+        void Parse(string rules);
         string Get();
     }
 
     public class GenericRecurrence : IRecurrence
     {
-        public RecurrencyType Type { get; set; }
-        public DateTime? Expiry { get; set; }
-        public DayOfWeek Days { get; set; }
-        public virtual void Parse(string format) { return; }
+        public RecurrencePattern Pattern { get; set; }
+        public virtual void Parse(string rules) { return; }
         public virtual string Get() { return "";  }
+
+        private DateTime? Expiry { get; set; }
+        private DayOfWeek Days { get; set; }
     }
 
     public interface IEvent

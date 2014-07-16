@@ -212,21 +212,20 @@ namespace Acco.Calendar.Manager
                 {
                     myEvt.Recurrence = new List<string>();
                     GoogleRecurrence temporaryRecurrency = new GoogleRecurrence();
-                    // this is bad, dunno how to do otherwise..
-                    temporaryRecurrency.Days = evt.Recurrence.Days;
-                    temporaryRecurrency.Expiry = evt.Recurrence.Expiry;
-                    temporaryRecurrency.Type = evt.Recurrence.Type;
-                    myEvt.Recurrence.Add(temporaryRecurrency.ToString());
+                    // this is bad, dunno how to do otherwise.. (TODO: fix this somehow)
+                    temporaryRecurrency.Pattern = evt.Recurrence.Pattern;
+                    //temporaryRecurrency.Pattern = evt.Recurrence.Type;
+                    myEvt.Recurrence.Add(temporaryRecurrency.Get());
                 }
                 // Creation date
                 if (evt.Created.HasValue)
                 {
                     myEvt.Created = evt.Created;
                 }
-
+                //
                 myEvt.Reminders = new Google.Apis.Calendar.v3.Data.Event.RemindersData();
                 myEvt.Reminders.UseDefault = true;
-
+                //
                 Google.Apis.Calendar.v3.Data.Event newlyCreatedEvent = await Service.Events.Insert(myEvt, MyCalendarId).ExecuteAsync();
                 if(newlyCreatedEvent != null)
                 {
