@@ -3,15 +3,13 @@ using System.Collections.Generic;
 
 namespace Acco.Calendar.Event
 {
-    public class GoogleRecurrency : GenericRecurrency
+    public class GoogleRecurrence : GenericRecurrence
     {
-        public override string ToString()
+        public override string Get()
         {
             string ret = "";
             string fmt = (TimeZone.CurrentTimeZone.GetUtcOffset(DateTime.Today) < TimeSpan.Zero ? "\\-" : "\\+") + "hh\\:mm";
             string offset = TimeZone.CurrentTimeZone.GetUtcOffset(DateTime.Today).ToString(fmt);
-            // yyyymmddThhmmss-OFFSET
-            // 20110701T100000-07:00
             ret = @"RRULE:FREQ=" + Type.ToString();
             if(Expiry.HasValue)
             {
@@ -54,7 +52,7 @@ namespace Acco.Calendar.Event
             return ret;
         }
 
-        public void FromString(string rules)
+        public override void Parse(string rules)
         {
             string[] details = rules.Split(':');
             foreach (string detail in details[1].Split(';'))

@@ -15,9 +15,9 @@ namespace Acco.Calendar.Event
     }
 
     [FlagsAttribute]
-    public enum DayOfWeek : ushort
+    public enum DayOfWeek : short
     {
-        None = 0,
+        None = -64,
         Monday = 1,
         Tuesday = 2,
         Wednesday = 4,
@@ -27,20 +27,22 @@ namespace Acco.Calendar.Event
         Sunday = 64
     }
 
-    public interface IRecurrency
+    public interface IRecurrence
     {
         RecurrencyType Type { get; set; }
-        
         DateTime? Expiry { get; set; }
-
         DayOfWeek Days { get; set; }
+        void Parse(string format);
+        string Get();
     }
 
-    public class GenericRecurrency : IRecurrency
+    public class GenericRecurrence : IRecurrence
     {
         public RecurrencyType Type { get; set; }
         public DateTime? Expiry { get; set; }
         public DayOfWeek Days { get; set; }
+        public virtual void Parse(string format) { return; }
+        public virtual string Get() { return "";  }
     }
 
     public interface IEvent
@@ -54,7 +56,7 @@ namespace Acco.Calendar.Event
         string Summary { get; set; }
         string Description { get; set; }
         GenericLocation Location { get; set; }
-        GenericRecurrency Recurrency { get; set; }
+        GenericRecurrence Recurrence { get; set; }
         List<GenericPerson> Attendees { get; set; }
     }
 
@@ -69,7 +71,7 @@ namespace Acco.Calendar.Event
         public string Summary { get; set; }
         public string Description { get; set; }
         public GenericLocation Location { get; set; }
-        public GenericRecurrency Recurrency { get; set; }
+        public GenericRecurrence Recurrence { get; set; }
         public List<GenericPerson> Attendees { get; set; }
     }
 }

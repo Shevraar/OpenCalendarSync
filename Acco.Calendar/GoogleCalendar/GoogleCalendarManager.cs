@@ -208,14 +208,14 @@ namespace Acco.Calendar.Manager
                     myEvt.EndTimeUnspecified = true;
                 }
                 // Recurrency
-                if (evt.Recurrency != null)
+                if (evt.Recurrence != null)
                 {
                     myEvt.Recurrence = new List<string>();
-                    GoogleRecurrency temporaryRecurrency = new GoogleRecurrency();
+                    GoogleRecurrence temporaryRecurrency = new GoogleRecurrence();
                     // this is bad, dunno how to do otherwise..
-                    temporaryRecurrency.Days = evt.Recurrency.Days;
-                    temporaryRecurrency.Expiry = evt.Recurrency.Expiry;
-                    temporaryRecurrency.Type = evt.Recurrency.Type;
+                    temporaryRecurrency.Days = evt.Recurrence.Days;
+                    temporaryRecurrency.Expiry = evt.Recurrence.Expiry;
+                    temporaryRecurrency.Type = evt.Recurrence.Type;
                     myEvt.Recurrence.Add(temporaryRecurrency.ToString());
                 }
                 // Creation date
@@ -317,8 +317,8 @@ namespace Acco.Calendar.Manager
                     {
                         // TODO: recurrency is a list of stuff coming from google... how this thing is
                         // formatted is unknown.
-                        myEvt.Recurrency = new GenericRecurrency();
-                        ((GoogleRecurrency)myEvt.Recurrency).FromString(evt.Recurrence[0]);
+                        myEvt.Recurrence = new GenericRecurrence();
+                        ((GoogleRecurrence)myEvt.Recurrence).Parse(evt.Recurrence[0]);
                     }
                     // Attendees
                     if (evt.Attendees != null)

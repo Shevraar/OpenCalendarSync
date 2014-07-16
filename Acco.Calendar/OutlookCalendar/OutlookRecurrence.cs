@@ -4,7 +4,7 @@ using Microsoft.Office.Interop.Outlook;
 
 namespace Acco.Calendar.Event
 {
-    class OutlookRecurrency : GenericRecurrency
+    class OutlookRecurrence : GenericRecurrence
     {
         /*
             The following table shows the properties that are valid for the different recurrence types. 

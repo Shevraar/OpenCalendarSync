@@ -62,10 +62,10 @@ namespace Acco.Calendar.Manager
             myCalendar.Events = new List<GenericEvent>();
             //
             Items evts = CalendarFolder.Items;
-            evts.IncludeRecurrences = true;
+            //evts.IncludeRecurrences = true;
             evts.Sort("[Start]");
             string filter = "[Start] >= '"
-                + DateTime.Now.ToString("g")
+                + DateTime.Now.Add(new TimeSpan(-30 /*days*/, 0 /* hours */, 0 /*minutes*/, 0 /* seconds*/)).ToString("g")
                 + "' AND [End] <= '"
                 + DateTime.Now.Add(new TimeSpan(30 /*days*/, 0 /* hours */, 0 /*minutes*/, 0 /* seconds*/)).ToString("g") + "'";
             evts = evts.Restrict(filter);
@@ -87,6 +87,8 @@ namespace Acco.Calendar.Manager
                 // Location
                 myEvt.Location = new GenericLocation();
                 myEvt.Location.Name = evt.Location;
+                //
+#if !OLD_OFFICE_ASSEMBLY // this only works with office 2010
                 // Creator and organizer are the same person.
                 // Creator
                 myEvt.Creator = new GenericPerson();
@@ -94,8 +96,10 @@ namespace Acco.Calendar.Manager
                 myEvt.Creator.Name = evt.GetOrganizer().Name;
                 // Organizer
                 myEvt.Organizer = new GenericPerson();
+                this only works with office 2010
                 myEvt.Organizer.Email = evt.GetOrganizer().Address;
                 myEvt.Organizer.Name = evt.GetOrganizer().Name;
+#endif
                 // Attendees
                 myEvt.Attendees = new List<GenericPerson>();
                 string[] requiredAttendeesEmails = null;
@@ -131,20 +135,19 @@ namespace Acco.Calendar.Manager
                     }
                 }
                 // Recurrency (it seems that on fucking microsoft outlook recurrency is from an alien planet) 
-                //if (evt.IsRecurring)
-                //{
-                //    myEvt.Recurrency = new GenericRecurrency();
-                //    //
-                //    RecurrencePattern rp = evt.GetRecurrencePattern();
-                //    OutlookRecurrency temporaryRecurrency = new OutlookRecurrency();
-                //    temporaryRecurrency.Expiry = rp.PatternEndDate;
-                //    temporaryRecurrency.Parse(rp);
-                //    // this is bad, but I don't know how to do otherwise.
-                //    myEvt.Recurrency.Days = temporaryRecurrency.Days;
-                //    myEvt.Recurrency.Expiry = temporaryRecurrency.Expiry;
-                //    myEvt.Recurrency.Type = temporaryRecurrency.Type;
-                //    //
-                //}
+                if (evt.IsRecurring)
+                {
+                    myEvt.Recurrence = new GenericRecurrence();
+                    //
+                    RecurrencePattern rp = evt.GetRecurrencePattern();
+                    OutlookRecurrence temporaryRecurrence = new OutlookRecurrence();
+                    temporaryRecurrence.Expiry = rp.PatternEndDate;
+                    temporaryRecurrence.Parse(rp);
+                    // this is bad, but I don't know how to do otherwise.
+                    myEvt.Recurrence.Days = temporaryRecurrence.Days;
+                    myEvt.Recurrence.Expiry = temporaryRecurrence.Expiry;
+                    myEvt.Recurrence.Type = temporaryRecurrence.Type;
+                }
                 // add it to calendar events.
                 myCalendar.Events.Add(myEvt);
             }
