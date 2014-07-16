@@ -57,25 +57,27 @@ namespace Acco.Calendar.Event
                 {
                     case OlRecurrenceType.olRecursDaily:
                         {
-                            //olRecursDaily            |  Duration, EndTime, Interval, NoEndDate, Occurrences, PatternStartDate, PatternEndDate, StartTime
                             Pattern = new DDay.iCal.RecurrencePattern(FrequencyType.Daily, outlookRecurrencePattern.Interval);
                             Pattern.FirstDayOfWeek = System.DayOfWeek.Monday; // always monday, c.b.a. to change it for other counties.
                             Pattern.RestrictionType = RecurrenceRestrictionType.Default;
-                            Pattern.Count = outlookRecurrencePattern.Occurrences;
-                            Pattern.Until = outlookRecurrencePattern.PatternEndDate;
+                            if (outlookRecurrencePattern.Occurrences > 0)
+                                Pattern.Count = outlookRecurrencePattern.Occurrences;
+                            else if (outlookRecurrencePattern.PatternEndDate > DateTime.Now)
+                                Pattern.Until = outlookRecurrencePattern.PatternEndDate;
                         }
                         break;
                     case OlRecurrenceType.olRecursWeekly:
                         {
-                            //olRecursWeekly           |  DayOfWeekMask, Duration, EndTime, Interval, NoEndDate, Occurrences, PatternStartDate, PatternEndDate, StartTime
                             //iCalendar _icalendar = new iCalendar();
                             //_icalendar.AddLocalTimeZone();
                             //DDay.iCal.Event _event = new DDay.iCal.Event();
                             Pattern = new DDay.iCal.RecurrencePattern(FrequencyType.Weekly, outlookRecurrencePattern.Interval);
                             Pattern.FirstDayOfWeek = System.DayOfWeek.Monday; // always monday, c.b.a. to change it for other countries.
                             Pattern.RestrictionType = RecurrenceRestrictionType.NoRestriction;
-                            Pattern.Count = outlookRecurrencePattern.Occurrences;
-                            Pattern.Until = outlookRecurrencePattern.PatternEndDate;
+                            if (outlookRecurrencePattern.Occurrences > 0)
+                                Pattern.Count = outlookRecurrencePattern.Occurrences;
+                            else if(outlookRecurrencePattern.PatternEndDate > DateTime.Now)
+                                Pattern.Until = outlookRecurrencePattern.PatternEndDate;
                             Pattern.ByDay = new List<IWeekDay>();
                             // 
                             if (outlookRecurrencePattern.DayOfWeekMask.HasFlag(OlDaysOfWeek.olMonday))
