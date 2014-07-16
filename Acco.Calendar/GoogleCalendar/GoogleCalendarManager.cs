@@ -1,6 +1,7 @@
 ﻿using Acco.Calendar.Event;
 using Acco.Calendar.Location;
 using Acco.Calendar.Person;
+using Google;
 using Google.Apis.Auth.OAuth2;
 using Google.Apis.Calendar.v3;
 using Google.Apis.Services;
@@ -12,6 +13,11 @@ using System.Threading.Tasks;
 
 namespace Acco.Calendar.Manager
 {
+
+    /// <summary>
+    /// Implementation of a Google Calendar Manager based on the latest API version:
+    /// https://developers.google.com/google-apps/calendar/v3/reference/
+    /// </summary>
     public sealed class GoogleCalendarManager : ICalendarManager
     {
         #region Variables + Constants
@@ -34,14 +40,16 @@ namespace Acco.Calendar.Manager
 
         public bool Push(GenericCalendar calendar)
         {
-            // to be implemented
-            return false;
+            Task<bool> pushTask = PushAsync(calendar);
+            pushTask.RunSynchronously();
+            return pushTask.Result;
         }
 
         public GenericCalendar Pull()
         {
-            // to be implemented
-            return null;
+            Task<GenericCalendar> pullTask = PullAsync();
+            pullTask.RunSynchronously();
+            return pullTask.Result;
         }
 
         public async Task<bool> PushAsync(GenericCalendar calendar)
@@ -152,6 +160,7 @@ namespace Acco.Calendar.Manager
             try
             {
                 Google.Apis.Calendar.v3.Data.Event myEvt = new Google.Apis.Calendar.v3.Data.Event();
+    
                 // Organizer
                 if (evt.Organizer != null)
                 {
@@ -194,14 +203,14 @@ namespace Acco.Calendar.Manager
                 {
                     myEvt.Start = new Google.Apis.Calendar.v3.Data.EventDateTime();
                     myEvt.Start.DateTime = evt.Start;
-                    myEvt.Start.TimeZone = "Europe/Rome";
+                    myEvt.Start.TimeZone = "Europe/Rome"; // documentation says its optional, but google still needs it...
                 }
                 // End
                 if (evt.End.HasValue)
                 {
                     myEvt.End = new Google.Apis.Calendar.v3.Data.EventDateTime();
                     myEvt.End.DateTime = evt.End;
-                    myEvt.End.TimeZone = "Europe/Rome";
+                    myEvt.End.TimeZone = "Europe/Rome"; // documentation says its optional, but google still needs it...
                 }
                 else
                 {
@@ -211,11 +220,7 @@ namespace Acco.Calendar.Manager
                 if (evt.Recurrence != null)
                 {
                     myEvt.Recurrence = new List<string>();
-                    GoogleRecurrence temporaryRecurrency = new GoogleRecurrence();
-                    // this is bad, dunno how to do otherwise.. (TODO: fix this somehow)
-                    temporaryRecurrency.Pattern = evt.Recurrence.Pattern;
-                    //temporaryRecurrency.Pattern = evt.Recurrence.Type;
-                    myEvt.Recurrence.Add(temporaryRecurrency.Get());
+                    myEvt.Recurrence.Add(evt.Recurrence.Get());
                 }
                 // Creation date
                 if (evt.Created.HasValue)
@@ -231,6 +236,10 @@ namespace Acco.Calendar.Manager
                 {
                     res = true;
                 }
+            }
+            catch(GoogleApiException ex)
+            {
+                Console.WriteLine("Exception: [{0}]", ex.Message);
             }
             catch (Exception ex)
             {
@@ -311,13 +320,11 @@ namespace Acco.Calendar.Manager
                     {
                         myEvt.Created = evt.Created;
                     }
-                    // Recurrency
+                    // Recurrence
                     if (evt.Recurrence != null)
                     {
-                        // TODO: recurrency is a list of stuff coming from google... how this thing is
-                        // formatted is unknown.
-                        myEvt.Recurrence = new GenericRecurrence();
-                        ((GoogleRecurrence)myEvt.Recurrence).Parse(evt.Recurrence[0]);
+                        myEvt.Recurrence = new GoogleRecurrence();
+                        ((GoogleRecurrence)myEvt.Recurrence).Parse<String>(evt.Recurrence[0]);
                     }
                     // Attendees
                     if (evt.Attendees != null)

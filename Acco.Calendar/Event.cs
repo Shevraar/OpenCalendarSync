@@ -11,42 +11,29 @@ using DDay.iCal.Serialization;
 
 namespace Acco.Calendar.Event
 {
-    //public enum RecurrencyType : ushort
-    //{
-    //    DAILY = 0,
-    //    WEEKLY,
-    //    MONTHLY,
-    //    YEARLY
-    //}
-
-    [FlagsAttribute]
-    public enum DayOfWeek : short
-    {
-        None = -64,
-        Monday = 1,
-        Tuesday = 2,
-        Wednesday = 4,
-        Thursday = 8,
-        Friday = 16,
-        Saturday = 32,
-        Sunday = 64
-    }
-
     public interface IRecurrence
     {
         RecurrencePattern Pattern { get; set; }
-        void Parse(string rules);
+        void Parse<T>(T rules);
         string Get();
     }
 
     public class GenericRecurrence : IRecurrence
     {
         public RecurrencePattern Pattern { get; set; }
-        public virtual void Parse(string rules) { return; }
-        public virtual string Get() { return "";  }
+        public virtual void Parse<T>(T rules) { throw new RecurrenceParseException("Unsupported type", typeof(T)); }
+        public virtual string Get() { throw new Exception("Not implemented"); }
+    }
 
-        private DateTime? Expiry { get; set; }
-        private DayOfWeek Days { get; set; }
+    public class RecurrenceParseException : Exception
+    {
+        public RecurrenceParseException(string message, Type _TypeOfRule) :
+            base(message)
+        {
+            TypeOfRule = _TypeOfRule;
+        }
+
+        public Type TypeOfRule { get; private set; }
     }
 
     public interface IEvent

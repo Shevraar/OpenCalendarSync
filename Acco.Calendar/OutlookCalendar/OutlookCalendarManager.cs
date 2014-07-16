@@ -98,7 +98,6 @@ namespace Acco.Calendar.Manager
                 myEvt.Creator.Name = evt.GetOrganizer().Name;
                 // Organizer
                 myEvt.Organizer = new GenericPerson();
-                this only works with office 2010
                 myEvt.Organizer.Email = evt.GetOrganizer().Address;
                 myEvt.Organizer.Name = evt.GetOrganizer().Name;
 #endif
@@ -142,15 +141,11 @@ namespace Acco.Calendar.Manager
                         });
                     }
                 }
-                // Recurrence (it seems that on fucking microsoft outlook recurrence is from an alien planet) 
+                // Recurrence
                 if (evt.IsRecurring)
                 {
-                    myEvt.Recurrence = new GenericRecurrence();
-                    //
-                    OutlookRecurrence temporaryRecurrence = new OutlookRecurrence();
-                    temporaryRecurrence.Parse(evt.GetRecurrencePattern());
-                    // this is bad, but I don't know how to do otherwise. (TODO: fix this somehow)
-                    myEvt.Recurrence.Pattern = temporaryRecurrence.Pattern;
+                    myEvt.Recurrence = new OutlookRecurrence();
+                    ((OutlookRecurrence)myEvt.Recurrence).Parse(evt.GetRecurrencePattern());
                 }
                 // add it to calendar events.
                 myCalendar.Events.Add(myEvt);
