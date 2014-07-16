@@ -8,3 +8,6 @@ bin
 /.nuget
 /Acco.Calendar/Acco.Calendar.work.csproj
 /CalendarApi.work.sln
+/Acco.Calendar/GoogleCalendar/*.TMP
+/Acco.Calendar/OutlookCalendar/*.TMP
+/Acco.Calendar/OutlookCalendar/*.ev4
