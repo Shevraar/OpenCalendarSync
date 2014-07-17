@@ -102,12 +102,7 @@ namespace Acco.Calendar.Manager
                 myEvt.Organizer.Name = evt.GetOrganizer().Name;
 #endif
                 // Attendees
-                // todo: get the address from exchange... another fucking thing from microsoft!
-                //foreach (Microsoft.Office.Interop.Outlook.Recipient rcpt in evt.Recipients)
-                //{
-                //    Microsoft.Office.Interop.Outlook.AddressEntry rcptAE = rcpt.AddressEntry;
-                //    Console.WriteLine("rcpt {0}", rcptAE.GetExchangeUser().PrimarySmtpAddress);
-                //}
+                List<string> attendeesEmails = GetRecipientsEmailAddresses(evt);
                 myEvt.Attendees = new List<GenericPerson>();
                 string[] requiredAttendees = null;
                 if(evt.RequiredAttendees != null)
@@ -154,56 +149,51 @@ namespace Acco.Calendar.Manager
             return myCalendar;
         }
 
-        //private string GetSenderSMTPAddress(AppointmentItem item)
-        //{
-        //    string PR_SMTP_ADDRESS =
-        //        @"http://schemas.microsoft.com/mapi/proptag/0x39FE001E";
-        //    if (item == null)
-        //    {
-        //        throw new ArgumentNullException();
-        //    }
-        //    if (item.Recipients == "EX")
-        //    {
-        //        Outlook.AddressEntry sender =
-        //            mail.Sender;
-        //        if (sender != null)
-        //        {
-        //            //Now we have an AddressEntry representing the Sender
-        //            if (sender.AddressEntryUserType ==
-        //                Outlook.OlAddressEntryUserType.
-        //                olExchangeUserAddressEntry
-        //                || sender.AddressEntryUserType ==
-        //                Outlook.OlAddressEntryUserType.
-        //                olExchangeRemoteUserAddressEntry)
-        //            {
-        //                //Use the ExchangeUser object PrimarySMTPAddress
-        //                Outlook.ExchangeUser exchUser =
-        //                    sender.GetExchangeUser();
-        //                if (exchUser != null)
-        //                {
-        //                    return exchUser.PrimarySmtpAddress;
-        //                }
-        //                else
-        //                {
-        //                    return null;
-        //                }
-        //            }
-        //            else
-        //            {
-        //                return sender.PropertyAccessor.GetProperty(
-        //                    PR_SMTP_ADDRESS) as string;
-        //            }
-        //        }
-        //        else
-        //        {
-        //            return null;
-        //        }
-        //    }
-        //    else
-        //    {
-        //        return mail.SenderEmailAddress;
-        //    }
-        //}
+        private List<string> GetRecipientsEmailAddresses(AppointmentItem item)
+        {
+            string PR_SMTP_ADDRESS = @"http://schemas.microsoft.com/mapi/proptag/0x39FE001E";
+            List<string> emails = new List<string>(); ;
+            ///
+            if (item == null)
+            {
+                throw new ArgumentNullException();
+            }
+            //
+            foreach (Microsoft.Office.Interop.Outlook.Recipient recipient in item.Recipients)
+            {
+                if (recipient.Address == "EX")
+                {
+                    AddressEntry recipientAddressEntry = recipient.AddressEntry;
+                    if (recipientAddressEntry != null)
+                    {
+                        //Now we have an AddressEntry representing the Sender
+                        if (recipientAddressEntry.AddressEntryUserType == Microsoft.Office.Interop.Outlook.OlAddressEntryUserType.olExchangeUserAddressEntry ||
+                            recipientAddressEntry.AddressEntryUserType == Microsoft.Office.Interop.Outlook.OlAddressEntryUserType.olExchangeRemoteUserAddressEntry)
+                        {
+                            //Use the ExchangeUser object PrimarySMTPAddress
+                            Microsoft.Office.Interop.Outlook.ExchangeUser exchUser = recipientAddressEntry.GetExchangeUser();
+                            if (exchUser != null)
+                            {
+                                emails.Add(exchUser.PrimarySmtpAddress);
+                            }
+                            else
+                            {
+                                // no email found
+                            }
+                        }
+                        else
+                        {
+                            emails.Add(recipientAddressEntry.PropertyAccessor.GetProperty(PR_SMTP_ADDRESS) as string);
+                        }
+                    }
+                    else
+                    {
+                        // no email found
+                    }
+                }
+            }
+            return emails;
+        }
 
         public async Task<bool> PushAsync(GenericCalendar calendar)
         {
