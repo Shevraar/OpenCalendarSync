@@ -1,19 +1,23 @@
 ﻿using System;
 using System.Linq;
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
 //
 using Acco.Calendar.Event;
 using Acco.Calendar.Location;
 using Acco.Calendar.Person;
+using Acco.Calendar.Database;
 //
 using Google;
 using Google.Apis.Auth.OAuth2;
 using Google.Apis.Calendar.v3;
 using Google.Apis.Services;
 using Google.Apis.Util.Store;
-using System.Collections.ObjectModel;
+using System.Collections.Specialized;
+using MongoDB.Driver.Builders;
+//
 
 namespace Acco.Calendar.Manager
 {
@@ -23,7 +27,6 @@ namespace Acco.Calendar.Manager
     /// </summary>
     public sealed class GoogleCalendarManager : ICalendarManager
     {
-        #region Members
         CalendarService Service { get; set; }
         UserCredential Credential { get; set; }
         FileDataStore DataStore { get; set; }
@@ -31,15 +34,10 @@ namespace Acco.Calendar.Manager
         string AppName { get { return "Outlook 2007 Calendar Importer"; } } // todo: replace this with mongodb config
         string MyCalendarId { get; set; }  // todo: replace this with mongodb config
         string MyCalendarName { get; set; } // todo: replace this with mongodb config
-        #endregion
-
-        #region Singleton directives
         private static readonly GoogleCalendarManager instance = new GoogleCalendarManager();
         // hidden constructor
         private GoogleCalendarManager() { }
-
         public static GoogleCalendarManager Instance { get { return instance; } }
-        #endregion
 
         public bool Push(ICalendar calendar)
         {
@@ -71,7 +69,32 @@ namespace Acco.Calendar.Manager
             return calendar;
         }
 
-        #region Initialization
+        private void Events_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
+        {
+            // todo: work in progress
+            switch (e.Action)
+            {
+                case NotifyCollectionChangedAction.Add:
+                    // note: to know which item was added, use NewItems.
+                    Console.WriteLine("Event added");
+                    foreach (GenericEvent item in e.NewItems) //todo: check if its possible to add the list of added events
+                    {
+                        Storage.Instance.Appointments.Save(item);
+                    }
+                    break;
+                case NotifyCollectionChangedAction.Remove:
+                    Console.WriteLine("Event removed");
+                    foreach (GenericEvent item in e.OldItems) //todo: check if its possible to delete the list of removed events
+                    {
+                        var query = Query<GenericEvent>.EQ(evt => evt.Id, item.Id);
+                        Storage.Instance.Appointments.Remove(query);
+                    }
+                    break;
+                default:
+                    throw new System.Exception("Unmanaged Action => " + e.Action);
+            }
+        }
+
         public async Task<bool> Initialize(string _ClientId, string _ClientSecret, string _CalendarName)
         {
             // todo: stop using google's datastore to store this kind of stuff and start using MongoDB
@@ -125,9 +148,7 @@ namespace Acco.Calendar.Manager
             }
             return res;
         }
-        #endregion
 
-        #region Google Calendar API v3 Operations
         private async Task<Google.Apis.Calendar.v3.Data.Calendar> GetCalendar(string id)
         {
             return await Service.Calendars.Get(id).ExecuteAsync();
@@ -146,14 +167,8 @@ namespace Acco.Calendar.Manager
         {
             var res = false;
             var deleteResult = await Service.Calendars.Delete(calendarId).ExecuteAsync();
-            if (deleteResult == "")
-            {
-                res = true;
-            }
-            else
-            {
-                Console.WriteLine("Error while removing calendar [{0}] => [{1}]", calendarId, deleteResult);
-            }
+            if (deleteResult == "") { res = true; }
+            else { Console.WriteLine("Error while removing calendar [{0}] => [{1}]", calendarId, deleteResult); }
             return res;
         }
 
@@ -272,7 +287,8 @@ namespace Acco.Calendar.Manager
 
         private async Task<IList<GenericEvent>> PullEvents()
         {
-            var myEvts = new List<GenericEvent>();
+            var myEvts = new ObservableCollection<GenericEvent>();
+            myEvts.CollectionChanged += Events_CollectionChanged;
             try
             {
                 var evts = await Service.Events.List(MyCalendarId).ExecuteAsync();
@@ -339,20 +355,23 @@ namespace Acco.Calendar.Manager
             {
                 Console.WriteLine("Exception: [{0}]", ex.Message);
             }
+            myEvts.CollectionChanged -= Events_CollectionChanged;
             return myEvts;
         }
 
         private async Task<IList<GenericEvent>> PullEvents(DateTime from, DateTime to)
         {
-            var myEvts = new List<GenericEvent>();
-            var evts = await PullEvents();
+            var myEvts = new ObservableCollection<GenericEvent>();
+            var evts = (await PullEvents()) as ObservableCollection<GenericEvent>;
             // note: google doesn't provide a direct way to filter events when listing them
             //       so we have to filter them manually
+            evts.CollectionChanged += Events_CollectionChanged;
             var excludedEvts = evts.Where(x => (x.Start < from && x.End > to)).ToList(); // todo: have to test this
             foreach(var excludedEvt in excludedEvts)
             {
                 evts.Remove(excludedEvt);
             }
+            evts.CollectionChanged -= Events_CollectionChanged;
             return myEvts;
         }
 
@@ -366,12 +385,12 @@ namespace Acco.Calendar.Manager
         public async Task<ICalendar> PullAsync(DateTime from, DateTime to)
         {
             var calendar = new GenericCalendar();
+            calendar.Events.CollectionChanged += Events_CollectionChanged;
             calendar.Events = await PullEvents(from, to) as ObservableCollection<GenericEvent>;
             calendar.Id = MyCalendarId;
             calendar.Name = MyCalendarName;
+            calendar.Events.CollectionChanged -= Events_CollectionChanged;
             return calendar;
         }
-
-        #endregion
     }
 }

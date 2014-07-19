@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.Threading.Tasks;
 //
 using Microsoft.Office.Interop.Outlook;
@@ -9,25 +10,21 @@ using Microsoft.Office.Interop.Outlook;
 using Acco.Calendar.Person;
 using Acco.Calendar.Event;
 using Acco.Calendar.Location;
-using System.Collections.Specialized;
+using Acco.Calendar.Database;
+using MongoDB.Driver.Builders;
+//
 
 namespace Acco.Calendar.Manager
 {
-
     public sealed class OutlookCalendarManager : ICalendarManager
     {
-        #region Members
         private Application OutlookApplication { get; set; }
         private NameSpace MapiNameSpace { get; set; }
         private MAPIFolder CalendarFolder { get; set; }
-        #endregion
-
-        #region Singleton directives
         private static readonly OutlookCalendarManager instance = new OutlookCalendarManager();
         // hidden constructor
         private OutlookCalendarManager() { Initialize(); }
         public static OutlookCalendarManager Instance { get { return instance; } }
-        #endregion
 
         private void Initialize()
         {
@@ -61,18 +58,23 @@ namespace Acco.Calendar.Manager
             switch(e.Action)
             { 
                 case NotifyCollectionChangedAction.Add:
+                    // note: to know which item was added, use NewItems.
+                    Console.WriteLine("Event added");
+                    foreach(GenericEvent item in e.NewItems) //todo: check if its possible to add the list of added events
+                    {
+                        Storage.Instance.Appointments.Save(item);
+                    }
                     break;
                 case NotifyCollectionChangedAction.Remove:
+                    Console.WriteLine("Event removed");
+                    foreach (GenericEvent item in e.OldItems) //todo: check if its possible to delete the list of removed events
+                    {
+                        var query = Query<GenericEvent>.EQ(evt => evt.Id, item.Id);
+                        Storage.Instance.Appointments.Remove(query);
+                    }
                     break;
-            }
-            if(e.Action == NotifyCollectionChangedAction.Add)
-            {
-                // note: to know which item was added, use NewItems.
-                Console.WriteLine("Event added");
-            }
-            else if(e.Action == NotifyCollectionChangedAction.Remove)
-            {
-                Console.WriteLine("Event removed");
+                default:
+                    throw new System.Exception("Unmanaged Action => " + e.Action);
             }
         }
 
@@ -105,7 +107,7 @@ namespace Acco.Calendar.Manager
                             }
                             else
                             {
-                                
+                                throw new System.Exception("No email found for " + recipientAddressEntry.Address);
                             }
                         }
                         else
@@ -228,6 +230,8 @@ namespace Acco.Calendar.Manager
                     // add it to calendar events.
                     myCalendar.Events.Add(myEvt);
                 }
+                //
+                myCalendar.Events.CollectionChanged -= Events_CollectionChanged;
             }
             catch(System.Exception ex)
             {

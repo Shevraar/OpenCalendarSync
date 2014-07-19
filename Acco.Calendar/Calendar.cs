@@ -4,6 +4,7 @@ using Acco.Calendar.Person;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
 
 namespace Acco.Calendar
 {
@@ -16,6 +17,7 @@ namespace Acco.Calendar
     }
     public class GenericCalendar : ICalendar
     {
+        [Required(ErrorMessage = "This field is required")] 
         public string Id { get; set; }
         public string Name { get; set; }
         public GenericPerson Creator { get; set; }

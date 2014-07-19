@@ -114,6 +114,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Calendar.cs" />
+    <Compile Include="Database\Database.cs" />
     <Compile Include="Event.cs" />
     <Compile Include="GoogleCalendar\GoogleCalendarManager.cs" />
     <Compile Include="GoogleCalendar\GoogleRecurrence.cs" />

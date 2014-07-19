@@ -3,8 +3,6 @@ using System;
 //
 using System.Threading.Tasks;
 //
-//
-//
 
 namespace Acco.Calendar
 {
