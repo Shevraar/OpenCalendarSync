@@ -9,7 +9,7 @@ namespace Acco.Calendar.Event
     {
         public override string Get()
         {
-            string _modifiedPattern = Pattern.ToString();
+            var _modifiedPattern = Pattern.ToString();
             // todo: modify this pattern to add timezones manually...
             _modifiedPattern = "RRULE:" + _modifiedPattern;
             return _modifiedPattern;
@@ -19,8 +19,8 @@ namespace Acco.Calendar.Event
         {
             if (rules is string)
             {
-                string stringRules = rules as string;
-                Pattern = new RecurrencePattern();
+                var stringRules = rules as string;
+                Pattern = new RecurrencePattern(stringRules);
             }
             else
             {

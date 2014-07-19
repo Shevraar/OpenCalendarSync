@@ -1,33 +1,36 @@
-﻿using Acco.Calendar.Event;
+﻿using System;
+using System.Linq;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
+//
+using Acco.Calendar.Event;
 using Acco.Calendar.Location;
 using Acco.Calendar.Person;
+//
 using Google;
 using Google.Apis.Auth.OAuth2;
 using Google.Apis.Calendar.v3;
 using Google.Apis.Services;
 using Google.Apis.Util.Store;
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
+using System.Collections.ObjectModel;
 
 namespace Acco.Calendar.Manager
 {
-
     /// <summary>
     /// Implementation of a Google Calendar Manager based on the latest API version:
     /// https://developers.google.com/google-apps/calendar/v3/reference/
     /// </summary>
     public sealed class GoogleCalendarManager : ICalendarManager
     {
-        #region Variables + Constants
+        #region Members
         CalendarService Service { get; set; }
         UserCredential Credential { get; set; }
         FileDataStore DataStore { get; set; }
-        string DataStorePath { get { return "Acco.Calendar.GoogleCalendarManager"; } }
-        string AppName { get { return "Outlook 2007 Calendar Importer"; } }
-        string MyCalendarId { get; set; }
-        string MyCalendarName { get; set; }
+        string DataStorePath { get { return "Acco.Calendar.GoogleCalendarManager"; } } // todo: replace this with mongodb config
+        string AppName { get { return "Outlook 2007 Calendar Importer"; } } // todo: replace this with mongodb config
+        string MyCalendarId { get; set; }  // todo: replace this with mongodb config
+        string MyCalendarName { get; set; } // todo: replace this with mongodb config
         #endregion
 
         #region Singleton directives
@@ -38,31 +41,31 @@ namespace Acco.Calendar.Manager
         public static GoogleCalendarManager Instance { get { return instance; } }
         #endregion
 
-        public bool Push(GenericCalendar calendar)
+        public bool Push(ICalendar calendar)
         {
-            Task<bool> pushTask = PushAsync(calendar);
+            var pushTask = PushAsync(calendar);
             pushTask.RunSynchronously();
             return pushTask.Result;
         }
 
-        public GenericCalendar Pull()
+        public ICalendar Pull()
         {
-            Task<GenericCalendar> pullTask = PullAsync();
+            var pullTask = PullAsync();
             pullTask.RunSynchronously();
             return pullTask.Result;
         }
 
-        public async Task<bool> PushAsync(GenericCalendar calendar)
+        public async Task<bool> PushAsync(ICalendar calendar)
         {
-            bool res = false;
+            var res = false;
             res = await PushEvents(calendar.Events);
             return res;
         }
 
-        public async Task<GenericCalendar> PullAsync()
+        public async Task<ICalendar> PullAsync()
         {
-            GenericCalendar calendar = new GenericCalendar();
-            calendar.Events = await PullEvents();
+            var calendar = new GenericCalendar();
+            calendar.Events = await PullEvents() as ObservableCollection<GenericEvent>;
             calendar.Id = MyCalendarId;
             calendar.Name = MyCalendarName;
             return calendar;
@@ -71,6 +74,7 @@ namespace Acco.Calendar.Manager
         #region Initialization
         public async Task<bool> Initialize(string _ClientId, string _ClientSecret, string _CalendarName)
         {
+            // todo: stop using google's datastore to store this kind of stuff and start using MongoDB
             bool res = await Authenticate(_ClientId, _ClientSecret);
             //
             MyCalendarId = await DataStore.GetAsync<string>( _CalendarName + "_Id");
@@ -116,14 +120,14 @@ namespace Acco.Calendar.Manager
             }
             catch (Exception ex)
             {
-                Console.WriteLine("ERROR: {0}", ex.Message);
+                Console.WriteLine("Exception: [{0}]", ex.Message);
                 res = false;
             }
             return res;
         }
         #endregion
 
-        #region Low Level Google Calendar API v3 Operations
+        #region Google Calendar API v3 Operations
         private async Task<Google.Apis.Calendar.v3.Data.Calendar> GetCalendar(string id)
         {
             return await Service.Calendars.Get(id).ExecuteAsync();
@@ -133,14 +137,14 @@ namespace Acco.Calendar.Manager
             return await Service.Calendars.Insert(new Google.Apis.Calendar.v3.Data.Calendar()
             {
                 Summary = MyCalendarName,
-                TimeZone = "Europe/Rome",
+                TimeZone = "Europe/Rome", //todo: configurable
                 Description = "Automatically created: " + DateTime.Now.ToString("g")
             }).ExecuteAsync();
         }
 
         private async Task<bool> RemoveCalendar(string calendarId)
         {
-            bool res = false;
+            var res = false;
             var deleteResult = await Service.Calendars.Delete(calendarId).ExecuteAsync();
             if (deleteResult == "")
             {
@@ -155,12 +159,13 @@ namespace Acco.Calendar.Manager
 
         private async Task<bool> PushEvent(GenericEvent evt)
         {
-            bool res = false;
+            var res = false;
             //
             try
             {
-                Google.Apis.Calendar.v3.Data.Event myEvt = new Google.Apis.Calendar.v3.Data.Event();
-    
+                var myEvt = new Google.Apis.Calendar.v3.Data.Event();
+                // Id
+                myEvt.Id = evt.Id;
                 // Organizer
                 if (evt.Organizer != null)
                 {
@@ -189,7 +194,7 @@ namespace Acco.Calendar.Manager
                 if (evt.Attendees != null)
                 {
                     myEvt.Attendees = new List<Google.Apis.Calendar.v3.Data.EventAttendee>();
-                    foreach (GenericPerson person in evt.Attendees)
+                    foreach (var person in evt.Attendees)
                     {
                         myEvt.Attendees.Add(new Google.Apis.Calendar.v3.Data.EventAttendee
                         {
@@ -231,60 +236,52 @@ namespace Acco.Calendar.Manager
                 myEvt.Reminders = new Google.Apis.Calendar.v3.Data.Event.RemindersData();
                 myEvt.Reminders.UseDefault = true;
                 //
-                Google.Apis.Calendar.v3.Data.Event newlyCreatedEvent = await Service.Events.Insert(myEvt, MyCalendarId).ExecuteAsync();
-                if(newlyCreatedEvent != null)
-                {
-                    res = true;
-                }
+                var createdEvent = await Service.Events.Insert(myEvt, MyCalendarId).ExecuteAsync();
+                //
+                if(createdEvent != null) { res = true; }
             }
             catch(GoogleApiException ex)
             {
-                Console.WriteLine("Exception: [{0}]", ex.Message);
+                Console.WriteLine("GoogleApiException: [{0}]", ex.Message); //todo: add improved logging...
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Exception: [{0}]", ex.Message);
+                Console.WriteLine("Exception: [{0}]", ex.Message); //todo: add improved logging...
                 res = false;
             }
             //
             return res;
         }
 
-        private async Task<bool> PushEvents(List<GenericEvent> evts)
+        private async Task<bool> PushEvents(IList<GenericEvent> evts)
         {
             bool res = false;
             //
-            foreach (GenericEvent evt in evts)
+            foreach (var evt in evts)
             {
                 res = await PushEvent(evt);
                 if(res == false)
                 {
-                    break;
+                    //Console.WriteLine("Event [{0}] was not pushed to google calendar. Aborting", evt.Id);
+                    throw new PushException("PushEvent failed", evt);
                 }
             }
             //
             return res;
         }
 
-        private async Task<List<GenericEvent>> PullEvents()
+        private async Task<IList<GenericEvent>> PullEvents()
         {
-            List<GenericEvent> myEvts = new List<GenericEvent>();
+            var myEvts = new List<GenericEvent>();
             try
             {
-                Google.Apis.Calendar.v3.Data.Events evts = await Service.Events.List(MyCalendarId).ExecuteAsync();
-                foreach(Google.Apis.Calendar.v3.Data.Event evt in evts.Items)
+                var evts = await Service.Events.List(MyCalendarId).ExecuteAsync();
+                foreach(var evt in evts.Items)
                 {
-                    GenericEvent myEvt = new GenericEvent();
-                    // Summary
-                    if (evt.Summary != "")
-                    {
-                        myEvt.Summary = evt.Summary;
-                    }
-                    // Description
-                    if (evt.Description != "")
-                    {
-                        myEvt.Description = evt.Description;
-                    }
+                    var myEvt = new GenericEvent(   Id: evt.Id, 
+                                                    Summary: evt.Summary, 
+                                                    Description: evt.Description, 
+                                                    Location: new GenericLocation{ Name = evt.Location }    );
                     // Organizer
                     if (evt.Organizer != null)
                     {
@@ -298,12 +295,6 @@ namespace Acco.Calendar.Manager
                         myEvt.Creator = new GenericPerson();
                         myEvt.Creator.Email = evt.Creator.Email;
                         myEvt.Creator.Name = evt.Creator.DisplayName;
-                    }
-                    // Location
-                    if (evt.Location != "")
-                    {
-                        myEvt.Location = new GenericLocation();
-                        myEvt.Location.Name = evt.Location;
                     }
                     // Start
                     if (evt.Start != null)
@@ -324,15 +315,15 @@ namespace Acco.Calendar.Manager
                     if (evt.Recurrence != null)
                     {
                         myEvt.Recurrence = new GoogleRecurrence();
-                        ((GoogleRecurrence)myEvt.Recurrence).Parse<String>(evt.Recurrence[0]);
+                        ((GoogleRecurrence)myEvt.Recurrence).Parse<String>(evt.Recurrence[0]); //warning: this only parses one line inside Recurrence...
                     }
                     // Attendees
                     if (evt.Attendees != null)
                     {
-                        foreach (Google.Apis.Calendar.v3.Data.EventAttendee attendee in evt.Attendees)
+                        foreach (var attendee in evt.Attendees)
                         {
                             myEvt.Attendees = new List<GenericPerson>();
-                            GenericPerson myAttendee = new GenericPerson();
+                            var myAttendee = new GenericPerson();
                             //
                             myAttendee.Email = attendee.Email;
                             myAttendee.Name = attendee.DisplayName;
@@ -349,6 +340,36 @@ namespace Acco.Calendar.Manager
                 Console.WriteLine("Exception: [{0}]", ex.Message);
             }
             return myEvts;
+        }
+
+        private async Task<IList<GenericEvent>> PullEvents(DateTime from, DateTime to)
+        {
+            var myEvts = new List<GenericEvent>();
+            var evts = await PullEvents();
+            // note: google doesn't provide a direct way to filter events when listing them
+            //       so we have to filter them manually
+            var excludedEvts = evts.Where(x => (x.Start < from && x.End > to)).ToList(); // todo: have to test this
+            foreach(var excludedEvt in excludedEvts)
+            {
+                evts.Remove(excludedEvt);
+            }
+            return myEvts;
+        }
+
+        public ICalendar Pull(DateTime from, DateTime to)
+        {
+            var pullTask = PullAsync();
+            pullTask.RunSynchronously();
+            return pullTask.Result;
+        }
+
+        public async Task<ICalendar> PullAsync(DateTime from, DateTime to)
+        {
+            var calendar = new GenericCalendar();
+            calendar.Events = await PullEvents(from, to) as ObservableCollection<GenericEvent>;
+            calendar.Id = MyCalendarId;
+            calendar.Name = MyCalendarName;
+            return calendar;
         }
 
         #endregion

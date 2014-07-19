@@ -1,6 +1,7 @@
 ﻿//
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Threading.Tasks;
 //
 using Microsoft.Office.Interop.Outlook;
@@ -8,13 +9,14 @@ using Microsoft.Office.Interop.Outlook;
 using Acco.Calendar.Person;
 using Acco.Calendar.Event;
 using Acco.Calendar.Location;
+using System.Collections.Specialized;
 
 namespace Acco.Calendar.Manager
 {
 
     public sealed class OutlookCalendarManager : ICalendarManager
     {
-        #region Variables
+        #region Members
         private Application OutlookApplication { get; set; }
         private NameSpace MapiNameSpace { get; set; }
         private MAPIFolder CalendarFolder { get; set; }
@@ -24,9 +26,6 @@ namespace Acco.Calendar.Manager
         private static readonly OutlookCalendarManager instance = new OutlookCalendarManager();
         // hidden constructor
         private OutlookCalendarManager() { Initialize(); }
-
-
-
         public static OutlookCalendarManager Instance { get { return instance; } }
         #endregion
 
@@ -37,12 +36,12 @@ namespace Acco.Calendar.Manager
             CalendarFolder = MapiNameSpace.GetDefaultFolder(OlDefaultFolders.olFolderCalendar);
         }
 
-        public bool Push(GenericCalendar calendar)
+        public bool Push(ICalendar calendar)
         {
             bool result = true;
             // TODO: set various infos here
             //
-            foreach(GenericEvent evt in calendar.Events)
+            foreach(var evt in calendar.Events)
             {
 
             }
@@ -50,109 +49,37 @@ namespace Acco.Calendar.Manager
             return result;
         }
 
-        public GenericCalendar Pull()
+        public ICalendar Pull()
         {
-            GenericCalendar myCalendar = new GenericCalendar();
-            //
-            myCalendar.Id = CalendarFolder.EntryID;
-            myCalendar.Name = CalendarFolder.Name;
-#if !OLD_OFFICE_ASSEMBLY
-            myCalendar.Creator = new GenericPerson();
-            myCalendar.Creator.Email = CalendarFolder.Store.DisplayName;
-#endif
-            //
-            myCalendar.Events = new List<GenericEvent>();
-            //
-            Items evts = CalendarFolder.Items;
-            //evts.IncludeRecurrences = true;
-            evts.Sort("[Start]");
-            string filter = "[Start] >= '"
-                + DateTime.Now.Add(new TimeSpan(-30 /*days*/, 0 /* hours */, 0 /*minutes*/, 0 /* seconds*/)).ToString("g")
-                + "' AND [End] <= '"
-                + DateTime.Now.Add(new TimeSpan(30 /*days*/, 0 /* hours */, 0 /*minutes*/, 0 /* seconds*/)).ToString("g") + "'";
-            evts = evts.Restrict(filter);
-            foreach (AppointmentItem evt in evts)
-            {
-                //
-                GenericEvent myEvt = new GenericEvent();
-                // Start
-                myEvt.Start = evt.Start;
-                // End
-                if(!evt.AllDayEvent)
-                { 
-                    myEvt.End = evt.End;
-                }
-                // Description
-                myEvt.Description = evt.Subject;
-                // Summary
-                myEvt.Summary = evt.Body;
-                // Location
-                myEvt.Location = new GenericLocation();
-                myEvt.Location.Name = evt.Location;
-                //
-#if !OLD_OFFICE_ASSEMBLY // this only works with office 2010
-                // Creator and organizer are the same person.
-                // Creator
-                myEvt.Creator = new GenericPerson();
-                myEvt.Creator.Email = evt.GetOrganizer().Address;
-                myEvt.Creator.Name = evt.GetOrganizer().Name;
-                // Organizer
-                myEvt.Organizer = new GenericPerson();
-                myEvt.Organizer.Email = evt.GetOrganizer().Address;
-                myEvt.Organizer.Name = evt.GetOrganizer().Name;
-#endif
-                // Attendees
-                List<string> attendeesEmails = GetRecipientsEmailAddresses(evt);
-                myEvt.Attendees = new List<GenericPerson>();
-                string[] requiredAttendees = null;
-                if(evt.RequiredAttendees != null)
-                { 
-                    requiredAttendees = evt.RequiredAttendees.Split(';');
-                }
-                string[] optionalAttendees = null;
-                if(evt.OptionalAttendees != null)
-                { 
-                    optionalAttendees = evt.OptionalAttendees.Split(';');
-                }
-                //
-                if(requiredAttendees != null)
-                { 
-                    foreach(string attendee in requiredAttendees)
-                    {
-                        myEvt.Attendees.Add(new GenericPerson 
-                        {
-                            Email = attendee.Trim() // todo: add some validation to test if attendee contains an email or not (regex)
-                        });
-                    }
-                }
-                //
-                if(optionalAttendees != null)
-                { 
-                    foreach(string optionalAttendee in optionalAttendees)
-                    {
-                        myEvt.Attendees.Add(new GenericPerson
-                        {
-                            Email = optionalAttendee.Trim() // todo: add some validation to test if attendee contains an email or not (regex)
-                        });
-                    }
-                }
-                // Recurrence
-                if (evt.IsRecurring)
-                {
-                    myEvt.Recurrence = new OutlookRecurrence();
-                    ((OutlookRecurrence)myEvt.Recurrence).Parse(evt.GetRecurrencePattern());
-                }
-                // add it to calendar events.
-                myCalendar.Events.Add(myEvt);
+            return Pull(from:   DateTime.Now.Add(new TimeSpan(-30 /*days*/, 0 /* hours */, 0 /*minutes*/, 0 /* seconds*/)), 
+                        to:     DateTime.Now.Add(new TimeSpan(30 /*days*/, 0 /* hours */, 0 /*minutes*/, 0 /* seconds*/)));
+        }
+
+        private void Events_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
+        {
+            // todo: work in progress
+            switch(e.Action)
+            { 
+                case NotifyCollectionChangedAction.Add:
+                    break;
+                case NotifyCollectionChangedAction.Remove:
+                    break;
             }
-            //
-            return myCalendar;
+            if(e.Action == NotifyCollectionChangedAction.Add)
+            {
+                // note: to know which item was added, use NewItems.
+                Console.WriteLine("Event added");
+            }
+            else if(e.Action == NotifyCollectionChangedAction.Remove)
+            {
+                Console.WriteLine("Event removed");
+            }
         }
 
         private List<string> GetRecipientsEmailAddresses(AppointmentItem item)
         {
             string PR_SMTP_ADDRESS = @"http://schemas.microsoft.com/mapi/proptag/0x39FE001E";
-            List<string> emails = new List<string>(); ;
+            var emails = new List<string>();
             ///
             if (item == null)
             {
@@ -163,7 +90,7 @@ namespace Acco.Calendar.Manager
             {
                 if (recipient.Address == "EX")
                 {
-                    AddressEntry recipientAddressEntry = recipient.AddressEntry;
+                    var recipientAddressEntry = recipient.AddressEntry;
                     if (recipientAddressEntry != null)
                     {
                         //Now we have an AddressEntry representing the Sender
@@ -171,14 +98,14 @@ namespace Acco.Calendar.Manager
                             recipientAddressEntry.AddressEntryUserType == Microsoft.Office.Interop.Outlook.OlAddressEntryUserType.olExchangeRemoteUserAddressEntry)
                         {
                             //Use the ExchangeUser object PrimarySMTPAddress
-                            Microsoft.Office.Interop.Outlook.ExchangeUser exchUser = recipientAddressEntry.GetExchangeUser();
+                            var exchUser = recipientAddressEntry.GetExchangeUser();
                             if (exchUser != null)
                             {
                                 emails.Add(exchUser.PrimarySmtpAddress);
                             }
                             else
                             {
-                                // no email found
+                                
                             }
                         }
                         else
@@ -188,23 +115,133 @@ namespace Acco.Calendar.Manager
                     }
                     else
                     {
-                        // no email found
+                        throw new System.Exception("No email found for " + recipientAddressEntry.Address);
                     }
                 }
             }
             return emails;
         }
 
-        public async Task<bool> PushAsync(GenericCalendar calendar)
+        public async Task<bool> PushAsync(ICalendar calendar)
         {
-            Task<bool> push = Task.Factory.StartNew(() => Push(calendar));
+            var push = Task.Factory.StartNew(() => Push(calendar));
             return await push;
         }
 
-        public async Task<GenericCalendar> PullAsync()
+        public async Task<ICalendar> PullAsync()
         {
-            Task<GenericCalendar> pull = Task.Factory.StartNew(() => Pull());
+            var pull = Task.Factory.StartNew(() => Pull());
             return await pull;
         }
+
+        public ICalendar Pull(DateTime from, DateTime to)
+        {
+            var myCalendar = new GenericCalendar();
+            try
+            {
+                myCalendar.Id = CalendarFolder.EntryID;
+                myCalendar.Name = CalendarFolder.Name;
+#if !OLD_OFFICE_ASSEMBLY
+                myCalendar.Creator = new GenericPerson();
+                myCalendar.Creator.Email = CalendarFolder.Store.DisplayName;
+#endif
+                //
+                myCalendar.Events = new ObservableCollection<GenericEvent>();
+                myCalendar.Events.CollectionChanged += Events_CollectionChanged;
+                //
+                Items evts = CalendarFolder.Items;
+                evts.Sort("[Start]");
+                var filter = "[Start] >= '"
+                            + from.ToString("g")
+                            + "' AND [End] <= '"
+                            + to.ToString("g") + "'";
+                evts = evts.Restrict(filter);
+                //
+                foreach (AppointmentItem evt in evts)
+                {
+                    //
+                    var myEvt = new GenericEvent(   Id: evt.EntryID,
+                                                    Summary: evt.Subject,
+                                                    Description: evt.Body,
+                                                    Location: new GenericLocation { Name = evt.Location });
+                    // Start
+                    myEvt.Start = evt.Start;
+                    // End
+                    if (!evt.AllDayEvent)
+                    {
+                        myEvt.End = evt.End;
+                    }
+                    //
+#if !OLD_OFFICE_ASSEMBLY // this only works with office 2010
+                    // Creator and organizer are the same person.
+                    // Creator
+                    myEvt.Creator = new GenericPerson();
+                    myEvt.Creator.Email = evt.GetOrganizer().Address;
+                    myEvt.Creator.Name = evt.GetOrganizer().Name;
+                    // Organizer
+                    myEvt.Organizer = new GenericPerson();
+                    myEvt.Organizer.Email = evt.GetOrganizer().Address;
+                    myEvt.Organizer.Name = evt.GetOrganizer().Name;
+#endif
+                    // Attendees
+                    // Note: GetRecipientsEmailAddresses is not always needed, it's only needed when we're facing Exchange masking...
+                    var attendeesEmail = GetRecipientsEmailAddresses(evt);
+                    myEvt.Attendees = new List<GenericPerson>();
+                    string[] requiredAttendees = null;
+                    if (evt.RequiredAttendees != null)
+                    {
+                        requiredAttendees = evt.RequiredAttendees.Split(';');
+                    }
+                    string[] optionalAttendees = null;
+                    if (evt.OptionalAttendees != null)
+                    {
+                        optionalAttendees = evt.OptionalAttendees.Split(';');
+                    }
+                    //
+                    if (requiredAttendees != null)
+                    {
+                        foreach (var attendee in requiredAttendees)
+                        {
+                            myEvt.Attendees.Add(new GenericPerson
+                            {
+                                Email = attendee.Trim() // todo: add some validation to test if attendee contains an email or not (regex)
+                            });
+                        }
+                    }
+                    //
+                    if (optionalAttendees != null)
+                    {
+                        foreach (var optionalAttendee in optionalAttendees)
+                        {
+                            myEvt.Attendees.Add(new GenericPerson
+                            {
+                                Email = optionalAttendee.Trim() // todo: add some validation to test if attendee contains an email or not (regex)
+                            });
+                        }
+                    }
+                    // Recurrence
+                    if (evt.IsRecurring)
+                    {
+                        myEvt.Recurrence = new OutlookRecurrence();
+                        ((OutlookRecurrence)myEvt.Recurrence).Parse(evt.GetRecurrencePattern());
+                    }
+                    // add it to calendar events.
+                    myCalendar.Events.Add(myEvt);
+                }
+            }
+            catch(System.Exception ex)
+            {
+                Console.WriteLine("Exception: [{0}]", ex.Message);
+            }
+            //
+            return myCalendar;
+        }
+
+        public async Task<ICalendar> PullAsync(DateTime from, DateTime to)
+        {
+            var pull = Task.Factory.StartNew(() => Pull(from, to));
+            return await pull;
+        }
+
     }
 }

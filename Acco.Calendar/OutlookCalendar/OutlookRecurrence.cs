@@ -12,6 +12,9 @@ namespace Acco.Calendar.Event
     public class OutlookRecurrence : GenericRecurrence
     {
         /// <summary>
+        /// Outlook Recurrence - Parse Microsoft.Office.Interop.Outlook.RecurrencePattern to DDay.ICal.RecurrencePattern
+        /// </summary>
+        /// <remarks>
         /// Directly from MSDN:
         /// 
         /// The following table shows the properties that are valid for the different recurrence types. 
@@ -46,13 +49,13 @@ namespace Acco.Calendar.Event
         /// If the resulting PatternEndDate is January 1, 4000 or later, NoEndDate is automatically reset to True, Occurrences is reset to 1,490,000, 
         /// PatternEndDate is reset to the month and day of PatternStartDate in the year 4001, and the recurrence pattern is considered to extend infinitely far into the future.
         /// Changes you make to properties on a RecurrencePattern object take effect when you call the underlying appointment's Send or Update method.
-        /// </summary>
+        /// </remarks>
 
         public override void Parse<T>(T rules)
         {
             if (rules is Microsoft.Office.Interop.Outlook.RecurrencePattern)
             {
-                Microsoft.Office.Interop.Outlook.RecurrencePattern outlookRecurrencePattern = rules as Microsoft.Office.Interop.Outlook.RecurrencePattern;
+                var outlookRecurrencePattern = rules as Microsoft.Office.Interop.Outlook.RecurrencePattern;
                 switch (outlookRecurrencePattern.RecurrenceType)
                 {
                     case OlRecurrenceType.olRecursDaily:
@@ -60,24 +63,17 @@ namespace Acco.Calendar.Event
                             Pattern = new DDay.iCal.RecurrencePattern(FrequencyType.Daily, outlookRecurrencePattern.Interval);
                             Pattern.FirstDayOfWeek = System.DayOfWeek.Monday; // always monday, c.b.a. to change it for other counties.
                             Pattern.RestrictionType = RecurrenceRestrictionType.Default;
-                            if (outlookRecurrencePattern.Occurrences > 0)
-                                Pattern.Count = outlookRecurrencePattern.Occurrences;
-                            else if (outlookRecurrencePattern.PatternEndDate > DateTime.Now)
-                                Pattern.Until = outlookRecurrencePattern.PatternEndDate;
+                            if (outlookRecurrencePattern.Occurrences > 0) { Pattern.Count = outlookRecurrencePattern.Occurrences; }
+                            else if (outlookRecurrencePattern.PatternEndDate > DateTime.Now) { Pattern.Until = outlookRecurrencePattern.PatternEndDate; }
                         }
                         break;
                     case OlRecurrenceType.olRecursWeekly:
                         {
-                            //iCalendar _icalendar = new iCalendar();
-                            //_icalendar.AddLocalTimeZone();
-                            //DDay.iCal.Event _event = new DDay.iCal.Event();
                             Pattern = new DDay.iCal.RecurrencePattern(FrequencyType.Weekly, outlookRecurrencePattern.Interval);
                             Pattern.FirstDayOfWeek = System.DayOfWeek.Monday; // always monday, c.b.a. to change it for other countries.
                             Pattern.RestrictionType = RecurrenceRestrictionType.NoRestriction;
-                            if (outlookRecurrencePattern.Occurrences > 0)
-                                Pattern.Count = outlookRecurrencePattern.Occurrences;
-                            else if(outlookRecurrencePattern.PatternEndDate > DateTime.Now)
-                                Pattern.Until = outlookRecurrencePattern.PatternEndDate;
+                            if (outlookRecurrencePattern.Occurrences > 0) { Pattern.Count = outlookRecurrencePattern.Occurrences; }
+                            else if (outlookRecurrencePattern.PatternEndDate > DateTime.Now) { Pattern.Until = outlookRecurrencePattern.PatternEndDate; }
                             Pattern.ByDay = new List<IWeekDay>();
                             // 
                             if (outlookRecurrencePattern.DayOfWeekMask.HasFlag(OlDaysOfWeek.olMonday))
@@ -129,12 +125,6 @@ namespace Acco.Calendar.Event
                                     DayOfWeek = System.DayOfWeek.Sunday
                                 });
                             }
-                            //_event.RecurrenceRules = new List<IRecurrencePattern>();
-                            //_event.RecurrenceRules.Add(Pattern);
-                            //_icalendar.Events.Add(_event);
-                            //iCalendarSerializer serializer = new iCalendarSerializer(_icalendar);
-                            //string _serializedicalendar = serializer.SerializeToString();
-                            //
                         }
                         break;
                     case OlRecurrenceType.olRecursMonthly:
@@ -159,12 +149,10 @@ namespace Acco.Calendar.Event
 
         public override string Get()
         {
-            string _modifiedPattern = Pattern.ToString();
-            // todo: eventually modify this pattern to add timezones manually...
+            var _modifiedPattern = Pattern.ToString();
             _modifiedPattern = "RRULE:" + _modifiedPattern;
             // todo: find a way to set the time correctly
-            //  "message": "Invalid value for: Invalid format: \"20140731T0000000000\" is malformed at \"T00000000000\""
-            //RFC3339DateTime _rfc3339dt = new RFC3339DateTime(_modifiedPattern.Substring((x) => (x = 1), (y) => ( y = 2)));
+            // note: error from google: "message": "Invalid value for: Invalid format: \"20140731T0000000000\" is malformed at \"T00000000000\""
             return _modifiedPattern;
         }
     }
