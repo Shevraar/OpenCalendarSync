@@ -10,6 +10,7 @@ using DDay;
 using DDay.iCal;
 using DDay.Collections;
 using DDay.iCal.Serialization;
+using Acco.Calendar.Utilities;
 //
 
 namespace Acco.Calendar.Event
@@ -42,6 +43,7 @@ namespace Acco.Calendar.Event
     public interface IEvent
     {
         [Required(ErrorMessage = "This field is required")] // todo: add other DataAnnotations validation stuff (such as min lenght and max lenght, etc)
+        
         string Id { get; set; }
         GenericPerson Organizer { get; set; }
         GenericPerson Creator { get; set; }

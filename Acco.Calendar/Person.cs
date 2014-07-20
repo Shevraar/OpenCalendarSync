@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Acco.Calendar.Utilities;
+using System;
+using System.ComponentModel.DataAnnotations;
 
 namespace Acco.Calendar.Person
 {
@@ -12,6 +14,8 @@ namespace Acco.Calendar.Person
 
 	public class GenericPerson : IPerson
 	{
+        [RegularExpression( Defines.EmailRegularExpression, 
+                            ErrorMessage = "Not a valid email address")]
         public string Email { get; set; }
         public string Name { get; set; }
         public string FirstName { get; set; }

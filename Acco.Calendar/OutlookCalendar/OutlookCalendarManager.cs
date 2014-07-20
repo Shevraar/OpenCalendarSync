@@ -12,6 +12,8 @@ using Acco.Calendar.Event;
 using Acco.Calendar.Location;
 using Acco.Calendar.Database;
 using MongoDB.Driver.Builders;
+using System.Text.RegularExpressions;
+using Acco.Calendar.Utilities;
 //
 
 namespace Acco.Calendar.Manager
@@ -78,7 +80,7 @@ namespace Acco.Calendar.Manager
             }
         }
 
-        private List<string> GetRecipientsEmailAddresses(AppointmentItem item)
+        private List<string> RecipientsEmailAddresses(AppointmentItem item)
         {
             string PR_SMTP_ADDRESS = @"http://schemas.microsoft.com/mapi/proptag/0x39FE001E";
             var emails = new List<string>();
@@ -120,7 +122,18 @@ namespace Acco.Calendar.Manager
                         throw new System.Exception("No email found for " + recipientAddressEntry.Address);
                     }
                 }
+                else
+                {
+                    // try to match the address against a regex
+                    Regex email = new Regex(Defines.EmailRegularExpression);
+                    if (email.IsMatch(recipient.Address) && 
+                        !emails.Contains(recipient.Address)) // avoid unnecessary duplicates
+                    {
+                        emails.Add(recipient.Address);
+                    }
+                }
             }
+         
             return emails;
         }
 
@@ -186,41 +199,46 @@ namespace Acco.Calendar.Manager
                     myEvt.Organizer.Name = evt.GetOrganizer().Name;
 #endif
                     // Attendees
-                    // Note: GetRecipientsEmailAddresses is not always needed, it's only needed when we're facing Exchange masking...
-                    var attendeesEmail = GetRecipientsEmailAddresses(evt);
                     myEvt.Attendees = new List<GenericPerson>();
-                    string[] requiredAttendees = null;
-                    if (evt.RequiredAttendees != null)
+                    foreach(var attendeeEmail in RecipientsEmailAddresses(evt))
                     {
-                        requiredAttendees = evt.RequiredAttendees.Split(';');
-                    }
-                    string[] optionalAttendees = null;
-                    if (evt.OptionalAttendees != null)
-                    {
-                        optionalAttendees = evt.OptionalAttendees.Split(';');
-                    }
-                    //
-                    if (requiredAttendees != null)
-                    {
-                        foreach (var attendee in requiredAttendees)
+                        myEvt.Attendees.Add(new GenericPerson
                         {
-                            myEvt.Attendees.Add(new GenericPerson
-                            {
-                                Email = attendee.Trim() // todo: add some validation to test if attendee contains an email or not (regex)
-                            });
-                        }
+                            Email = attendeeEmail
+                        });
                     }
-                    //
-                    if (optionalAttendees != null)
-                    {
-                        foreach (var optionalAttendee in optionalAttendees)
-                        {
-                            myEvt.Attendees.Add(new GenericPerson
-                            {
-                                Email = optionalAttendee.Trim() // todo: add some validation to test if attendee contains an email or not (regex)
-                            });
-                        }
-                    }
+                    //string[] requiredAttendees = null;
+                    //if (evt.RequiredAttendees != null)
+                    //{
+                    //    requiredAttendees = evt.RequiredAttendees.Split(';');
+                    //}
+                    //string[] optionalAttendees = null;
+                    //if (evt.OptionalAttendees != null)
+                    //{
+                    //    optionalAttendees = evt.OptionalAttendees.Split(';');
+                    //}
+                    ////
+                    //if (requiredAttendees != null)
+                    //{
+                    //    foreach (var attendee in requiredAttendees)
+                    //    {
+                    //        myEvt.Attendees.Add(new GenericPerson
+                    //        {
+                    //            Email = attendee.Trim() // todo: add some validation to test if attendee contains an email or not (regex)
+                    //        });
+                    //    }
+                    //}
+                    ////
+                    //if (optionalAttendees != null)
+                    //{
+                    //    foreach (var optionalAttendee in optionalAttendees)
+                    //    {
+                    //        myEvt.Attendees.Add(new GenericPerson
+                    //        {
+                    //            Email = optionalAttendee.Trim() // todo: add some validation to test if attendee contains an email or not (regex)
+                    //        });
+                    //    }
+                    //}
                     // Recurrence
                     if (evt.IsRecurring)
                     {
