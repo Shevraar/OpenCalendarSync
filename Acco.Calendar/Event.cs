@@ -29,6 +29,7 @@ namespace Acco.Calendar.Event
         public virtual string Get() { throw new Exception("Not implemented"); }
     }
 
+    [Serializable]
     public class RecurrenceParseException : Exception
     {
         public RecurrenceParseException(string message, Type _TypeOfRule) :

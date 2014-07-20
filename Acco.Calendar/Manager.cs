@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 
 namespace Acco.Calendar
 {
+    [Serializable]
     public class PushException : Exception
     {
         public PushException(string message, GenericEvent _FailedEvent) 
