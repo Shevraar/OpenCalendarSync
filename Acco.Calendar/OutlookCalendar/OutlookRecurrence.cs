@@ -59,86 +59,50 @@ namespace Acco.Calendar.Event
                 switch (outlookRecurrencePattern.RecurrenceType)
                 {
                     case OlRecurrenceType.olRecursDaily:
-                        {
-                            Pattern = new DDay.iCal.RecurrencePattern(FrequencyType.Daily, outlookRecurrencePattern.Interval);
-                            Pattern.FirstDayOfWeek = System.DayOfWeek.Monday; // always monday, c.b.a. to change it for other counties.
-                            Pattern.RestrictionType = RecurrenceRestrictionType.Default;
-                            if (outlookRecurrencePattern.Occurrences > 0) { Pattern.Count = outlookRecurrencePattern.Occurrences; }
-                            else if (outlookRecurrencePattern.PatternEndDate > DateTime.Now) { Pattern.Until = outlookRecurrencePattern.PatternEndDate; }
-                        }
-                        break;
+                    {
+                        Pattern = new DDay.iCal.RecurrencePattern(FrequencyType.Daily, outlookRecurrencePattern.Interval);
+                        Pattern.FirstDayOfWeek = System.DayOfWeek.Monday; // always monday, c.b.a. to change it for other counties.
+                        Pattern.RestrictionType = RecurrenceRestrictionType.Default;
+                        if (outlookRecurrencePattern.Occurrences > 0) { Pattern.Count = outlookRecurrencePattern.Occurrences; }
+                        else if (outlookRecurrencePattern.PatternEndDate > DateTime.Now) { Pattern.Until = outlookRecurrencePattern.PatternEndDate; }
+                    }
+                    break;
                     case OlRecurrenceType.olRecursWeekly:
-                        {
-                            Pattern = new DDay.iCal.RecurrencePattern(FrequencyType.Weekly, outlookRecurrencePattern.Interval);
-                            Pattern.FirstDayOfWeek = System.DayOfWeek.Monday; // always monday, c.b.a. to change it for other countries.
-                            Pattern.RestrictionType = RecurrenceRestrictionType.NoRestriction;
-                            if (outlookRecurrencePattern.Occurrences > 0) { Pattern.Count = outlookRecurrencePattern.Occurrences; }
-                            else if (outlookRecurrencePattern.PatternEndDate > DateTime.Now) { Pattern.Until = outlookRecurrencePattern.PatternEndDate; }
-                            Pattern.ByDay = new List<IWeekDay>();
-                            // 
-                            if (outlookRecurrencePattern.DayOfWeekMask.HasFlag(OlDaysOfWeek.olMonday))
-                            {
-                                Pattern.ByDay.Add(new WeekDay()
-                                {
-                                    DayOfWeek = System.DayOfWeek.Monday
-                                });
-                            }
-                            if (outlookRecurrencePattern.DayOfWeekMask.HasFlag(OlDaysOfWeek.olTuesday))
-                            {
-                                Pattern.ByDay.Add(new WeekDay()
-                                {
-                                    DayOfWeek = System.DayOfWeek.Tuesday
-                                });
-                            }
-                            if (outlookRecurrencePattern.DayOfWeekMask.HasFlag(OlDaysOfWeek.olWednesday))
-                            {
-                                Pattern.ByDay.Add(new WeekDay()
-                                {
-                                    DayOfWeek = System.DayOfWeek.Wednesday
-                                });
-                            }
-                            if (outlookRecurrencePattern.DayOfWeekMask.HasFlag(OlDaysOfWeek.olThursday))
-                            {
-                                Pattern.ByDay.Add(new WeekDay()
-                                {
-                                    DayOfWeek = System.DayOfWeek.Thursday
-                                });
-                            }
-                            if (outlookRecurrencePattern.DayOfWeekMask.HasFlag(OlDaysOfWeek.olFriday))
-                            {
-                                Pattern.ByDay.Add(new WeekDay()
-                                {
-                                    DayOfWeek = System.DayOfWeek.Friday
-                                });
-                            }
-                            if (outlookRecurrencePattern.DayOfWeekMask.HasFlag(OlDaysOfWeek.olSaturday))
-                            {
-                                Pattern.ByDay.Add(new WeekDay()
-                                {
-                                    DayOfWeek = System.DayOfWeek.Saturday
-                                });
-                            }
-                            if (outlookRecurrencePattern.DayOfWeekMask.HasFlag(OlDaysOfWeek.olSunday))
-                            {
-                                Pattern.ByDay.Add(new WeekDay()
-                                {
-                                    DayOfWeek = System.DayOfWeek.Sunday
-                                });
-                            }
-                        }
-                        break;
+                    {
+                        Pattern = new DDay.iCal.RecurrencePattern(FrequencyType.Weekly, outlookRecurrencePattern.Interval);
+                        Pattern.FirstDayOfWeek = System.DayOfWeek.Monday; // always monday, c.b.a. to change it for other countries.
+                        Pattern.RestrictionType = RecurrenceRestrictionType.NoRestriction;
+                        if (outlookRecurrencePattern.Occurrences > 0) { Pattern.Count = outlookRecurrencePattern.Occurrences; }
+                        else if (outlookRecurrencePattern.PatternEndDate > DateTime.Now) { Pattern.Until = outlookRecurrencePattern.PatternEndDate; }
+                        Pattern.ByDay = extractDaysOfWeek(outlookRecurrencePattern.DayOfWeekMask);
+                    }
+                    break;
                     case OlRecurrenceType.olRecursMonthly:
                     case OlRecurrenceType.olRecursMonthNth:
-                        {
-                            //
-                        }
-                        break;
+                    {
+                        // warning: untested
+                        Pattern = new DDay.iCal.RecurrencePattern(FrequencyType.Monthly, outlookRecurrencePattern.Interval);
+                        Pattern.FirstDayOfWeek = System.DayOfWeek.Monday; // always monday, c.b.a. to change it for other countries.
+                        Pattern.RestrictionType = RecurrenceRestrictionType.NoRestriction;
+                        if (outlookRecurrencePattern.Occurrences > 0) { Pattern.Count = outlookRecurrencePattern.Occurrences; }
+                        else if (outlookRecurrencePattern.PatternEndDate > DateTime.Now) { Pattern.Until = outlookRecurrencePattern.PatternEndDate; }
+                        if (outlookRecurrencePattern.DayOfWeekMask > 0) { Pattern.ByDay = extractDaysOfWeek(outlookRecurrencePattern.DayOfWeekMask); }
+                        else if (outlookRecurrencePattern.DayOfMonth > 0) { Pattern.ByMonthDay = new List<int> { outlookRecurrencePattern.DayOfMonth }; }
+                    }
+                    break;
                     case OlRecurrenceType.olRecursYearly:
                     case OlRecurrenceType.olRecursYearNth:
-                        {
-                            //
-                        }
-                        break;
+                    {
+                        // warning: untested
+                        Pattern = new DDay.iCal.RecurrencePattern(FrequencyType.Yearly, outlookRecurrencePattern.Interval);
+                        Pattern.FirstDayOfWeek = System.DayOfWeek.Monday; // always monday, c.b.a. to change it for other countries.
+                        Pattern.RestrictionType = RecurrenceRestrictionType.NoRestriction;
+                        if (outlookRecurrencePattern.Occurrences > 0) { Pattern.Count = outlookRecurrencePattern.Occurrences; }
+                        else if (outlookRecurrencePattern.PatternEndDate > DateTime.Now) { Pattern.Until = outlookRecurrencePattern.PatternEndDate; }
+                        if (outlookRecurrencePattern.DayOfWeekMask > 0) { Pattern.ByDay = extractDaysOfWeek(outlookRecurrencePattern.DayOfWeekMask); }
+                        else if (outlookRecurrencePattern.DayOfMonth > 0) { Pattern.ByMonthDay = new List<int> { outlookRecurrencePattern.DayOfMonth }; }
+                    }
+                    break;
                 }
             }
             else
@@ -154,6 +118,62 @@ namespace Acco.Calendar.Event
             // todo: find a way to set the time correctly
             // note: error from google: "message": "Invalid value for: Invalid format: \"20140731T0000000000\" is malformed at \"T00000000000\""
             return _modifiedPattern;
+        }
+
+        private List<IWeekDay> extractDaysOfWeek(OlDaysOfWeek outlookDaysOfWeekMask)
+        {
+            var myDaysOfWeekMask =  new List<IWeekDay>();
+            // 
+            if (outlookDaysOfWeekMask.HasFlag(OlDaysOfWeek.olMonday))
+            {
+                myDaysOfWeekMask.Add(new WeekDay()
+                {
+                    DayOfWeek = System.DayOfWeek.Monday
+                });
+            }
+            if (outlookDaysOfWeekMask.HasFlag(OlDaysOfWeek.olTuesday))
+            {
+                myDaysOfWeekMask.Add(new WeekDay()
+                {
+                    DayOfWeek = System.DayOfWeek.Tuesday
+                });
+            }
+            if (outlookDaysOfWeekMask.HasFlag(OlDaysOfWeek.olWednesday))
+            {
+                myDaysOfWeekMask.Add(new WeekDay()
+                {
+                    DayOfWeek = System.DayOfWeek.Wednesday
+                });
+            }
+            if (outlookDaysOfWeekMask.HasFlag(OlDaysOfWeek.olThursday))
+            {
+                myDaysOfWeekMask.Add(new WeekDay()
+                {
+                    DayOfWeek = System.DayOfWeek.Thursday
+                });
+            }
+            if (outlookDaysOfWeekMask.HasFlag(OlDaysOfWeek.olFriday))
+            {
+                myDaysOfWeekMask.Add(new WeekDay()
+                {
+                    DayOfWeek = System.DayOfWeek.Friday
+                });
+            }
+            if (outlookDaysOfWeekMask.HasFlag(OlDaysOfWeek.olSaturday))
+            {
+                myDaysOfWeekMask.Add(new WeekDay()
+                {
+                    DayOfWeek = System.DayOfWeek.Saturday
+                });
+            }
+            if (outlookDaysOfWeekMask.HasFlag(OlDaysOfWeek.olSunday))
+            {
+                myDaysOfWeekMask.Add(new WeekDay()
+                {
+                    DayOfWeek = System.DayOfWeek.Sunday
+                });
+            }
+            return myDaysOfWeekMask;
         }
     }
 }

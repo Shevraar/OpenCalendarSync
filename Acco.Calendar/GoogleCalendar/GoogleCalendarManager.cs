@@ -33,7 +33,7 @@ namespace Acco.Calendar.Manager
         CalendarService Service { get; set; }
         UserCredential Credential { get; set; }
         FileDataStore DataStore { get; set; }
-        string DataStorePath { get { return "Acco.Calendar.GoogleCalendarManager"; } } // todo: replace this with mongodb config
+        string DataStorePath { get { return "Acco.Calendar.GoogleCalendarManager"; } }
         private GoogleCalendarSettings Settings = new GoogleCalendarSettings();
         private static readonly GoogleCalendarManager instance = new GoogleCalendarManager();
         // hidden constructor
@@ -195,7 +195,7 @@ namespace Acco.Calendar.Manager
             {
                 var myEvt = new Google.Apis.Calendar.v3.Data.Event();
                 // Id
-                myEvt.Id = evt.Id;
+                myEvt.ICalUID = evt.Id;
                 // Organizer
                 if (evt.Organizer != null)
                 {
@@ -273,6 +273,10 @@ namespace Acco.Calendar.Manager
             catch(GoogleApiException ex)
             {
                 Console.WriteLine("GoogleApiException: [{0}]", ex.Message); //todo: add improved logging...
+                Console.WriteLine("\tServiceName: [{0}]", ex.ServiceName); //todo: add improved logging...
+                Console.WriteLine("\tTargetSite: [{0}]", ex.TargetSite); //todo: add improved logging...
+                Console.WriteLine("\tHttpStatusCode: [{0}]", ex.HttpStatusCode); //todo: add improved logging...
+                Console.WriteLine("\tStackTrace: [{0}]", ex.StackTrace); //todo: add improved logging...
             }
             catch (Exception ex)
             {

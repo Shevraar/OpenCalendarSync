@@ -145,7 +145,7 @@ namespace Acco.Calendar.Manager
                 myCalendar.Name = CalendarFolder.Name;
 #if !OLD_OFFICE_ASSEMBLY
                 myCalendar.Creator = new GenericPerson();
-                myCalendar.Creator.Email = CalendarFolder.Store.DisplayName;
+                myCalendar.Creator.Email = CalendarFolder.Store.DisplayName; // warning: display name isn't always an email.
 #endif
                 //
                 myCalendar.Events = new ObservableCollection<GenericEvent>();
@@ -246,6 +246,5 @@ namespace Acco.Calendar.Manager
             var pull = Task.Factory.StartNew(() => Pull(from, to));
             return await pull;
         }
-
     }
 }
