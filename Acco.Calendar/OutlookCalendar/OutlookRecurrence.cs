@@ -55,52 +55,75 @@ namespace Acco.Calendar.Event
         {
             if (rules is Microsoft.Office.Interop.Outlook.RecurrencePattern)
             {
-                var outlookRecurrencePattern = rules as Microsoft.Office.Interop.Outlook.RecurrencePattern;
-                switch (outlookRecurrencePattern.RecurrenceType)
+                var outlookRP = rules as Microsoft.Office.Interop.Outlook.RecurrencePattern;
+                switch (outlookRP.RecurrenceType)
                 {
                     case OlRecurrenceType.olRecursDaily:
                     {
-                        Pattern = new DDay.iCal.RecurrencePattern(FrequencyType.Daily, outlookRecurrencePattern.Interval);
+                        Pattern = new DDay.iCal.RecurrencePattern(FrequencyType.Daily, outlookRP.Interval);
                         Pattern.FirstDayOfWeek = System.DayOfWeek.Monday; // always monday, c.b.a. to change it for other counties.
                         Pattern.RestrictionType = RecurrenceRestrictionType.Default;
-                        if (outlookRecurrencePattern.Occurrences > 0) { Pattern.Count = outlookRecurrencePattern.Occurrences; }
-                        else if (outlookRecurrencePattern.PatternEndDate > DateTime.Now) { Pattern.Until = outlookRecurrencePattern.PatternEndDate; }
+                        if (outlookRP.Occurrences > 0) { Pattern.Count = outlookRP.Occurrences; }
+                        else if (outlookRP.PatternEndDate > DateTime.Now) { Pattern.Until = outlookRP.PatternEndDate; }
                     }
                     break;
                     case OlRecurrenceType.olRecursWeekly:
                     {
-                        Pattern = new DDay.iCal.RecurrencePattern(FrequencyType.Weekly, outlookRecurrencePattern.Interval);
+                        Pattern = new DDay.iCal.RecurrencePattern(FrequencyType.Weekly, outlookRP.Interval);
                         Pattern.FirstDayOfWeek = System.DayOfWeek.Monday; // always monday, c.b.a. to change it for other countries.
                         Pattern.RestrictionType = RecurrenceRestrictionType.NoRestriction;
-                        if (outlookRecurrencePattern.Occurrences > 0) { Pattern.Count = outlookRecurrencePattern.Occurrences; }
-                        else if (outlookRecurrencePattern.PatternEndDate > DateTime.Now) { Pattern.Until = outlookRecurrencePattern.PatternEndDate; }
-                        Pattern.ByDay = extractDaysOfWeek(outlookRecurrencePattern.DayOfWeekMask);
+                        if (outlookRP.Occurrences > 0) { Pattern.Count = outlookRP.Occurrences; }
+                        else if (outlookRP.PatternEndDate > DateTime.Now) { Pattern.Until = outlookRP.PatternEndDate; }
+                        Pattern.ByDay = extractDaysOfWeek(outlookRP.DayOfWeekMask);
                     }
                     break;
                     case OlRecurrenceType.olRecursMonthly:
-                    case OlRecurrenceType.olRecursMonthNth:
                     {
                         // warning: untested
-                        Pattern = new DDay.iCal.RecurrencePattern(FrequencyType.Monthly, outlookRecurrencePattern.Interval);
+                        // see also: http://msdn.microsoft.com/en-us/library/office/aa211012(v=office.11).aspx 
+                        Pattern = new DDay.iCal.RecurrencePattern(FrequencyType.Monthly, outlookRP.Interval);
                         Pattern.FirstDayOfWeek = System.DayOfWeek.Monday; // always monday, c.b.a. to change it for other countries.
                         Pattern.RestrictionType = RecurrenceRestrictionType.NoRestriction;
-                        if (outlookRecurrencePattern.Occurrences > 0) { Pattern.Count = outlookRecurrencePattern.Occurrences; }
-                        else if (outlookRecurrencePattern.PatternEndDate > DateTime.Now) { Pattern.Until = outlookRecurrencePattern.PatternEndDate; }
-                        if (outlookRecurrencePattern.DayOfWeekMask > 0) { Pattern.ByDay = extractDaysOfWeek(outlookRecurrencePattern.DayOfWeekMask); }
-                        else if (outlookRecurrencePattern.DayOfMonth > 0) { Pattern.ByMonthDay = new List<int> { outlookRecurrencePattern.DayOfMonth }; }
+                        // how many times this is going to occur
+                        if (outlookRP.Occurrences > 0) { Pattern.Count = outlookRP.Occurrences; }
+                        else if (outlookRP.DayOfMonth > 0) { Pattern.ByMonthDay = new List<int> { outlookRP.DayOfMonth }; }
+                    }
+                    break;
+                    case OlRecurrenceType.olRecursMonthNth:
+                    {
+                        // see also: http://msdn.microsoft.com/en-us/library/office/aa211012(v=office.11).aspx 
+                        Pattern = new DDay.iCal.RecurrencePattern(FrequencyType.Monthly, outlookRP.Interval);
+                        Pattern.FirstDayOfWeek = System.DayOfWeek.Monday; // always monday, c.b.a. to change it for other countries.
+                        Pattern.RestrictionType = RecurrenceRestrictionType.NoRestriction;
+                        // how many times this is going to occur
+                        if (outlookRP.Occurrences > 0) { Pattern.Count = outlookRP.Occurrences; }
+                        // instance states e.g.: "The Nth Tuesday"
+                        if (outlookRP.Instance > 0) { Pattern.BySetPosition = new List<int> { outlookRP.Instance }; }
+                        if (outlookRP.DayOfWeekMask > 0) { Pattern.ByDay = extractDaysOfWeek(outlookRP.DayOfWeekMask); }
                     }
                     break;
                     case OlRecurrenceType.olRecursYearly:
+                    {
+                        // warning: untested
+                        Pattern = new DDay.iCal.RecurrencePattern(FrequencyType.Yearly, outlookRP.Interval);
+                        Pattern.FirstDayOfWeek = System.DayOfWeek.Monday; // always monday, c.b.a. to change it for other countries.
+                        Pattern.RestrictionType = RecurrenceRestrictionType.NoRestriction;
+                        if (outlookRP.Occurrences > 0) { Pattern.Count = outlookRP.Occurrences; }
+                        else if (outlookRP.PatternEndDate > DateTime.Now) { Pattern.Until = outlookRP.PatternEndDate; }
+                        if (outlookRP.DayOfWeekMask > 0) { Pattern.ByDay = extractDaysOfWeek(outlookRP.DayOfWeekMask); }
+                        else if (outlookRP.DayOfMonth > 0) { Pattern.ByMonthDay = new List<int> { outlookRP.DayOfMonth }; }
+                    }
+                    break;
                     case OlRecurrenceType.olRecursYearNth:
                     {
                         // warning: untested
-                        Pattern = new DDay.iCal.RecurrencePattern(FrequencyType.Yearly, outlookRecurrencePattern.Interval);
+                        Pattern = new DDay.iCal.RecurrencePattern(FrequencyType.Yearly, outlookRP.Interval);
                         Pattern.FirstDayOfWeek = System.DayOfWeek.Monday; // always monday, c.b.a. to change it for other countries.
                         Pattern.RestrictionType = RecurrenceRestrictionType.NoRestriction;
-                        if (outlookRecurrencePattern.Occurrences > 0) { Pattern.Count = outlookRecurrencePattern.Occurrences; }
-                        else if (outlookRecurrencePattern.PatternEndDate > DateTime.Now) { Pattern.Until = outlookRecurrencePattern.PatternEndDate; }
-                        if (outlookRecurrencePattern.DayOfWeekMask > 0) { Pattern.ByDay = extractDaysOfWeek(outlookRecurrencePattern.DayOfWeekMask); }
-                        else if (outlookRecurrencePattern.DayOfMonth > 0) { Pattern.ByMonthDay = new List<int> { outlookRecurrencePattern.DayOfMonth }; }
+                        if (outlookRP.Occurrences > 0) { Pattern.Count = outlookRP.Occurrences; }
+                        else if (outlookRP.PatternEndDate > DateTime.Now) { Pattern.Until = outlookRP.PatternEndDate; }
+                        if (outlookRP.DayOfWeekMask > 0) { Pattern.ByDay = extractDaysOfWeek(outlookRP.DayOfWeekMask); }
+                        else if (outlookRP.DayOfMonth > 0) { Pattern.ByMonthDay = new List<int> { outlookRP.DayOfMonth }; }
                     }
                     break;
                 }

@@ -100,5 +100,17 @@ namespace Acco.Calendar.Event
         public GenericLocation Location { get; set; }
         public GenericRecurrence Recurrence { get; set; }
         public List<GenericPerson> Attendees { get; set; }
+
+        public override string ToString()
+        {
+            var eventString = "[";
+            eventString += "Id: " + Id;
+            eventString += "\n";
+            eventString += "Summary: " + Summary;
+            eventString += "\n";
+            eventString += "Location: " + Location.Name;
+            eventString += "]";
+            return eventString;
+        }
     }
 }
