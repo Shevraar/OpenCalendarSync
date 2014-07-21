@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Acco.Calendar.Utilities
+﻿namespace Acco.Calendar.Utilities
 {
     public static class Defines
     {

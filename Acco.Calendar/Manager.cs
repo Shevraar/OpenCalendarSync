@@ -12,10 +12,10 @@ namespace Acco.Calendar
     [Serializable]
     public class PushException : Exception
     {
-        public PushException(string message, GenericEvent _FailedEvent) 
+        public PushException(string message, GenericEvent failedEvent) 
             : base(message)
         {
-            FailedEvent = _FailedEvent;
+            FailedEvent = failedEvent;
         }
 
         public GenericEvent FailedEvent { get; private set; }
@@ -92,7 +92,7 @@ namespace Acco.Calendar
             }
             else
             {
-                throw new System.Exception("Unmanaged Action => " + e.Action);
+                throw new Exception("Unmanaged Action => " + e.Action);
             }
         }
     }

@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Acco.Calendar.Location
+﻿namespace Acco.Calendar.Location
 {
     public interface ILocation
     {

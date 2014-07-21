@@ -1,9 +1,7 @@
 ﻿
 using Acco.Calendar.Event;
 using Acco.Calendar.Person;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 
 namespace Acco.Calendar

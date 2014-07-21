@@ -36,10 +36,10 @@ namespace Acco.Calendar.Event
     [Serializable]
     public class RecurrenceParseException : Exception
     {
-        public RecurrenceParseException(string message, Type _TypeOfRule) :
+        public RecurrenceParseException(string message, Type typeOfRule) :
             base(message)
         {
-            TypeOfRule = _TypeOfRule;
+            TypeOfRule = typeOfRule;
         }
 
         public Type TypeOfRule { get; private set; }
@@ -73,28 +73,28 @@ namespace Acco.Calendar.Event
 
     public class GenericEvent : IEvent
     {
-        public GenericEvent(string Id)
+        public GenericEvent(string id)
         {
-            this.Id = Id;
+            Id = id;
             Summary = "No Summary";
             Description = "No Description";
             Location = new GenericLocation {Name = "No Location"};
         }
 
-        public GenericEvent(string Id, string Summary, string Description)
+        public GenericEvent(string id, string summary, string description)
         {
-            this.Id = Id;
-            this.Summary = Summary;
-            this.Description = Description;
+            Id = id;
+            Summary = summary;
+            Description = description;
             Location = new GenericLocation {Name = "No Location"};
         }
 
-        public GenericEvent(string Id, string Summary, string Description, ILocation Location)
+        public GenericEvent(string id, string summary, string description, ILocation location)
         {
-            this.Id = Id;
-            this.Summary = Summary;
-            this.Description = Description;
-            this.Location = Location as GenericLocation;
+            Id = id;
+            Summary = summary;
+            Description = description;
+            Location = location as GenericLocation;
         }
 
         public string Id { get; set; }

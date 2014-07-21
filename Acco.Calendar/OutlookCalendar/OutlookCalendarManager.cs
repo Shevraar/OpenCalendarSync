@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Collections.Specialized;
 using System.Threading.Tasks;
 //
 using Microsoft.Office.Interop.Outlook;
@@ -10,8 +9,6 @@ using Microsoft.Office.Interop.Outlook;
 using Acco.Calendar.Person;
 using Acco.Calendar.Event;
 using Acco.Calendar.Location;
-using Acco.Calendar.Database;
-using MongoDB.Driver.Builders;
 using System.Text.RegularExpressions;
 using Acco.Calendar.Utilities;
 //
@@ -54,21 +51,22 @@ namespace Acco.Calendar.Manager
                         to:     DateTime.Now.Add(new TimeSpan(30 /*days*/, 0 /* hours */, 0 /*minutes*/, 0 /* seconds*/)));
         }
 
-        private List<GenericPerson> ExtractRecipientInfos(AppointmentItem item)
+        private static List<GenericPerson> ExtractRecipientInfos(AppointmentItem item)
         {
-            string PR_SMTP_ADDRESS = @"http://schemas.microsoft.com/mapi/proptag/0x39FE001E";
+            const string prSmtpAddress = @"http://schemas.microsoft.com/mapi/proptag/0x39FE001E";
             var emails = new List<string>();
             var people = new List<GenericPerson>();
-            ///
             if (item == null)
             {
                 throw new ArgumentNullException();
             }
             //
-            foreach (Microsoft.Office.Interop.Outlook.Recipient recipient in item.Recipients)
+            foreach (Recipient recipient in item.Recipients)
             {
-                var person = new GenericPerson();
-                person.Name = recipient.Name;
+                var person = new GenericPerson
+                {
+                    Name = recipient.Name
+                };
                 //
                 var recipientAddressEntry = recipient.AddressEntry;
                 if (recipientAddressEntry.Type == "EX")
@@ -76,8 +74,8 @@ namespace Acco.Calendar.Manager
                     if (recipientAddressEntry != null)
                     {
                         //Now we have an AddressEntry representing the Sender
-                        if (recipientAddressEntry.AddressEntryUserType == Microsoft.Office.Interop.Outlook.OlAddressEntryUserType.olExchangeUserAddressEntry ||
-                            recipientAddressEntry.AddressEntryUserType == Microsoft.Office.Interop.Outlook.OlAddressEntryUserType.olExchangeRemoteUserAddressEntry)
+                        if (recipientAddressEntry.AddressEntryUserType == OlAddressEntryUserType.olExchangeUserAddressEntry ||
+                            recipientAddressEntry.AddressEntryUserType == OlAddressEntryUserType.olExchangeRemoteUserAddressEntry)
                         {
                             //Use the ExchangeUser object PrimarySMTPAddress
                             var exchUser = recipientAddressEntry.GetExchangeUser();
@@ -93,8 +91,8 @@ namespace Acco.Calendar.Manager
                         }
                         else
                         {
-                            emails.Add(recipientAddressEntry.PropertyAccessor.GetProperty(PR_SMTP_ADDRESS) as string);
-                            person.Email = recipientAddressEntry.PropertyAccessor.GetProperty(PR_SMTP_ADDRESS) as string;
+                            emails.Add(recipientAddressEntry.PropertyAccessor.GetProperty(prSmtpAddress) as string);
+                            person.Email = recipientAddressEntry.PropertyAccessor.GetProperty(prSmtpAddress) as string;
                         }
                     }
                     else
@@ -105,7 +103,7 @@ namespace Acco.Calendar.Manager
                 else
                 {
                     // try to match the address against a regex
-                    Regex email = new Regex(Defines.EmailRegularExpression);
+                    var email = new Regex(Defines.EmailRegularExpression);
                     if (email.IsMatch(recipient.Address) && 
                         !emails.Contains(recipient.Address)) // avoid unnecessary duplicates
                     {
@@ -139,8 +137,10 @@ namespace Acco.Calendar.Manager
                 myCalendar.Id = CalendarFolder.EntryID;
                 myCalendar.Name = CalendarFolder.Name;
 #if !OLD_OFFICE_ASSEMBLY
-                myCalendar.Creator = new GenericPerson();
-                myCalendar.Creator.Email = CalendarFolder.Store.DisplayName; // warning: display name isn't always an email.
+                myCalendar.Creator = new GenericPerson
+                {
+                    Email = CalendarFolder.Store.DisplayName
+                };
 #endif
                 //
                 myCalendar.Events = new ObservableCollection<GenericEvent>();
@@ -157,10 +157,10 @@ namespace Acco.Calendar.Manager
                 foreach (AppointmentItem evt in evts)
                 {
                     //
-                    var myEvt = new GenericEvent(   Id: evt.EntryID,
-                                                    Summary: evt.Subject,
-                                                    Description: evt.Body,
-                                                    Location: new GenericLocation { Name = evt.Location });
+                    var myEvt = new GenericEvent(   id: evt.EntryID,
+                                                    summary: evt.Subject,
+                                                    description: evt.Body,
+                                                    location: new GenericLocation { Name = evt.Location });
                     // Start
                     myEvt.Start = evt.Start;
                     // End
@@ -172,13 +172,17 @@ namespace Acco.Calendar.Manager
 #if !OLD_OFFICE_ASSEMBLY // this only works with office 2010
                     // Creator and organizer are the same person.
                     // Creator
-                    myEvt.Creator = new GenericPerson();
-                    myEvt.Creator.Email = evt.GetOrganizer().Address;
-                    myEvt.Creator.Name = evt.GetOrganizer().Name;
+                    myEvt.Creator = new GenericPerson
+                    {
+                        Email = evt.GetOrganizer().Address,
+                        Name = evt.GetOrganizer().Name
+                    };
                     // Organizer
-                    myEvt.Organizer = new GenericPerson();
-                    myEvt.Organizer.Email = evt.GetOrganizer().Address;
-                    myEvt.Organizer.Name = evt.GetOrganizer().Name;
+                    myEvt.Organizer = new GenericPerson
+                    {
+                        Email = evt.GetOrganizer().Address,
+                        Name = evt.GetOrganizer().Name
+                    };
 #endif
                     // Attendees
                     myEvt.Attendees = ExtractRecipientInfos(evt);

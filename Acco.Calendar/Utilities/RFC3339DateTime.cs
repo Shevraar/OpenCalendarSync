@@ -2,25 +2,25 @@ using System;
 
 namespace Acco.Calendar.Utilities
 {
-    public struct RFC3339DateTime : IEquatable<RFC3339DateTime>, IComparable<RFC3339DateTime>
+    public struct Rfc3339DateTime : IEquatable<Rfc3339DateTime>, IComparable<Rfc3339DateTime>
     {
         private readonly DateTimeOffset _value;
 
-        private static readonly string[] _formats = new string[] { "yyyy-MM-ddTHH:mm:ssK", "yyyy-MM-ddTHH:mm:ss.ffK", "yyyy-MM-ddTHH:mm:ssZ", "yyyy-MM-ddTHH:mm:ss.ffZ" };
+        private static readonly string[] Formats = { "yyyy-MM-ddTHH:mm:ssK", "yyyy-MM-ddTHH:mm:ss.ffK", "yyyy-MM-ddTHH:mm:ssZ", "yyyy-MM-ddTHH:mm:ss.ffZ" };
 
-        public RFC3339DateTime(string rfc3339FormattedDateTime)
+        public Rfc3339DateTime(string rfc3339FormattedDateTime)
         {
             DateTimeOffset tmp;
-            if (!DateTimeOffset.TryParseExact(rfc3339FormattedDateTime, _formats, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.AssumeUniversal, out tmp))
+            if (!DateTimeOffset.TryParseExact(rfc3339FormattedDateTime, Formats, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.AssumeUniversal, out tmp))
             {
                 throw new ArgumentException("Value is not in proper RFC3339 format", "rfc3339FormattedDateTime");
             }
             _value = tmp;
         }
 
-        public static explicit operator RFC3339DateTime(string rfc3339FormattedDateTime)
+        public static explicit operator Rfc3339DateTime(string rfc3339FormattedDateTime)
         {
-            return new RFC3339DateTime(rfc3339FormattedDateTime);
+            return new Rfc3339DateTime(rfc3339FormattedDateTime);
         }
 
         public override int GetHashCode()
@@ -31,28 +31,28 @@ namespace Acco.Calendar.Utilities
         public override bool Equals(object obj)
         {
             if (obj == null) return false;
-            if (!(obj is RFC3339DateTime)) return false;
-            return this._value.Equals(((RFC3339DateTime)obj)._value);
+            if (!(obj is Rfc3339DateTime)) return false;
+            return _value.Equals(((Rfc3339DateTime)obj)._value);
         }
 
-        public bool Equals(RFC3339DateTime other)
+        public bool Equals(Rfc3339DateTime other)
         {
-            return this._value.Equals(other._value);
+            return _value.Equals(other._value);
         }
 
-        public static bool operator ==(RFC3339DateTime a, RFC3339DateTime b)
+        public static bool operator ==(Rfc3339DateTime a, Rfc3339DateTime b)
         {
             return a._value == b._value;
         }
 
-        public static bool operator !=(RFC3339DateTime a, RFC3339DateTime b)
+        public static bool operator !=(Rfc3339DateTime a, Rfc3339DateTime b)
         {
             return a._value != b._value;
         }
 
-        public int CompareTo(RFC3339DateTime other)
+        public int CompareTo(Rfc3339DateTime other)
         {
-            return this._value.CompareTo(other._value);
+            return _value.CompareTo(other._value);
         }
     }
 }

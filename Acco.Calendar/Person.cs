@@ -1,5 +1,4 @@
 ﻿using Acco.Calendar.Utilities;
-using System;
 using System.ComponentModel.DataAnnotations;
 
 namespace Acco.Calendar.Person

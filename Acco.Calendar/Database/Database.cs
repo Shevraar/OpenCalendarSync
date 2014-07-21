@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 //
 using Acco.Calendar.Event;
 //
@@ -12,13 +8,13 @@ namespace Acco.Calendar.Database
 {
     public sealed class Storage
     {
-        string ConnectionString { get { return "mongodb://localhost"; } }
+        static string ConnectionString { get { return "mongodb://localhost"; } }
         MongoClient Client { get; set; }
         MongoServer Server { get; set; }
         public MongoDatabase Database { get; private set; }
         public MongoCollection<GenericEvent> Appointments { get; private set; }
         private static volatile Storage instance;
-        private static object syncRoot = new Object();
+        private static readonly object SyncRoot = new Object();
 
         private Storage()
         {
@@ -34,7 +30,7 @@ namespace Acco.Calendar.Database
             {
                 if (instance == null)
                 {
-                    lock (syncRoot)
+                    lock (SyncRoot)
                     {
                         if (instance == null)
                             instance = new Storage();
