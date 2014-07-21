@@ -20,6 +20,7 @@ namespace Acco.Calendar
 
         public GenericEvent FailedEvent { get; private set; }
     }
+
     public interface ICalendarManager
     {
         bool Push(ICalendar calendar);
@@ -49,7 +50,7 @@ namespace Acco.Calendar
                     {
                         // first: check if the item has already been added to the shared database
                         var query = Query<GenericEvent>.EQ(x => x.Id, item.Id);
-                        var isAlreadyPresent = Storage.Instance.Appointments.FindOne(query);
+                        var isAlreadyPresent = Storage.Instance.Appointments.FindOneAs<GenericEvent>(query);
                         if (isAlreadyPresent != null)
                         {
                             Console.WriteLine("Event [{0}] is already present on database", item.Id);

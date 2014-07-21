@@ -22,11 +22,11 @@ namespace Acco.Calendar.Event
         string Get();
     }
 
-    public class GenericRecurrence : IRecurrence
+    public abstract class GenericRecurrence : IRecurrence
     {
         public RecurrencePattern Pattern { get; set; }
-        public virtual void Parse<T>(T rules) { throw new RecurrenceParseException("Unsupported type", typeof(T)); }
-        public virtual string Get() { throw new Exception("Not implemented"); }
+        public abstract void Parse<T>(T rules);
+        public abstract string Get();
     }
 
     [Serializable]
@@ -44,7 +44,6 @@ namespace Acco.Calendar.Event
     public interface IEvent
     {
         [Required(ErrorMessage = "This field is required")] // todo: add other DataAnnotations validation stuff (such as min lenght and max lenght, etc)
-        
         string Id { get; set; }
         GenericPerson Organizer { get; set; }
         GenericPerson Creator { get; set; }
@@ -66,7 +65,8 @@ namespace Acco.Calendar.Event
     {
         private GenericEvent()
         {
-            throw new Exception("You shouldn't invoke this constructor");
+            // have comment this exception, until I understand how MongoDB de-serialization works...
+            //throw new Exception("You shouldn't invoke this constructor");
         }
         public GenericEvent(string Id) 
         { 
