@@ -93,10 +93,11 @@ namespace Acco.Calendar.Manager
             }
         }
 
-        private List<string> RecipientsEmailAddresses(AppointmentItem item)
+        private List<GenericPerson> ExtractRecipientInfos(AppointmentItem item)
         {
             string PR_SMTP_ADDRESS = @"http://schemas.microsoft.com/mapi/proptag/0x39FE001E";
             var emails = new List<string>();
+            var people = new List<GenericPerson>();
             ///
             if (item == null)
             {
@@ -105,6 +106,9 @@ namespace Acco.Calendar.Manager
             //
             foreach (Microsoft.Office.Interop.Outlook.Recipient recipient in item.Recipients)
             {
+                var person = new GenericPerson();
+                person.Name = recipient.Name;
+                //
                 var recipientAddressEntry = recipient.AddressEntry;
                 if (recipientAddressEntry.Type == "EX")
                 {
@@ -119,6 +123,7 @@ namespace Acco.Calendar.Manager
                             if (exchUser != null)
                             {
                                 emails.Add(exchUser.PrimarySmtpAddress);
+                                person.Email = exchUser.PrimarySmtpAddress;
                             }
                             else
                             {
@@ -128,6 +133,7 @@ namespace Acco.Calendar.Manager
                         else
                         {
                             emails.Add(recipientAddressEntry.PropertyAccessor.GetProperty(PR_SMTP_ADDRESS) as string);
+                            person.Email = recipientAddressEntry.PropertyAccessor.GetProperty(PR_SMTP_ADDRESS) as string;
                         }
                     }
                     else
@@ -143,11 +149,13 @@ namespace Acco.Calendar.Manager
                         !emails.Contains(recipient.Address)) // avoid unnecessary duplicates
                     {
                         emails.Add(recipient.Address);
+                        person.Email = recipient.Address;
                     }
                 }
+                people.Add(person);
             }
-         
-            return emails;
+            //
+            return people;
         }
 
         public async Task<bool> PushAsync(ICalendar calendar)
@@ -212,14 +220,7 @@ namespace Acco.Calendar.Manager
                     myEvt.Organizer.Name = evt.GetOrganizer().Name;
 #endif
                     // Attendees
-                    myEvt.Attendees = new List<GenericPerson>();
-                    foreach(var attendeeEmail in RecipientsEmailAddresses(evt))
-                    {
-                        myEvt.Attendees.Add(new GenericPerson
-                        {
-                            Email = attendeeEmail
-                        });
-                    }
+                    myEvt.Attendees = ExtractRecipientInfos(evt);
                     // Recurrence
                     if (evt.IsRecurring)
                     {
