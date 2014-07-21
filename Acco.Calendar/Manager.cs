@@ -54,7 +54,6 @@ namespace Acco.Calendar
 
         protected void Events_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
-            // todo: work in progress
             if (e.Action == NotifyCollectionChangedAction.Add)
             {
                 // note: to know which item was added, use NewItems.
@@ -65,6 +64,7 @@ namespace Acco.Calendar
                     var isAlreadyPresent = Storage.Instance.Appointments.FindOneAs<GenericEvent>(query);
                     if (isAlreadyPresent != null)
                     {
+                        //todo: fire an event to state that this event is a duplicate
                         Console.BackgroundColor = ConsoleColor.Yellow; // add these in utils.
                         Console.ForegroundColor = ConsoleColor.DarkGray;
                         // add these in utils. (Utilities.Warning(...) - Utilities.Error(...) - Utilities.Info(...)
