@@ -50,6 +50,12 @@ namespace Acco.Calendar.Event
         /// PatternEndDate is reset to the month and day of PatternStartDate in the year 4001, and the recurrence pattern is considered to extend infinitely far into the future.
         /// Changes you make to properties on a RecurrencePattern object take effect when you call the underlying appointment's Send or Update method.
         /// </remarks>
+        /// 
+
+        public OutlookRecurrence()
+        {
+            
+        }
 
         public override void Parse<T>(T rules)
         {

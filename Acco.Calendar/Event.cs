@@ -1,16 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.ComponentModel.DataAnnotations;
+﻿//
 //
+using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using Acco.Calendar.Location;
 using Acco.Calendar.Person;
-//
-using DDay;
 using DDay.iCal;
-using DDay.Collections;
-using DDay.iCal.Serialization;
-using Acco.Calendar.Utilities;
+
 //
 
 namespace Acco.Calendar.Event
@@ -21,11 +17,20 @@ namespace Acco.Calendar.Event
         string Get();
     }
 
-    public abstract class GenericRecurrence : IRecurrence
+    public class GenericRecurrence : IRecurrence
     {
         protected RecurrencePattern Pattern { get; set; }
-        public abstract void Parse<T>(T rules);
-        public abstract string Get();
+        public virtual void Parse<T>(T rules) { throw new NotImplementedException(); }
+        public virtual string Get() { throw new NotImplementedException(); }
+        public override string ToString()
+        {
+            string s = "";
+            if (Pattern != null)
+            {
+                s = Pattern.ToString();
+            }
+            return s;
+        }
     }
 
     [Serializable]
@@ -42,45 +47,48 @@ namespace Acco.Calendar.Event
 
     public interface IEvent
     {
-        [Required(ErrorMessage = "This field is required")] // todo: add other DataAnnotations validation stuff (such as min lenght and max lenght, etc)
+        [Required(ErrorMessage = "This field is required")]
+        // todo: add other DataAnnotations validation stuff (such as min lenght and max lenght, etc)
         string Id { get; set; }
+
         GenericPerson Organizer { get; set; }
         GenericPerson Creator { get; set; }
         DateTime? Created { get; set; }
         DateTime? LastModified { get; set; }
         DateTime? Start { get; set; }
         DateTime? End { get; set; }
+
         [Required(ErrorMessage = "This field is required")]
         string Summary { get; set; }
+
         [Required(ErrorMessage = "This field is required")]
         string Description { get; set; }
+
         [Required(ErrorMessage = "This field is required")]
         GenericLocation Location { get; set; }
+
         GenericRecurrence Recurrence { get; set; }
         List<GenericPerson> Attendees { get; set; }
     }
 
     public class GenericEvent : IEvent
     {
-        private GenericEvent()
+        public GenericEvent(string Id)
         {
-            // have comment this exception, until I understand how MongoDB de-serialization works...
-            //throw new Exception("You shouldn't invoke this constructor");
-        }
-        public GenericEvent(string Id) 
-        { 
             this.Id = Id;
             Summary = "No Summary";
             Description = "No Description";
-            Location = new GenericLocation { Name = "No Location" };
+            Location = new GenericLocation {Name = "No Location"};
         }
+
         public GenericEvent(string Id, string Summary, string Description)
         {
             this.Id = Id;
             this.Summary = Summary;
             this.Description = Description;
-            Location = new GenericLocation { Name = "No Location" };
+            Location = new GenericLocation {Name = "No Location"};
         }
+
         public GenericEvent(string Id, string Summary, string Description, ILocation Location)
         {
             this.Id = Id;
@@ -88,6 +96,7 @@ namespace Acco.Calendar.Event
             this.Description = Description;
             this.Location = Location as GenericLocation;
         }
+
         public string Id { get; set; }
         public GenericPerson Organizer { get; set; }
         public GenericPerson Creator { get; set; }
@@ -103,7 +112,7 @@ namespace Acco.Calendar.Event
 
         public override string ToString()
         {
-            var eventString = "[";
+            string eventString = "[";
             eventString += "Id: " + Id;
             eventString += "\n";
             eventString += "Summary: " + Summary;

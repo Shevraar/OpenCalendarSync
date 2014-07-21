@@ -7,6 +7,10 @@ namespace Acco.Calendar.Event
 {
     public class GoogleRecurrence : GenericRecurrence
     {
+        public GoogleRecurrence()
+        {
+            
+        }
         public override string Get()
         {
             var _modifiedPattern = Pattern.ToString();

@@ -56,8 +56,7 @@ namespace Acco.Calendar.Manager
 
         public override async Task<bool> PushAsync(ICalendar calendar)
         {
-            var res = false;
-            res = await PushEvents(calendar.Events);
+            var res = await PushEvents(calendar.Events);
             return res;
         }
 
