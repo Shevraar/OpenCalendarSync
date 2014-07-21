@@ -59,10 +59,12 @@ namespace Acco.Calendar.Manager
 
         public override async Task<ICalendar> PullAsync()
         {
-            var calendar = new GenericCalendar();
-            calendar.Events = await PullEvents() as ObservableCollection<GenericEvent>;
-            calendar.Id = _settings.CalendarId;
-            calendar.Name = _settings.CalendarName;
+            var calendar = new GenericCalendar
+            {
+                Events = await PullEvents() as ObservableCollection<GenericEvent>,
+                Id = _settings.CalendarId,
+                Name = _settings.CalendarName
+            };
             return calendar;
         }
 
@@ -168,22 +170,28 @@ namespace Acco.Calendar.Manager
             //
             try
             {
-                var myEvt = new Google.Apis.Calendar.v3.Data.Event();
+                var myEvt = new Google.Apis.Calendar.v3.Data.Event
+                {
+                    ICalUID = evt.Id
+                };
                 // Id
-                myEvt.ICalUID = evt.Id;
                 // Organizer
                 if (evt.Organizer != null)
                 {
-                    myEvt.Organizer = new Google.Apis.Calendar.v3.Data.Event.OrganizerData();
-                    myEvt.Organizer.DisplayName = evt.Organizer.Name;
-                    myEvt.Organizer.Email = evt.Organizer.Email;
+                    myEvt.Organizer = new Google.Apis.Calendar.v3.Data.Event.OrganizerData
+                    {
+                        DisplayName = evt.Organizer.Name,
+                        Email = evt.Organizer.Email
+                    };
                 }
                 // Creator
                 if(evt.Creator != null)
                 {
-                    myEvt.Creator = new Google.Apis.Calendar.v3.Data.Event.CreatorData();
-                    myEvt.Creator.DisplayName = evt.Creator.Name;
-                    myEvt.Creator.Email = evt.Creator.Email;
+                    myEvt.Creator = new Google.Apis.Calendar.v3.Data.Event.CreatorData
+                    {
+                        DisplayName = evt.Creator.Name,
+                        Email = evt.Creator.Email
+                    };
                 }
                 // Summary
                 if (evt.Summary != "")
@@ -273,7 +281,6 @@ namespace Acco.Calendar.Manager
                 res = await PushEvent(evt);
                 if(res == false)
                 {
-                    //Console.WriteLine("Event [{0}] was not pushed to google calendar. Aborting", evt.Id);
                     throw new PushException("PushEvent failed", evt);
                 }
             }
@@ -392,8 +399,10 @@ namespace Acco.Calendar.Manager
 
         public override async Task<ICalendar> PullAsync(DateTime from, DateTime to)
         {
-            var calendar = new GenericCalendar();
-            calendar.Events = new ObservableCollection<GenericEvent>();
+            var calendar = new GenericCalendar
+            {
+                Events = new ObservableCollection<GenericEvent>()
+            };
             calendar.Events.CollectionChanged += Events_CollectionChanged;
             calendar.Events = await PullEvents(from, to) as ObservableCollection<GenericEvent>;
             calendar.Id = _settings.CalendarId;

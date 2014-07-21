@@ -1,18 +1,13 @@
-﻿using System;
+﻿//
 //
+using System;
 using Acco.Calendar.Event;
-//
 using MongoDB.Driver;
 
 namespace Acco.Calendar.Database
 {
     public sealed class Storage
     {
-        static string ConnectionString { get { return "mongodb://localhost"; } }
-        MongoClient Client { get; set; }
-        MongoServer Server { get; set; }
-        public MongoDatabase Database { get; private set; }
-        public MongoCollection<GenericEvent> Appointments { get; private set; }
         private static volatile Storage instance;
         private static readonly object SyncRoot = new Object();
 
@@ -23,6 +18,16 @@ namespace Acco.Calendar.Database
             Database = Server.GetDatabase("AccoCalendar");
             Appointments = Database.GetCollection<GenericEvent>("appointments");
         }
+
+        private static string ConnectionString
+        {
+            get { return "mongodb://localhost"; }
+        }
+
+        private MongoClient Client { get; set; }
+        private MongoServer Server { get; set; }
+        public MongoDatabase Database { get; private set; }
+        public MongoCollection<GenericEvent> Appointments { get; private set; }
 
         public static Storage Instance
         {
@@ -38,6 +43,6 @@ namespace Acco.Calendar.Database
                 }
                 return instance;
             }
-        } 
+        }
     }
 }
