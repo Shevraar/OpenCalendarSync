@@ -1,16 +1,20 @@
-﻿//
+﻿using Acco.Calendar.Event;
+using Acco.Calendar.Location;
+
+//
+using Acco.Calendar.Person;
+using Acco.Calendar.Utilities;
+
+//
+using Microsoft.Office.Interop.Outlook;
+
+//
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Threading.Tasks;
-//
-using Microsoft.Office.Interop.Outlook;
-//
-using Acco.Calendar.Person;
-using Acco.Calendar.Event;
-using Acco.Calendar.Location;
 using System.Text.RegularExpressions;
-using Acco.Calendar.Utilities;
+using System.Threading.Tasks;
+
 //
 
 namespace Acco.Calendar.Manager
@@ -18,11 +22,19 @@ namespace Acco.Calendar.Manager
     public sealed class OutlookCalendarManager : GenericCalendarManager
     {
         private Application OutlookApplication { get; set; }
+
         private NameSpace MapiNameSpace { get; set; }
+
         private MAPIFolder CalendarFolder { get; set; }
+
         private static readonly OutlookCalendarManager instance = new OutlookCalendarManager();
+
         // hidden constructor
-        private OutlookCalendarManager() { Initialize(); }
+        private OutlookCalendarManager()
+        {
+            Initialize();
+        }
+
         public static OutlookCalendarManager Instance { get { return instance; } }
 
         private void Initialize()
@@ -37,9 +49,8 @@ namespace Acco.Calendar.Manager
             bool result = true;
             // TODO: set various infos here
             //
-            foreach(var evt in calendar.Events)
+            foreach (var evt in calendar.Events)
             {
-
             }
             //
             return result;
@@ -47,8 +58,8 @@ namespace Acco.Calendar.Manager
 
         public override ICalendar Pull()
         {
-            return Pull(from:   DateTime.Now.Add(new TimeSpan(-30 /*days*/, 0 /* hours */, 0 /*minutes*/, 0 /* seconds*/)), 
-                        to:     DateTime.Now.Add(new TimeSpan(30 /*days*/, 0 /* hours */, 0 /*minutes*/, 0 /* seconds*/)));
+            return Pull(from: DateTime.Now.Add(new TimeSpan(-30 /*days*/, 0 /* hours */, 0 /*minutes*/, 0 /* seconds*/)),
+                        to: DateTime.Now.Add(new TimeSpan(30 /*days*/, 0 /* hours */, 0 /*minutes*/, 0 /* seconds*/)));
         }
 
         private static List<GenericPerson> ExtractRecipientInfos(AppointmentItem item)
@@ -104,7 +115,7 @@ namespace Acco.Calendar.Manager
                 {
                     // try to match the address against a regex
                     var email = new Regex(Defines.EmailRegularExpression);
-                    if (email.IsMatch(recipient.Address) && 
+                    if (email.IsMatch(recipient.Address) &&
                         !emails.Contains(recipient.Address)) // avoid unnecessary duplicates
                     {
                         emails.Add(recipient.Address);
@@ -157,7 +168,7 @@ namespace Acco.Calendar.Manager
                 foreach (AppointmentItem evt in evts)
                 {
                     //
-                    var myEvt = new GenericEvent(   id: evt.EntryID,
+                    var myEvt = new GenericEvent(id: evt.EntryID,
                                                     summary: evt.Subject,
                                                     description: evt.Body,
                                                     location: new GenericLocation { Name = evt.Location });
@@ -198,7 +209,7 @@ namespace Acco.Calendar.Manager
                 //
                 myCalendar.Events.CollectionChanged -= Events_CollectionChanged;
             }
-            catch(System.Exception ex)
+            catch (System.Exception ex)
             {
                 Console.WriteLine("Exception: [{0}]", ex.Message);
             }
