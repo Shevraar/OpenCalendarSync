@@ -17,14 +17,13 @@ namespace Acco.Calendar.Event
 {
     public interface IRecurrence
     {
-        RecurrencePattern Pattern { get; set; }
         void Parse<T>(T rules);
         string Get();
     }
 
     public abstract class GenericRecurrence : IRecurrence
     {
-        public RecurrencePattern Pattern { get; set; }
+        protected RecurrencePattern Pattern { get; set; }
         public abstract void Parse<T>(T rules);
         public abstract string Get();
     }

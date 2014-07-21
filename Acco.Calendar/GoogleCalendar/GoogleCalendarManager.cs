@@ -329,7 +329,7 @@ namespace Acco.Calendar.Manager
                     if (evt.Recurrence != null)
                     {
                         myEvt.Recurrence = new GoogleRecurrence();
-                        ((GoogleRecurrence)myEvt.Recurrence).Parse<String>(evt.Recurrence[0]); //warning: this only parses one line inside Recurrence...
+                        ((GoogleRecurrence)myEvt.Recurrence).Parse(evt.Recurrence[0]); //warning: this only parses one line inside Recurrence...
                     }
                     // Attendees
                     if (evt.Attendees != null)
