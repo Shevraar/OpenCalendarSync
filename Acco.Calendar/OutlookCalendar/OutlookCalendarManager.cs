@@ -57,20 +57,33 @@ namespace Acco.Calendar.Manager
         private void Events_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
             // todo: work in progress
-            switch(e.Action)
-            { 
+            switch (e.Action)
+            {
                 case NotifyCollectionChangedAction.Add:
                     // note: to know which item was added, use NewItems.
-                    Console.WriteLine("Event added");
-                    foreach(GenericEvent item in e.NewItems) //todo: check if its possible to add the list of added events
+                    foreach (GenericEvent item in e.NewItems) //todo: check if its possible to add the list of added events
                     {
-                        Storage.Instance.Appointments.Save(item);
+                        var r = Storage.Instance.Appointments.Save(item);
+                        if (!r.Ok)
+                        {
+                            Console.BackgroundColor = ConsoleColor.Red; // add these in utils.
+                            Console.ForegroundColor = ConsoleColor.White;  // add these in utils. (Utilities.Warning(...) - Utilities.Error(...) - Utilities.Info(...)
+                            Console.WriteLine("Event [{0}] was not added", item.Id);
+                            Console.ResetColor();
+                        }
+                        else
+                        {
+                            Console.BackgroundColor = ConsoleColor.Green; // add these in utils.
+                            Console.ForegroundColor = ConsoleColor.Black;  // add these in utils. (Utilities.Warning(...) - Utilities.Error(...) - Utilities.Info(...)
+                            Console.WriteLine("Event [{0}] added", item.Id);
+                            Console.ResetColor();
+                        }
                     }
                     break;
                 case NotifyCollectionChangedAction.Remove:
-                    Console.WriteLine("Event removed");
                     foreach (GenericEvent item in e.OldItems) //todo: check if its possible to delete the list of removed events
                     {
+                        Console.WriteLine("Event [{0}] removed", item.Id);
                         var query = Query<GenericEvent>.EQ(evt => evt.Id, item.Id);
                         Storage.Instance.Appointments.Remove(query);
                     }
@@ -92,9 +105,9 @@ namespace Acco.Calendar.Manager
             //
             foreach (Microsoft.Office.Interop.Outlook.Recipient recipient in item.Recipients)
             {
-                if (recipient.Address == "EX")
+                var recipientAddressEntry = recipient.AddressEntry;
+                if (recipientAddressEntry.Type == "EX")
                 {
-                    var recipientAddressEntry = recipient.AddressEntry;
                     if (recipientAddressEntry != null)
                     {
                         //Now we have an AddressEntry representing the Sender
@@ -207,38 +220,6 @@ namespace Acco.Calendar.Manager
                             Email = attendeeEmail
                         });
                     }
-                    //string[] requiredAttendees = null;
-                    //if (evt.RequiredAttendees != null)
-                    //{
-                    //    requiredAttendees = evt.RequiredAttendees.Split(';');
-                    //}
-                    //string[] optionalAttendees = null;
-                    //if (evt.OptionalAttendees != null)
-                    //{
-                    //    optionalAttendees = evt.OptionalAttendees.Split(';');
-                    //}
-                    ////
-                    //if (requiredAttendees != null)
-                    //{
-                    //    foreach (var attendee in requiredAttendees)
-                    //    {
-                    //        myEvt.Attendees.Add(new GenericPerson
-                    //        {
-                    //            Email = attendee.Trim() // todo: add some validation to test if attendee contains an email or not (regex)
-                    //        });
-                    //    }
-                    //}
-                    ////
-                    //if (optionalAttendees != null)
-                    //{
-                    //    foreach (var optionalAttendee in optionalAttendees)
-                    //    {
-                    //        myEvt.Attendees.Add(new GenericPerson
-                    //        {
-                    //            Email = optionalAttendee.Trim() // todo: add some validation to test if attendee contains an email or not (regex)
-                    //        });
-                    //    }
-                    //}
                     // Recurrence
                     if (evt.IsRecurring)
                     {

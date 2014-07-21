@@ -77,16 +77,29 @@ namespace Acco.Calendar.Manager
             {
                 case NotifyCollectionChangedAction.Add:
                     // note: to know which item was added, use NewItems.
-                    Console.WriteLine("Event added");
                     foreach (GenericEvent item in e.NewItems) //todo: check if its possible to add the list of added events
                     {
-                        Storage.Instance.Appointments.Save(item);
+                        var r = Storage.Instance.Appointments.Save(item);
+                        if(!r.Ok)
+                        {
+                            Console.BackgroundColor = ConsoleColor.Red; // add these in utils.
+                            Console.ForegroundColor = ConsoleColor.White;  // add these in utils. (Utilities.Warning(...) - Utilities.Error(...) - Utilities.Info(...)
+                            Console.WriteLine("Event [{0}] was not added", item.Id);
+                            Console.ResetColor();
+                        }
+                        else
+                        {
+                            Console.BackgroundColor = ConsoleColor.Green; // add these in utils.
+                            Console.ForegroundColor = ConsoleColor.Black;  // add these in utils. (Utilities.Warning(...) - Utilities.Error(...) - Utilities.Info(...)
+                            Console.WriteLine("Event [{0}] added", item.Id);
+                            Console.ResetColor();
+                        }
                     }
                     break;
                 case NotifyCollectionChangedAction.Remove:
-                    Console.WriteLine("Event removed");
                     foreach (GenericEvent item in e.OldItems) //todo: check if its possible to delete the list of removed events
                     {
+                        Console.WriteLine("Event [{0}] removed", item.Id);
                         var query = Query<GenericEvent>.EQ(evt => evt.Id, item.Id);
                         Storage.Instance.Appointments.Remove(query);
                     }
