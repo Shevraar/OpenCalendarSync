@@ -28,7 +28,7 @@ namespace Acco.Calendar.Manager
     /// Implementation of a Google Calendar Manager based on the latest API version:
     /// https://developers.google.com/google-apps/calendar/v3/reference/
     /// </summary>
-    public sealed class GoogleCalendarManager : ICalendarManager
+    public sealed class GoogleCalendarManager : GenericCalendarManager
     {
         CalendarService Service { get; set; }
         UserCredential Credential { get; set; }
@@ -40,73 +40,34 @@ namespace Acco.Calendar.Manager
         private GoogleCalendarManager() { }
         public static GoogleCalendarManager Instance { get { return instance; } }
 
-        public bool Push(ICalendar calendar)
+        public override bool Push(ICalendar calendar)
         {
             var pushTask = PushAsync(calendar);
             pushTask.RunSynchronously();
             return pushTask.Result;
         }
 
-        public ICalendar Pull()
+        public override ICalendar Pull()
         {
             var pullTask = PullAsync();
             pullTask.RunSynchronously();
             return pullTask.Result;
         }
 
-        public async Task<bool> PushAsync(ICalendar calendar)
+        public override async Task<bool> PushAsync(ICalendar calendar)
         {
             var res = false;
             res = await PushEvents(calendar.Events);
             return res;
         }
 
-        public async Task<ICalendar> PullAsync()
+        public override async Task<ICalendar> PullAsync()
         {
             var calendar = new GenericCalendar();
             calendar.Events = await PullEvents() as ObservableCollection<GenericEvent>;
             calendar.Id = Settings.CalendarId;
             calendar.Name = Settings.CalendarName;
             return calendar;
-        }
-
-        private void Events_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
-        {
-            // todo: work in progress
-            switch (e.Action)
-            {
-                case NotifyCollectionChangedAction.Add:
-                    // note: to know which item was added, use NewItems.
-                    foreach (GenericEvent item in e.NewItems) //todo: check if its possible to add the list of added events
-                    {
-                        var r = Storage.Instance.Appointments.Save(item);
-                        if(!r.Ok)
-                        {
-                            Console.BackgroundColor = ConsoleColor.Red; // add these in utils.
-                            Console.ForegroundColor = ConsoleColor.White;  // add these in utils. (Utilities.Warning(...) - Utilities.Error(...) - Utilities.Info(...)
-                            Console.WriteLine("Event [{0}] was not added", item.Id);
-                            Console.ResetColor();
-                        }
-                        else
-                        {
-                            Console.BackgroundColor = ConsoleColor.Green; // add these in utils.
-                            Console.ForegroundColor = ConsoleColor.Black;  // add these in utils. (Utilities.Warning(...) - Utilities.Error(...) - Utilities.Info(...)
-                            Console.WriteLine("Event [{0}] added", item.Id);
-                            Console.ResetColor();
-                        }
-                    }
-                    break;
-                case NotifyCollectionChangedAction.Remove:
-                    foreach (GenericEvent item in e.OldItems) //todo: check if its possible to delete the list of removed events
-                    {
-                        Console.WriteLine("Event [{0}] removed", item.Id);
-                        var query = Query<GenericEvent>.EQ(evt => evt.Id, item.Id);
-                        Storage.Instance.Appointments.Remove(query);
-                    }
-                    break;
-                default:
-                    throw new System.Exception("Unmanaged Action => " + e.Action);
-            }
         }
 
         public async Task<bool> Initialize(string _ClientId, string _ClientSecret, string _CalendarName)
@@ -117,14 +78,16 @@ namespace Acco.Calendar.Manager
             //
             var result = (from e in googleDb.AsQueryable<GoogleCalendarSettings>()
                           select e).Any();
-            if(result == false) // not yet initialized - no record on db
+            if(result == false)
             {
+                // save settings
                 Settings.CalendarName = _CalendarName;
                 Settings.CalendarId = (await CreateCalendar()).Id;
                 googleDb.Insert<GoogleCalendarSettings>(Settings);
             }
             else
             {
+                // get settings
                 var selectSettings =(from c in googleDb.AsQueryable<GoogleCalendarSettings>()
                                     select c).First<GoogleCalendarSettings>();
                 Settings = selectSettings;
@@ -132,7 +95,10 @@ namespace Acco.Calendar.Manager
             // 
             if (Settings.CalendarId != null)
             {
-                Settings.CalendarId = (await GetCalendar(Settings.CalendarId)).Id;
+                if(Settings.CalendarId == (await GetCalendar(Settings.CalendarId)).Id)
+                {
+                    Console.WriteLine("Our calendarId matches the one on google!");
+                }
             }
             //
             return res;
@@ -407,14 +373,14 @@ namespace Acco.Calendar.Manager
             return myEvts;
         }
 
-        public ICalendar Pull(DateTime from, DateTime to)
+        public override ICalendar Pull(DateTime from, DateTime to)
         {
             var pullTask = PullAsync();
             pullTask.RunSynchronously();
             return pullTask.Result;
         }
 
-        public async Task<ICalendar> PullAsync(DateTime from, DateTime to)
+        public override async Task<ICalendar> PullAsync(DateTime from, DateTime to)
         {
             var calendar = new GenericCalendar();
             calendar.Events.CollectionChanged += Events_CollectionChanged;

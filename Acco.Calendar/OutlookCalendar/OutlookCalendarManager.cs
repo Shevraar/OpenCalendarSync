@@ -18,7 +18,7 @@ using Acco.Calendar.Utilities;
 
 namespace Acco.Calendar.Manager
 {
-    public sealed class OutlookCalendarManager : ICalendarManager
+    public sealed class OutlookCalendarManager : GenericCalendarManager
     {
         private Application OutlookApplication { get; set; }
         private NameSpace MapiNameSpace { get; set; }
@@ -35,7 +35,7 @@ namespace Acco.Calendar.Manager
             CalendarFolder = MapiNameSpace.GetDefaultFolder(OlDefaultFolders.olFolderCalendar);
         }
 
-        public bool Push(ICalendar calendar)
+        public override bool Push(ICalendar calendar)
         {
             bool result = true;
             // TODO: set various infos here
@@ -48,49 +48,10 @@ namespace Acco.Calendar.Manager
             return result;
         }
 
-        public ICalendar Pull()
+        public override ICalendar Pull()
         {
             return Pull(from:   DateTime.Now.Add(new TimeSpan(-30 /*days*/, 0 /* hours */, 0 /*minutes*/, 0 /* seconds*/)), 
                         to:     DateTime.Now.Add(new TimeSpan(30 /*days*/, 0 /* hours */, 0 /*minutes*/, 0 /* seconds*/)));
-        }
-
-        private void Events_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
-        {
-            // todo: work in progress
-            switch (e.Action)
-            {
-                case NotifyCollectionChangedAction.Add:
-                    // note: to know which item was added, use NewItems.
-                    foreach (GenericEvent item in e.NewItems) //todo: check if its possible to add the list of added events
-                    {
-                        var r = Storage.Instance.Appointments.Save(item);
-                        if (!r.Ok)
-                        {
-                            Console.BackgroundColor = ConsoleColor.Red; // add these in utils.
-                            Console.ForegroundColor = ConsoleColor.White;  // add these in utils. (Utilities.Warning(...) - Utilities.Error(...) - Utilities.Info(...)
-                            Console.WriteLine("Event [{0}] was not added", item.Id);
-                            Console.ResetColor();
-                        }
-                        else
-                        {
-                            Console.BackgroundColor = ConsoleColor.Green; // add these in utils.
-                            Console.ForegroundColor = ConsoleColor.Black;  // add these in utils. (Utilities.Warning(...) - Utilities.Error(...) - Utilities.Info(...)
-                            Console.WriteLine("Event [{0}] added", item.Id);
-                            Console.ResetColor();
-                        }
-                    }
-                    break;
-                case NotifyCollectionChangedAction.Remove:
-                    foreach (GenericEvent item in e.OldItems) //todo: check if its possible to delete the list of removed events
-                    {
-                        Console.WriteLine("Event [{0}] removed", item.Id);
-                        var query = Query<GenericEvent>.EQ(evt => evt.Id, item.Id);
-                        Storage.Instance.Appointments.Remove(query);
-                    }
-                    break;
-                default:
-                    throw new System.Exception("Unmanaged Action => " + e.Action);
-            }
         }
 
         private List<GenericPerson> ExtractRecipientInfos(AppointmentItem item)
@@ -158,19 +119,19 @@ namespace Acco.Calendar.Manager
             return people;
         }
 
-        public async Task<bool> PushAsync(ICalendar calendar)
+        public override async Task<bool> PushAsync(ICalendar calendar)
         {
             var push = Task.Factory.StartNew(() => Push(calendar));
             return await push;
         }
 
-        public async Task<ICalendar> PullAsync()
+        public override async Task<ICalendar> PullAsync()
         {
             var pull = Task.Factory.StartNew(() => Pull());
             return await pull;
         }
 
-        public ICalendar Pull(DateTime from, DateTime to)
+        public override ICalendar Pull(DateTime from, DateTime to)
         {
             var myCalendar = new GenericCalendar();
             try
@@ -241,7 +202,7 @@ namespace Acco.Calendar.Manager
             return myCalendar;
         }
 
-        public async Task<ICalendar> PullAsync(DateTime from, DateTime to)
+        public override async Task<ICalendar> PullAsync(DateTime from, DateTime to)
         {
             var pull = Task.Factory.StartNew(() => Pull(from, to));
             return await pull;
