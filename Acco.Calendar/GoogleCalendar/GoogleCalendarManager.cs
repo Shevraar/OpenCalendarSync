@@ -370,7 +370,10 @@ namespace Acco.Calendar.Manager
                         }
                     }
                     //
-                    myEvts.Add(myEvt);
+                    if(!AlreadySynced(myEvt))
+                    {
+                        myEvts.Add(myEvt);
+                    }
                 }
             }
             catch (Exception ex)

@@ -1,5 +1,6 @@
 ﻿using Acco.Calendar.Database;
 using Acco.Calendar.Event;
+using MongoDB.Bson;
 using MongoDB.Driver.Builders;
 using System;
 using System.Collections.Specialized;
@@ -52,6 +53,22 @@ namespace Acco.Calendar
 
         public abstract Task<ICalendar> PullAsync(DateTime from, DateTime to);
 
+        protected bool AlreadySynced(IEvent evt)
+        {
+            // first: check if the item has already been added to the shared database
+            var query = Query<GenericEvent>.EQ(x => x.Id, evt.Id);
+            if (Storage.Instance.Appointments.FindOneAs<GenericEvent>(query) == null)
+            {
+                return false;
+            }
+            // 
+            Console.BackgroundColor = ConsoleColor.Yellow;
+            Console.ForegroundColor = ConsoleColor.DarkGray;
+            Console.WriteLine("Event [{0}] is already present on database", evt.Id);
+            Console.ResetColor();
+            return true;
+        }
+
         protected void Events_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
             if (e.Action == NotifyCollectionChangedAction.Add)
@@ -59,37 +76,22 @@ namespace Acco.Calendar
                 // note: to know which item was added, use NewItems.
                 foreach (GenericEvent item in e.NewItems) //todo: check if its possible to add the list of added events
                 {
-                    // first: check if the item has already been added to the shared database
-                    var query = Query<GenericEvent>.EQ(x => x.Id, item.Id);
-                    var isAlreadyPresent = Storage.Instance.Appointments.FindOneAs<GenericEvent>(query);
-                    if (isAlreadyPresent != null)
+                    var r = Storage.Instance.Appointments.Save(item);
+                    if (!r.Ok)
                     {
-                        //todo: fire an event to state that this event is a duplicate
-                        Console.BackgroundColor = ConsoleColor.Yellow; // add these in utils.
-                        Console.ForegroundColor = ConsoleColor.DarkGray;
+                        Console.BackgroundColor = ConsoleColor.Red; // add these in utils.
+                        Console.ForegroundColor = ConsoleColor.White;
                         // add these in utils. (Utilities.Warning(...) - Utilities.Error(...) - Utilities.Info(...)
-                        Console.WriteLine("Event [{0}] is already present on database", item.Id);
+                        Console.WriteLine("Event [{0}] was not added", item.Id);
                         Console.ResetColor();
                     }
                     else
                     {
-                        var r = Storage.Instance.Appointments.Save(item);
-                        if (!r.Ok)
-                        {
-                            Console.BackgroundColor = ConsoleColor.Red; // add these in utils.
-                            Console.ForegroundColor = ConsoleColor.White;
-                            // add these in utils. (Utilities.Warning(...) - Utilities.Error(...) - Utilities.Info(...)
-                            Console.WriteLine("Event [{0}] was not added", item.Id);
-                            Console.ResetColor();
-                        }
-                        else
-                        {
-                            Console.BackgroundColor = ConsoleColor.Green; // add these in utils.
-                            Console.ForegroundColor = ConsoleColor.Black;
-                            // add these in utils. (Utilities.Warning(...) - Utilities.Error(...) - Utilities.Info(...)
-                            Console.WriteLine("Event [{0}] added", item.Id);
-                            Console.ResetColor();
-                        }
+                        Console.BackgroundColor = ConsoleColor.Green; // add these in utils.
+                        Console.ForegroundColor = ConsoleColor.Black;
+                        // add these in utils. (Utilities.Warning(...) - Utilities.Error(...) - Utilities.Info(...)
+                        Console.WriteLine("Event [{0}] added", item.Id);
+                        Console.ResetColor();
                     }
                 }
             }
