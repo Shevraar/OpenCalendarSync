@@ -212,6 +212,11 @@ namespace Acco.Calendar.Manager
                 {
                     myEvt.Summary = evt.Summary;
                 }
+                // Description
+                if (evt.Description != "")
+                {
+                    myEvt.Description = evt.Description;
+                }
                 // Location
                 if (evt.Location != null)
                 {

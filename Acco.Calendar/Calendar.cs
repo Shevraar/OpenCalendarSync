@@ -9,14 +9,14 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Acco.Calendar
 {
-    public interface IDBActions<T> where T: GenericEvent
+    public interface IDBActions<T> where T: IEvent
     {
         void Save(T item);
         void Delete(T item);
         bool IsAlreadySynced(T item);
     }
 
-    public class DBCollection<T> : Collection<T>, IDBActions<T> where T: GenericEvent
+    public class DBCollection<T> : Collection<T>, IDBActions<T> where T: IEvent
     {
         public void Save(T item)
         {
@@ -72,6 +72,7 @@ namespace Acco.Calendar
                 Console.ForegroundColor = ConsoleColor.DarkGray;
                 Console.WriteLine("Event [{0}] is already present on database", item.Id);
                 Console.ResetColor();
+                isPresent = true;
             }
             return isPresent;
         }
