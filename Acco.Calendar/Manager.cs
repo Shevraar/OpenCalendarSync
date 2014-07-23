@@ -1,5 +1,6 @@
 ﻿using Acco.Calendar.Database;
 using Acco.Calendar.Event;
+using MongoDB.Bson;
 using MongoDB.Driver.Builders;
 using System;
 using System.Collections.Specialized;
@@ -51,62 +52,5 @@ namespace Acco.Calendar
         public abstract ICalendar Pull(DateTime from, DateTime to);
 
         public abstract Task<ICalendar> PullAsync(DateTime from, DateTime to);
-
-        protected void Events_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
-        {
-            if (e.Action == NotifyCollectionChangedAction.Add)
-            {
-                // note: to know which item was added, use NewItems.
-                foreach (GenericEvent item in e.NewItems) //todo: check if its possible to add the list of added events
-                {
-                    // first: check if the item has already been added to the shared database
-                    var query = Query<GenericEvent>.EQ(x => x.Id, item.Id);
-                    var isAlreadyPresent = Storage.Instance.Appointments.FindOneAs<GenericEvent>(query);
-                    if (isAlreadyPresent != null)
-                    {
-                        //todo: fire an event to state that this event is a duplicate
-                        Console.BackgroundColor = ConsoleColor.Yellow; // add these in utils.
-                        Console.ForegroundColor = ConsoleColor.DarkGray;
-                        // add these in utils. (Utilities.Warning(...) - Utilities.Error(...) - Utilities.Info(...)
-                        Console.WriteLine("Event [{0}] is already present on database", item.Id);
-                        Console.ResetColor();
-                    }
-                    else
-                    {
-                        var r = Storage.Instance.Appointments.Save(item);
-                        if (!r.Ok)
-                        {
-                            Console.BackgroundColor = ConsoleColor.Red; // add these in utils.
-                            Console.ForegroundColor = ConsoleColor.White;
-                            // add these in utils. (Utilities.Warning(...) - Utilities.Error(...) - Utilities.Info(...)
-                            Console.WriteLine("Event [{0}] was not added", item.Id);
-                            Console.ResetColor();
-                        }
-                        else
-                        {
-                            Console.BackgroundColor = ConsoleColor.Green; // add these in utils.
-                            Console.ForegroundColor = ConsoleColor.Black;
-                            // add these in utils. (Utilities.Warning(...) - Utilities.Error(...) - Utilities.Info(...)
-                            Console.WriteLine("Event [{0}] added", item.Id);
-                            Console.ResetColor();
-                        }
-                    }
-                }
-            }
-            else if (e.Action == NotifyCollectionChangedAction.Remove)
-            {
-                foreach (GenericEvent item in e.OldItems)
-                //todo: check if its possible to delete the list of removed events
-                {
-                    Console.WriteLine("Event [{0}] removed", item.Id);
-                    var query = Query<GenericEvent>.EQ(evt => evt.Id, item.Id);
-                    Storage.Instance.Appointments.Remove(query);
-                }
-            }
-            else
-            {
-                throw new Exception("Unmanaged Action => " + e.Action);
-            }
-        }
     }
 }

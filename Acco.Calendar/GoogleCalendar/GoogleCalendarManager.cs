@@ -16,7 +16,6 @@ using Google.Apis.Util.Store;
 using MongoDB.Driver.Linq;
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -73,7 +72,7 @@ namespace Acco.Calendar.Manager
         {
             var calendar = new GenericCalendar
             {
-                Events = await PullEvents() as ObservableCollection<GenericEvent>,
+                Events = await PullEvents() as DBCollection<GenericEvent>,
                 Id = _settings.CalendarId,
                 Name = _settings.CalendarName
             };
@@ -212,6 +211,11 @@ namespace Acco.Calendar.Manager
                 {
                     myEvt.Summary = evt.Summary;
                 }
+                // Description
+                if (evt.Description != "")
+                {
+                    myEvt.Description = evt.Description;
+                }
                 // Location
                 if (evt.Location != null)
                 {
@@ -286,7 +290,7 @@ namespace Acco.Calendar.Manager
             return res;
         }
 
-        private async Task<bool> PushEvents(IEnumerable<GenericEvent> evts)
+        private async Task<bool> PushEvents(IEnumerable<IEvent> evts)
         {
             bool res = false;
             //
@@ -295,7 +299,7 @@ namespace Acco.Calendar.Manager
                 res = await PushEvent(evt);
                 if (res == false)
                 {
-                    throw new PushException("PushEvent failed", evt);
+                    throw new PushException("PushEvent failed", evt as GenericEvent);
                 }
             }
             //
@@ -304,8 +308,7 @@ namespace Acco.Calendar.Manager
 
         private async Task<IList<GenericEvent>> PullEvents()
         {
-            var myEvts = new ObservableCollection<GenericEvent>();
-            myEvts.CollectionChanged += Events_CollectionChanged;
+            var myEvts = new DBCollection<GenericEvent>();
             try
             {
                 var evts = await Service.Events.List(_settings.CalendarId).ExecuteAsync();
@@ -369,7 +372,6 @@ namespace Acco.Calendar.Manager
                             );
                         }
                     }
-                    //
                     myEvts.Add(myEvt);
                 }
             }
@@ -377,25 +379,22 @@ namespace Acco.Calendar.Manager
             {
                 Console.WriteLine("Exception: [{0}]", ex.Message);
             }
-            myEvts.CollectionChanged -= Events_CollectionChanged;
             return myEvts;
         }
 
         private async Task<IList<GenericEvent>> PullEvents(DateTime from, DateTime to)
         {
-            var myEvts = new ObservableCollection<GenericEvent>();
-            var evts = (await PullEvents()) as ObservableCollection<GenericEvent>;
+            var myEvts = new DBCollection<GenericEvent>();
+            var evts = (await PullEvents()) as DBCollection<GenericEvent>;
             // note: google doesn't provide a direct way to filter events when listing them
             //       so we have to filter them manually
             if (evts != null)
             {
-                evts.CollectionChanged += Events_CollectionChanged;
                 var excludedEvts = evts.Where(x => (x.Start < @from && x.End > to)).ToList(); // todo: have to test this
                 foreach (var excludedEvt in excludedEvts)
                 {
                     evts.Remove(excludedEvt);
                 }
-                evts.CollectionChanged -= Events_CollectionChanged;
             }
             else
             {
@@ -415,13 +414,11 @@ namespace Acco.Calendar.Manager
         {
             var calendar = new GenericCalendar
             {
-                Events = new ObservableCollection<GenericEvent>()
+                Events = new DBCollection<GenericEvent>()
             };
-            calendar.Events.CollectionChanged += Events_CollectionChanged;
-            calendar.Events = await PullEvents(from, to) as ObservableCollection<GenericEvent>;
+            calendar.Events = await PullEvents(from, to) as DBCollection<GenericEvent>;
             calendar.Id = _settings.CalendarId;
             calendar.Name = _settings.CalendarId;
-            if (calendar.Events != null) calendar.Events.CollectionChanged -= Events_CollectionChanged;
             return calendar;
         }
     }

@@ -1,4 +1,5 @@
-﻿using Acco.Calendar.Event;
+﻿using System.Linq;
+using Acco.Calendar.Event;
 using Acco.Calendar.Location;
 
 //
@@ -11,7 +12,6 @@ using Microsoft.Office.Interop.Outlook;
 //
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
@@ -46,7 +46,7 @@ namespace Acco.Calendar.Manager
 
         public override bool Push(ICalendar calendar)
         {
-            bool result = true;
+            var result = true;
             // TODO: set various infos here
             //
             foreach (var evt in calendar.Events)
@@ -65,7 +65,6 @@ namespace Acco.Calendar.Manager
         private static List<GenericPerson> ExtractRecipientInfos(AppointmentItem item)
         {
             const string prSmtpAddress = @"http://schemas.microsoft.com/mapi/proptag/0x39FE001E";
-            var emails = new List<string>();
             var people = new List<GenericPerson>();
             if (item == null)
             {
@@ -92,7 +91,6 @@ namespace Acco.Calendar.Manager
                             var exchUser = recipientAddressEntry.GetExchangeUser();
                             if (exchUser != null)
                             {
-                                emails.Add(exchUser.PrimarySmtpAddress);
                                 person.Email = exchUser.PrimarySmtpAddress;
                             }
                             else
@@ -102,7 +100,6 @@ namespace Acco.Calendar.Manager
                         }
                         else
                         {
-                            emails.Add(recipientAddressEntry.PropertyAccessor.GetProperty(prSmtpAddress) as string);
                             person.Email = recipientAddressEntry.PropertyAccessor.GetProperty(prSmtpAddress) as string;
                         }
                     }
@@ -115,14 +112,16 @@ namespace Acco.Calendar.Manager
                 {
                     // try to match the address against a regex
                     var email = new Regex(Defines.EmailRegularExpression);
-                    if (email.IsMatch(recipient.Address) &&
-                        !emails.Contains(recipient.Address)) // avoid unnecessary duplicates
+                    if (email.IsMatch(recipient.Address)) 
                     {
-                        emails.Add(recipient.Address);
                         person.Email = recipient.Address;
                     }
                 }
-                people.Add(person);
+                //
+                if (people.All(p => p.Name != person.Name) && people.All(e => e.Email != person.Email))
+                {
+                    people.Add(person);
+                }
             }
             //
             return people;
@@ -142,7 +141,10 @@ namespace Acco.Calendar.Manager
 
         public override ICalendar Pull(DateTime from, DateTime to)
         {
-            var myCalendar = new GenericCalendar();
+            var myCalendar = new GenericCalendar
+            {
+                Events = new DBCollection<GenericEvent>()
+            };
             try
             {
                 myCalendar.Id = CalendarFolder.EntryID;
@@ -153,9 +155,6 @@ namespace Acco.Calendar.Manager
                     Email = CalendarFolder.Store.DisplayName
                 };
 #endif
-                //
-                myCalendar.Events = new ObservableCollection<GenericEvent>();
-                myCalendar.Events.CollectionChanged += Events_CollectionChanged;
                 //
                 Items evts = CalendarFolder.Items;
                 evts.Sort("[Start]");
@@ -168,7 +167,7 @@ namespace Acco.Calendar.Manager
                 foreach (AppointmentItem evt in evts)
                 {
                     //
-                    var myEvt = new GenericEvent(id: evt.EntryID,
+                    var myEvt = new GenericEvent(   id: evt.EntryID,
                                                     summary: evt.Subject,
                                                     description: evt.Body,
                                                     location: new GenericLocation { Name = evt.Location });
@@ -206,8 +205,6 @@ namespace Acco.Calendar.Manager
                     // add it to calendar events.
                     myCalendar.Events.Add(myEvt);
                 }
-                //
-                myCalendar.Events.CollectionChanged -= Events_CollectionChanged;
             }
             catch (System.Exception ex)
             {
