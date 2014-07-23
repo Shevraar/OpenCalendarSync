@@ -16,7 +16,6 @@ using Google.Apis.Util.Store;
 using MongoDB.Driver.Linq;
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -309,7 +308,7 @@ namespace Acco.Calendar.Manager
 
         private async Task<IList<GenericEvent>> PullEvents()
         {
-            var myEvts = new ObservableCollection<GenericEvent>();
+            var myEvts = new DBCollection<GenericEvent>();
             try
             {
                 var evts = await Service.Events.List(_settings.CalendarId).ExecuteAsync();
@@ -385,8 +384,8 @@ namespace Acco.Calendar.Manager
 
         private async Task<IList<GenericEvent>> PullEvents(DateTime from, DateTime to)
         {
-            var myEvts = new ObservableCollection<GenericEvent>();
-            var evts = (await PullEvents()) as ObservableCollection<GenericEvent>;
+            var myEvts = new DBCollection<GenericEvent>();
+            var evts = (await PullEvents()) as DBCollection<GenericEvent>;
             // note: google doesn't provide a direct way to filter events when listing them
             //       so we have to filter them manually
             if (evts != null)
