@@ -9,14 +9,14 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Acco.Calendar
 {
-    public interface IDBActions<T> where T: IEvent
+    public interface IDBActions<T> where T: GenericEvent
     {
         void Save(T item);
         void Delete(T item);
         bool IsAlreadySynced(T item);
     }
 
-    public class DBCollection<T> : Collection<T>, IDBActions<T> where T: IEvent
+    public class DBCollection<T> : Collection<T>, IDBActions<T> where T: GenericEvent
     {
         public void Save(T item)
         {
@@ -39,7 +39,7 @@ namespace Acco.Calendar
 
         public void Delete(T item)
         {
-            var query = Query<GenericEvent>.EQ(e => e.Id, item.Id);
+            var query = Query<T>.EQ(e => e.Id, item.Id);
             var r = Storage.Instance.Appointments.Remove(query);
             if (!r.Ok)
             {
@@ -61,8 +61,8 @@ namespace Acco.Calendar
         {
             var isPresent = false;
             // first: check if the item has already been added to the shared database
-            var query = Query<IEvent>.EQ(x => x.Id, item.Id);
-            if (Storage.Instance.Appointments.FindOneAs<IEvent>(query) == null)
+            var query = Query<T>.EQ(x => x.Id, item.Id);
+            if (Storage.Instance.Appointments.FindOneAs<T>(query) == null)
             {
                 isPresent = false;
             }
@@ -100,7 +100,7 @@ namespace Acco.Calendar
 
         GenericPerson Creator { get; set; }
 
-        DBCollection<IEvent> Events { get; set; }
+        DBCollection<GenericEvent> Events { get; set; }
     }
 
     public class GenericCalendar : ICalendar
@@ -112,6 +112,6 @@ namespace Acco.Calendar
 
         public GenericPerson Creator { get; set; }
 
-        public DBCollection<IEvent> Events { get; set; }
+        public DBCollection<GenericEvent> Events { get; set; }
     }
 }

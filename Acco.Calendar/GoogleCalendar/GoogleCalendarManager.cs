@@ -73,7 +73,7 @@ namespace Acco.Calendar.Manager
         {
             var calendar = new GenericCalendar
             {
-                Events = await PullEvents() as DBCollection<IEvent>,
+                Events = await PullEvents() as DBCollection<GenericEvent>,
                 Id = _settings.CalendarId,
                 Name = _settings.CalendarName
             };
@@ -410,9 +410,9 @@ namespace Acco.Calendar.Manager
         {
             var calendar = new GenericCalendar
             {
-                Events = new DBCollection<IEvent>()
+                Events = new DBCollection<GenericEvent>()
             };
-            calendar.Events = await PullEvents(from, to) as DBCollection<IEvent>;
+            calendar.Events = await PullEvents(from, to) as DBCollection<GenericEvent>;
             calendar.Id = _settings.CalendarId;
             calendar.Name = _settings.CalendarId;
             return calendar;

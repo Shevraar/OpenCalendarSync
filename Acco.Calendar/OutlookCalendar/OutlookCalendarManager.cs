@@ -142,7 +142,10 @@ namespace Acco.Calendar.Manager
 
         public override ICalendar Pull(DateTime from, DateTime to)
         {
-            var myCalendar = new GenericCalendar();
+            var myCalendar = new GenericCalendar
+            {
+                Events = new DBCollection<GenericEvent>()
+            };
             try
             {
                 myCalendar.Id = CalendarFolder.EntryID;
