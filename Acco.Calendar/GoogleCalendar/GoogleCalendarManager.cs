@@ -73,7 +73,7 @@ namespace Acco.Calendar.Manager
         {
             var calendar = new GenericCalendar
             {
-                Events = await PullEvents() as ObservableCollection<GenericEvent>,
+                Events = await PullEvents() as DBCollection<IEvent>,
                 Id = _settings.CalendarId,
                 Name = _settings.CalendarName
             };
@@ -286,7 +286,7 @@ namespace Acco.Calendar.Manager
             return res;
         }
 
-        private async Task<bool> PushEvents(IEnumerable<GenericEvent> evts)
+        private async Task<bool> PushEvents(IEnumerable<IEvent> evts)
         {
             bool res = false;
             //
@@ -295,7 +295,7 @@ namespace Acco.Calendar.Manager
                 res = await PushEvent(evt);
                 if (res == false)
                 {
-                    throw new PushException("PushEvent failed", evt);
+                    throw new PushException("PushEvent failed", evt as GenericEvent);
                 }
             }
             //
@@ -305,7 +305,6 @@ namespace Acco.Calendar.Manager
         private async Task<IList<GenericEvent>> PullEvents()
         {
             var myEvts = new ObservableCollection<GenericEvent>();
-            myEvts.CollectionChanged += Events_CollectionChanged;
             try
             {
                 var evts = await Service.Events.List(_settings.CalendarId).ExecuteAsync();
@@ -369,18 +368,13 @@ namespace Acco.Calendar.Manager
                             );
                         }
                     }
-                    //
-                    if(!AlreadySynced(myEvt))
-                    {
-                        myEvts.Add(myEvt);
-                    }
+                    myEvts.Add(myEvt);
                 }
             }
             catch (Exception ex)
             {
                 Console.WriteLine("Exception: [{0}]", ex.Message);
             }
-            myEvts.CollectionChanged -= Events_CollectionChanged;
             return myEvts;
         }
 
@@ -392,13 +386,11 @@ namespace Acco.Calendar.Manager
             //       so we have to filter them manually
             if (evts != null)
             {
-                evts.CollectionChanged += Events_CollectionChanged;
                 var excludedEvts = evts.Where(x => (x.Start < @from && x.End > to)).ToList(); // todo: have to test this
                 foreach (var excludedEvt in excludedEvts)
                 {
                     evts.Remove(excludedEvt);
                 }
-                evts.CollectionChanged -= Events_CollectionChanged;
             }
             else
             {
@@ -418,13 +410,11 @@ namespace Acco.Calendar.Manager
         {
             var calendar = new GenericCalendar
             {
-                Events = new ObservableCollection<GenericEvent>()
+                Events = new DBCollection<IEvent>()
             };
-            calendar.Events.CollectionChanged += Events_CollectionChanged;
-            calendar.Events = await PullEvents(from, to) as ObservableCollection<GenericEvent>;
+            calendar.Events = await PullEvents(from, to) as DBCollection<IEvent>;
             calendar.Id = _settings.CalendarId;
             calendar.Name = _settings.CalendarId;
-            if (calendar.Events != null) calendar.Events.CollectionChanged -= Events_CollectionChanged;
             return calendar;
         }
     }

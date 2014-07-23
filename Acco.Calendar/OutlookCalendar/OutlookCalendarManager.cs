@@ -1,5 +1,4 @@
 ﻿using System.Linq;
-using System.Security.Cryptography.X509Certificates;
 using Acco.Calendar.Event;
 using Acco.Calendar.Location;
 
@@ -155,9 +154,6 @@ namespace Acco.Calendar.Manager
                 };
 #endif
                 //
-                myCalendar.Events = new ObservableCollection<GenericEvent>();
-                myCalendar.Events.CollectionChanged += Events_CollectionChanged;
-                //
                 Items evts = CalendarFolder.Items;
                 evts.Sort("[Start]");
                 var filter = "[Start] >= '"
@@ -204,15 +200,9 @@ namespace Acco.Calendar.Manager
                         myEvt.Recurrence = new OutlookRecurrence();
                         ((OutlookRecurrence)myEvt.Recurrence).Parse(evt.GetRecurrencePattern());
                     }
-                    //
-                    if(!AlreadySynced(myEvt))
-                    { 
-                        // add it to calendar events.
-                        myCalendar.Events.Add(myEvt);
-                    }
+                    // add it to calendar events.
+                    myCalendar.Events.Add(myEvt);
                 }
-                //
-                myCalendar.Events.CollectionChanged -= Events_CollectionChanged;
             }
             catch (System.Exception ex)
             {
