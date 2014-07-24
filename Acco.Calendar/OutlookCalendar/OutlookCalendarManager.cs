@@ -21,6 +21,8 @@ namespace Acco.Calendar.Manager
 {
     public sealed class OutlookCalendarManager : GenericCalendarManager
     {
+        private static readonly log4net.ILog Log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+
         private Application OutlookApplication { get; set; }
 
         private NameSpace MapiNameSpace { get; set; }
@@ -39,6 +41,7 @@ namespace Acco.Calendar.Manager
 
         private void Initialize()
         {
+            Log.Info("Initializing...");
             OutlookApplication = new Application();
             MapiNameSpace = OutlookApplication.GetNamespace("MAPI");
             CalendarFolder = MapiNameSpace.GetDefaultFolder(OlDefaultFolders.olFolderCalendar);
@@ -46,6 +49,7 @@ namespace Acco.Calendar.Manager
 
         public override bool Push(ICalendar calendar)
         {
+            Log.Info(String.Format("Pushing calendar [{0}] to outlook", calendar.Id));
             var result = true;
             // TODO: set various infos here
             //
@@ -58,12 +62,14 @@ namespace Acco.Calendar.Manager
 
         public override ICalendar Pull()
         {
+            Log.Info("Pulling calendar from outlook");
             return Pull(from: DateTime.Now.Add(new TimeSpan(-30 /*days*/, 0 /* hours */, 0 /*minutes*/, 0 /* seconds*/)),
                         to: DateTime.Now.Add(new TimeSpan(30 /*days*/, 0 /* hours */, 0 /*minutes*/, 0 /* seconds*/)));
         }
 
         private static List<GenericPerson> ExtractRecipientInfos(AppointmentItem item)
         {
+            Log.Info("Extracting recipients infos");
             const string prSmtpAddress = @"http://schemas.microsoft.com/mapi/proptag/0x39FE001E";
             var people = new List<GenericPerson>();
             if (item == null)
@@ -120,6 +126,7 @@ namespace Acco.Calendar.Manager
                 //
                 if (people.All(p => p.Name != person.Name) && people.All(e => e.Email != person.Email))
                 {
+                    Log.Info(String.Format("Adding person with email [{0}] to outlook", person.Email));
                     people.Add(person);
                 }
             }
@@ -141,9 +148,10 @@ namespace Acco.Calendar.Manager
 
         public override ICalendar Pull(DateTime from, DateTime to)
         {
+            Log.Info(String.Format("Pulling calendar from outlook, from[{0}] to [{1}]", from, to));
             var myCalendar = new GenericCalendar
             {
-                Events = new DBCollection<GenericEvent>()
+                Events = new DbCollection<GenericEvent>()
             };
             try
             {
@@ -162,6 +170,7 @@ namespace Acco.Calendar.Manager
                             + from.ToString("g")
                             + "' AND [End] <= '"
                             + to.ToString("g") + "'";
+                Log.Debug(String.Format("Filter string [{0}]", filter));
                 evts = evts.Restrict(filter);
                 //
                 foreach (AppointmentItem evt in evts)
@@ -208,7 +217,7 @@ namespace Acco.Calendar.Manager
             }
             catch (System.Exception ex)
             {
-                Console.WriteLine("Exception: [{0}]", ex.Message);
+                Log.Error("Exception", ex);
             }
             //
             return myCalendar;

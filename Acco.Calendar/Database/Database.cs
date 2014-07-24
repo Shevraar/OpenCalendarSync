@@ -9,11 +9,13 @@ namespace Acco.Calendar.Database
 {
     public sealed class Storage
     {
-        private static volatile Storage instance;
+        private static readonly log4net.ILog Log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+        private static volatile Storage _instance;
         private static readonly object SyncRoot = new Object();
 
         private Storage()
         {
+            Log.Info("Initializing storage...");
             Client = new MongoClient(ConnectionString);
             Server = Client.GetServer();
             Database = Server.GetDatabase("AccoCalendar");
@@ -37,15 +39,15 @@ namespace Acco.Calendar.Database
         {
             get
             {
-                if (instance == null)
+                if (_instance == null)
                 {
                     lock (SyncRoot)
                     {
-                        if (instance == null)
-                            instance = new Storage();
+                        if (_instance == null)
+                            _instance = new Storage();
                     }
                 }
-                return instance;
+                return _instance;
             }
         }
     }

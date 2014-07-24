@@ -3,37 +3,32 @@ using Acco.Calendar.Event;
 using Acco.Calendar.Person;
 using MongoDB.Driver.Builders;
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel.DataAnnotations;
 
 namespace Acco.Calendar
 {
-    public interface IDBActions<T> where T: IEvent
+    public interface IDbActions<in T> where T: IEvent
     {
         void Save(T item);
         void Delete(T item);
         bool IsAlreadySynced(T item);
     }
 
-    public class DBCollection<T> : Collection<T>, IDBActions<T> where T: IEvent
+    public class DbCollection<T> : Collection<T>, IDbActions<T> where T: IEvent
     {
+        private static readonly log4net.ILog Log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+
         public void Save(T item)
         {
             var r = Storage.Instance.Appointments.Save(item);
             if (!r.Ok)
             {
-                Console.BackgroundColor = ConsoleColor.Red; // add these in utils.
-                Console.ForegroundColor = ConsoleColor.White; // add these in utils. (Utilities.Warning(...) - Utilities.Error(...) - Utilities.Info(...)
-                Console.WriteLine("Event [{0}] was not added", item.Id);
-                Console.ResetColor();
+                Log.Error(String.Format("[{0}] was not added", item.Id));
             }
             else
             {
-                Console.BackgroundColor = ConsoleColor.Green; // add these in utils.
-                Console.ForegroundColor = ConsoleColor.Black; // add these in utils. (Utilities.Warning(...) - Utilities.Error(...) - Utilities.Info(...)
-                Console.WriteLine("Event [{0}] added", item.Id);
-                Console.ResetColor();
+                Log.Info(String.Format("[{0}] was added", item.Id));
             }
         }
 
@@ -43,35 +38,27 @@ namespace Acco.Calendar
             var r = Storage.Instance.Appointments.Remove(query);
             if (!r.Ok)
             {
-                Console.BackgroundColor = ConsoleColor.Yellow; // add these in utils.
-                Console.ForegroundColor = ConsoleColor.Black; // add these in utils. (Utilities.Warning(...) - Utilities.Error(...) - Utilities.Info(...)
-                Console.WriteLine("Event [{0}] was not removed", item.Id);
-                Console.ResetColor();
+                Log.Warn(String.Format("[{0}] was not removed", item.Id));
             }
             else
             {
-                Console.BackgroundColor = ConsoleColor.Red; // add these in utils.
-                Console.ForegroundColor = ConsoleColor.White; // add these in utils. (Utilities.Warning(...) - Utilities.Error(...) - Utilities.Info(...)
-                Console.WriteLine("Event [{0}] removed", item.Id);
-                Console.ResetColor();
+                Log.Info(String.Format("[{0}] was removed", item.Id));
             }
         }
 
         public bool IsAlreadySynced(T item)
         {
-            var isPresent = false;
+            bool isPresent;
             // first: check if the item has already been added to the shared database
             var query = Query<T>.EQ(x => x.Id, item.Id);
             if (Storage.Instance.Appointments.FindOneAs<T>(query) == null)
             {
+                Log.Debug(String.Format("[{0}] was not found", item.Id));
                 isPresent = false;
             }
             else 
             { 
-                Console.BackgroundColor = ConsoleColor.Yellow;
-                Console.ForegroundColor = ConsoleColor.DarkGray;
-                Console.WriteLine("Event [{0}] is already present on database", item.Id);
-                Console.ResetColor();
+                Log.Warn(String.Format("[{0}] already on database", item.Id));
                 isPresent = true;
             }
             return isPresent;
@@ -101,7 +88,7 @@ namespace Acco.Calendar
 
         GenericPerson Creator { get; set; }
 
-        DBCollection<GenericEvent> Events { get; set; }
+        DbCollection<GenericEvent> Events { get; set; }
     }
 
     public class GenericCalendar : ICalendar
@@ -113,6 +100,6 @@ namespace Acco.Calendar
 
         public GenericPerson Creator { get; set; }
 
-        public DBCollection<GenericEvent> Events { get; set; }
+        public DbCollection<GenericEvent> Events { get; set; }
     }
 }

@@ -1,4 +1,6 @@
 ﻿//
+
+using System;
 using DDay.iCal;
 
 //
@@ -6,6 +8,7 @@ namespace Acco.Calendar.Event
 {
     public class GoogleRecurrence : GenericRecurrence
     {
+        private static readonly log4net.ILog Log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
         public override string Get()
         {
             var modifiedPattern = Pattern.ToString();
@@ -18,8 +21,10 @@ namespace Acco.Calendar.Event
         {
             if (rules is string)
             {
+                Log.Info(String.Format("Parsing GoogleRecurrence [{0}]", rules));
                 var stringRules = rules as string;
                 Pattern = new RecurrencePattern(stringRules);
+                Log.Debug(String.Format("iCalendar recurrence pattern is [{0}]", Pattern));
             }
             else
             {

@@ -30,6 +30,8 @@ namespace Acco.Calendar.Manager
     /// </summary>
     public sealed class GoogleCalendarManager : GenericCalendarManager
     {
+        private static readonly log4net.ILog Log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+
         private CalendarService Service { get; set; }
 
         private UserCredential Credential { get; set; }
@@ -57,6 +59,7 @@ namespace Acco.Calendar.Manager
 
         public override ICalendar Pull()
         {
+            Log.Info("Pulling calendar from google");
             var pullTask = PullAsync();
             pullTask.RunSynchronously();
             return pullTask.Result;
@@ -64,15 +67,17 @@ namespace Acco.Calendar.Manager
 
         public override async Task<bool> PushAsync(ICalendar calendar)
         {
+            Log.Info(String.Format("Pushing calendar to google [{0}]", calendar.Id));
             var res = await PushEvents(calendar.Events);
             return res;
         }
 
         public override async Task<ICalendar> PullAsync()
         {
+            Log.Info("Pulling calendar from google");
             var calendar = new GenericCalendar
             {
-                Events = await PullEvents() as DBCollection<GenericEvent>,
+                Events = await PullEvents() as DbCollection<GenericEvent>,
                 Id = _settings.CalendarId,
                 Name = _settings.CalendarName
             };
@@ -81,7 +86,8 @@ namespace Acco.Calendar.Manager
 
         public async Task<bool> Initialize(string clientId, string clientSecret, string calendarName)
         {
-            bool res = await Authenticate(clientId, clientSecret);
+            Log.Info(String.Format("Initializing google calendar [{0}]", calendarName));
+            var res = await Authenticate(clientId, clientSecret);
             //
             var googleDb = Storage.Instance.Database.GetCollection<GoogleCalendarSettings>("google");
             //
@@ -89,24 +95,36 @@ namespace Acco.Calendar.Manager
                           select e).Any();
             if (result == false)
             {
+                Log.Warn("Didn't find any saved settings, saving them");
                 // save settings
                 _settings.CalendarName = calendarName;
                 _settings.CalendarId = (await CreateCalendar()).Id;
-                googleDb.Insert<GoogleCalendarSettings>(_settings);
+                var r = googleDb.Insert<GoogleCalendarSettings>(_settings);
+                if (r.Ok)
+                {
+                    Log.Info(String.Format("Successfully saved settings [{0}]", _settings));
+                }
+                else
+                {
+                    Log.Error(String.Format("Did not save settings!"));    
+                    throw new Exception("Failed to save google calendar settings");
+                }
             }
             else
             {
+                Log.Info("Getting settings from db...");
                 // get settings
                 var selectSettings = (from c in googleDb.AsQueryable()
                                       select c).First<GoogleCalendarSettings>();
                 _settings = selectSettings;
+                Log.Info(String.Format("[{0}]", _settings));
             }
             //
             if (_settings.CalendarId != null)
             {
                 if (_settings.CalendarId == (await GetCalendar(_settings.CalendarId)).Id)
                 {
-                    Console.WriteLine("Our calendarId matches the one on google!");
+                    Log.Debug(String.Format("Our calendarId matches the one on google!"));
                 }
             }
             //
@@ -115,7 +133,8 @@ namespace Acco.Calendar.Manager
 
         private async Task<bool> Authenticate(string clientId, string clientSecret)
         {
-            bool res = true;
+            Log.Info("Authenticating to google");
+            var res = true;
             try
             {
                 DataStore = new FileDataStore(DataStorePath);
@@ -138,7 +157,7 @@ namespace Acco.Calendar.Manager
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Exception: [{0}]", ex.Message);
+                Log.Error("Exception", ex);
                 res = false;
             }
             return res;
@@ -151,6 +170,7 @@ namespace Acco.Calendar.Manager
 
         private Task<Google.Apis.Calendar.v3.Data.Calendar> CreateCalendar()
         {
+            Log.Info("Creating calendar");
             Task<Google.Apis.Calendar.v3.Data.Calendar> createCalendar = null;
             try
             {
@@ -163,22 +183,28 @@ namespace Acco.Calendar.Manager
             }
             catch (GoogleApiException ex)
             {
-                Console.WriteLine("GoogleApiException [{0}] = [{1}]", ex.Message, ex.StackTrace);
+                Log.Error("GoogleApiException", ex);
+            }
+            catch (Exception ex)
+            {
+                Log.Error("Exception", ex);
             }
             return createCalendar;
         }
 
         private async Task<bool> RemoveCalendar(string calendarId)
         {
+            Log.Info(String.Format("Removing calendar [{0}]", calendarId));
             var res = false;
             var deleteResult = await Service.Calendars.Delete(calendarId).ExecuteAsync();
             if (deleteResult == "") { res = true; }
-            else { Console.WriteLine("Error while removing calendar [{0}] => [{1}]", calendarId, deleteResult); }
+            else { Log.Error(String.Format("Error removing calendar [{0}], deleteResult [{1}]", calendarId, deleteResult)); ; }
             return res;
         }
 
         private async Task<bool> PushEvent(IEvent evt)
         {
+            Log.Debug(String.Format("Pushing event [{0}]", evt.Id));
             var res = false;
             //
             try
@@ -275,15 +301,12 @@ namespace Acco.Calendar.Manager
             }
             catch (GoogleApiException ex)
             {
-                Console.WriteLine("GoogleApiException: [{0}]", ex.Message); //todo: add improved logging...
-                Console.WriteLine("\tServiceName: [{0}]", ex.ServiceName); //todo: add improved logging...
-                Console.WriteLine("\tTargetSite: [{0}]", ex.TargetSite); //todo: add improved logging...
-                Console.WriteLine("\tHttpStatusCode: [{0}]", ex.HttpStatusCode); //todo: add improved logging...
-                Console.WriteLine("\tStackTrace: [{0}]", ex.StackTrace); //todo: add improved logging...
+                Log.Error("GoogleApiException", ex);
+                res = false;
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Exception: [{0}]", ex.Message); //todo: add improved logging...
+                Log.Error("Exception", ex);
                 res = false;
             }
             //
@@ -292,7 +315,7 @@ namespace Acco.Calendar.Manager
 
         private async Task<bool> PushEvents(IEnumerable<IEvent> evts)
         {
-            bool res = false;
+            var res = false;
             //
             foreach (var evt in evts)
             {
@@ -308,7 +331,8 @@ namespace Acco.Calendar.Manager
 
         private async Task<IList<GenericEvent>> PullEvents()
         {
-            var myEvts = new DBCollection<GenericEvent>();
+            Log.Info("Pulling events");
+            var myEvts = new DbCollection<GenericEvent>();
             try
             {
                 var evts = await Service.Events.List(_settings.CalendarId).ExecuteAsync();
@@ -377,15 +401,16 @@ namespace Acco.Calendar.Manager
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Exception: [{0}]", ex.Message);
+                Log.Error("Exception", ex);
             }
             return myEvts;
         }
 
         private async Task<IList<GenericEvent>> PullEvents(DateTime from, DateTime to)
         {
-            var myEvts = new DBCollection<GenericEvent>();
-            var evts = (await PullEvents()) as DBCollection<GenericEvent>;
+            Log.Info(String.Format("Pulling events from [{0}] to [{1}]", from, to));
+            var myEvts = new DbCollection<GenericEvent>();
+            var evts = (await PullEvents()) as DbCollection<GenericEvent>;
             // note: google doesn't provide a direct way to filter events when listing them
             //       so we have to filter them manually
             if (evts != null)
@@ -414,9 +439,9 @@ namespace Acco.Calendar.Manager
         {
             var calendar = new GenericCalendar
             {
-                Events = new DBCollection<GenericEvent>()
+                Events = new DbCollection<GenericEvent>()
             };
-            calendar.Events = await PullEvents(from, to) as DBCollection<GenericEvent>;
+            calendar.Events = await PullEvents(from, to) as DbCollection<GenericEvent>;
             calendar.Id = _settings.CalendarId;
             calendar.Name = _settings.CalendarId;
             return calendar;
@@ -432,5 +457,15 @@ namespace Acco.Calendar.Manager
         public string CalendarName { get; set; }
 
         public string ApplicationName { get { return "Google Calendar to Outlook"; } }
+
+        public override string ToString()
+        {
+            var s = "[";
+            s += "Id:" + Id;
+            s += "CalendarId:" + CalendarId;
+            s += "ApplicationName:" + CalendarName;
+            s += "]";
+            return s;
+        }
     }
 }
