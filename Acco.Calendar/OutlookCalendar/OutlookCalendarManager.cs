@@ -151,7 +151,7 @@ namespace Acco.Calendar.Manager
                 }
                 // free busy
                 // todo: finish parsing freebusy info
-                var fb = recipient.FreeBusy(DateTime.Now /* what date do we pass here? */, 30 /* minutes */); // every "1" means that 30 minutes are busy
+                //var fb = recipient.FreeBusy(DateTime.Now /* what date do we pass here? */, 30 /* minutes */); // every "1" means that 30 minutes are busy
                 //
                 if (people.All(p => p.Name != person.Name) && people.All(e => e.Email != person.Email))
                 {
