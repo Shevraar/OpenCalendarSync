@@ -384,11 +384,11 @@ namespace Acco.Calendar.Manager
                     // Attendees
                     if (evt.Attendees != null)
                     {
-                        myEvt.Attendees = new List<GenericPerson>();
+                        myEvt.Attendees = new List<GenericAttendee>();
                         foreach (var attendee in evt.Attendees)
                         {
                             myEvt.Attendees.Add(
-                                new GenericPerson
+                                new GenericAttendee
                                 {
                                     Email = attendee.Email,
                                     Name = attendee.DisplayName

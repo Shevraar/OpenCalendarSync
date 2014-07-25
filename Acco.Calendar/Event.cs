@@ -85,7 +85,7 @@ namespace Acco.Calendar.Event
 
         GenericRecurrence Recurrence { get; set; }
 
-        List<GenericPerson> Attendees { get; set; }
+        List<GenericAttendee> Attendees { get; set; }
     }
 
     public class GenericEvent : IEvent
@@ -136,7 +136,7 @@ namespace Acco.Calendar.Event
 
         public GenericRecurrence Recurrence { get; set; }
 
-        public List<GenericPerson> Attendees { get; set; }
+        public List<GenericAttendee> Attendees { get; set; }
 
         public override string ToString()
         {

@@ -26,4 +26,19 @@ namespace Acco.Calendar.Person
 
         public string LastName { get; set; }
     }
+
+    public enum ResponseStatus : sbyte
+    {
+        Accepted,
+        Declined,
+        Tentative,
+        Organized,
+        None,
+        NotResponded
+    }
+
+    public class GenericAttendee : GenericPerson
+    {
+        public ResponseStatus Response { get; set; }
+    }
 }

@@ -67,11 +67,11 @@ namespace Acco.Calendar.Manager
                         to: DateTime.Now.Add(new TimeSpan(30 /*days*/, 0 /* hours */, 0 /*minutes*/, 0 /* seconds*/)));
         }
 
-        private static List<GenericPerson> ExtractRecipientInfos(AppointmentItem item)
+        private static List<GenericAttendee> ExtractRecipientInfos(AppointmentItem item)
         {
             Log.Info("Extracting recipients infos");
             const string prSmtpAddress = @"http://schemas.microsoft.com/mapi/proptag/0x39FE001E";
-            var people = new List<GenericPerson>();
+            var people = new List<GenericAttendee>();
             if (item == null)
             {
                 throw new ArgumentNullException();
@@ -79,12 +79,14 @@ namespace Acco.Calendar.Manager
             //
             foreach (Recipient recipient in item.Recipients)
             {
-                var person = new GenericPerson
+                var person = new GenericAttendee
                 {
-                    Name = recipient.Name
+                    Name = recipient.Name,
+                    Response = ResponseStatus.None
                 };
                 //
                 var recipientAddressEntry = recipient.AddressEntry;
+                // find attedee's email
                 if (recipientAddressEntry.Type == "EX")
                 {
                     if (recipientAddressEntry != null)
@@ -122,6 +124,29 @@ namespace Acco.Calendar.Manager
                     {
                         person.Email = recipient.Address;
                     }
+                }
+                // find attendee's response to the meeting
+                Log.Debug(String.Format("[{0}] response status is [{1}]", person.Email, recipient.MeetingResponseStatus));
+                switch (recipient.MeetingResponseStatus)
+                {
+                    case OlResponseStatus.olResponseAccepted:
+                        person.Response = ResponseStatus.Accepted;
+                        break;
+                    case OlResponseStatus.olResponseTentative:
+                        person.Response = ResponseStatus.Tentative;
+                        break;
+                    case OlResponseStatus.olResponseDeclined:
+                        person.Response = ResponseStatus.Declined;
+                        break;
+                    case OlResponseStatus.olResponseOrganized:
+                        person.Response = ResponseStatus.Organized;
+                        break;
+                    case OlResponseStatus.olResponseNone:
+                        person.Response = ResponseStatus.None;
+                        break;
+                    case OlResponseStatus.olResponseNotResponded:
+                        person.Response = ResponseStatus.NotResponded;
+                        break;
                 }
                 //
                 if (people.All(p => p.Name != person.Name) && people.All(e => e.Email != person.Email))
