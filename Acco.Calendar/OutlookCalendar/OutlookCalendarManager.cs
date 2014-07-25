@@ -126,7 +126,7 @@ namespace Acco.Calendar.Manager
                 //
                 if (people.All(p => p.Name != person.Name) && people.All(e => e.Email != person.Email))
                 {
-                    Log.Info(String.Format("Adding person with email [{0}] to outlook", person.Email));
+                    Log.Info(String.Format("Adding [{0}] to people", person.Email));
                     people.Add(person);
                 }
             }
