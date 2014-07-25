@@ -125,7 +125,8 @@ namespace Acco.Calendar.Manager
                         person.Email = recipient.Address;
                     }
                 }
-                // find attendee's response to the meeting
+                // find attendee's response to the meeting 
+                // todo: check why OlResponseStatus is always olResponseNone
                 Log.Debug(String.Format("[{0}] response status is [{1}]", person.Email, recipient.MeetingResponseStatus));
                 switch (recipient.MeetingResponseStatus)
                 {
@@ -189,16 +190,16 @@ namespace Acco.Calendar.Manager
                 };
 #endif
                 //
-                Items evts = CalendarFolder.Items;
-                evts.Sort("[Start]");
+                Items items = CalendarFolder.Items;
+                items.Sort("[Start]");
                 var filter = "[Start] >= '"
                             + from.ToString("g")
                             + "' AND [End] <= '"
                             + to.ToString("g") + "'";
                 Log.Debug(String.Format("Filter string [{0}]", filter));
-                evts = evts.Restrict(filter);
+                items = items.Restrict(filter);
                 //
-                foreach (AppointmentItem evt in evts)
+                foreach (AppointmentItem evt in items)
                 {
                     //
                     var myEvt = new GenericEvent(   id: evt.EntryID,
