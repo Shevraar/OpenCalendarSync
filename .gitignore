@@ -11,3 +11,4 @@ bin
 /Acco.Calendar/GoogleCalendar/*.TMP
 /Acco.Calendar/OutlookCalendar/*.TMP
 /Acco.Calendar/OutlookCalendar/*.ev4
+/Acco.Calendar.Console.Work
