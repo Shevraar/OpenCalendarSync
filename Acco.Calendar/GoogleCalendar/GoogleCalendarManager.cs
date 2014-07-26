@@ -1,17 +1,15 @@
 ﻿using Acco.Calendar.Database;
-
 //
 using Acco.Calendar.Event;
 using Acco.Calendar.Location;
 using Acco.Calendar.Person;
-
+using Acco.Calendar.Utilities;
 //
 using Google;
 using Google.Apis.Auth.OAuth2;
 using Google.Apis.Calendar.v3;
 using Google.Apis.Services;
 using Google.Apis.Util.Store;
-
 //
 using MongoDB.Driver.Linq;
 using System;
@@ -253,10 +251,12 @@ namespace Acco.Calendar.Manager
                     myEvt.Attendees = new List<Google.Apis.Calendar.v3.Data.EventAttendee>();
                     foreach (var person in evt.Attendees)
                     {
+                        var r = EnumHelper.GetAttributeOfType<GoogleResponseStatus>(person.Response);
                         myEvt.Attendees.Add(new Google.Apis.Calendar.v3.Data.EventAttendee
                         {
                             Email = person.Email,
                             DisplayName = person.Name,
+                            ResponseStatus = r.Text
                         });
                     }
                 }
@@ -384,14 +384,34 @@ namespace Acco.Calendar.Manager
                     // Attendees
                     if (evt.Attendees != null)
                     {
-                        myEvt.Attendees = new List<GenericPerson>();
+                        myEvt.Attendees = new List<GenericAttendee>();
                         foreach (var attendee in evt.Attendees)
                         {
+                            var r = ResponseStatus.None;
+                            switch(attendee.ResponseStatus)
+                            {
+                                case "accepted":
+                                    r = ResponseStatus.Accepted;
+                                    break;
+                                case "tentative":
+                                    r = ResponseStatus.Tentative;
+                                    break;
+                                case "needsAction":
+                                    r = ResponseStatus.NotResponded;
+                                    break;
+                                case "declined":
+                                    r = ResponseStatus.Declined;
+                                    break;
+                                default:
+                                    r = ResponseStatus.None;
+                                    break;
+                            }
                             myEvt.Attendees.Add(
-                                new GenericPerson
+                                new GenericAttendee
                                 {
                                     Email = attendee.Email,
-                                    Name = attendee.DisplayName
+                                    Name = attendee.DisplayName,
+                                    Response = r
                                 }
                             );
                         }
