@@ -68,13 +68,12 @@ namespace Acco.Calendar.Manager
             Log.Info(String.Format("Pushing calendar to google [{0}]", calendar.Id));
             if(LastCalendar != null)
             {
-                var eventsToRemove = LastCalendar.Events.Where(e => !calendar.Events.Any(elc => elc.Id != e.Id));
+                var eventsToRemove = LastCalendar.Events.Where(e => !calendar.Events.Any(elc => elc.Id == e.Id));
+                //var eventsToRemove = calendar.Events.Except(LastCalendar.Events);
+                //var eventsToRemove = LastCalendar.Events.Except(calendar.Events);
                 RemoveEvents(eventsToRemove);
             }
-            else
-            {
-                LastCalendar = calendar;
-            }
+            LastCalendar = calendar;
             var res = await PushEvents(calendar.Events);
             return res;
         }
@@ -329,10 +328,13 @@ namespace Acco.Calendar.Manager
             //
             foreach (var evt in evts)
             {
-                res = await PushEvent(evt);
-                if (res == false)
+                if (evt.EventAction == EventAction.Add)
                 {
-                    throw new PushException("PushEvent failed", evt as GenericEvent);
+                    res = await PushEvent(evt);
+                    if (res == false)
+                    {
+                        throw new PushException("PushEvent failed", evt as GenericEvent);
+                    }
                 }
             }
             //
@@ -484,7 +486,7 @@ namespace Acco.Calendar.Manager
             {
                 try
                 {
-                    var res = await Service.Events.Delete(_settings.CalendarId, evt.Id).ExecuteAsync();
+                    var res = await Service.Events.Delete(_settings.CalendarId, evt.Id).ExecuteAsync(); //todo: this fails, probably because iCalUID is different from google Id
                     Log.Debug(res);
                 }
                 catch (GoogleApiException ex)
