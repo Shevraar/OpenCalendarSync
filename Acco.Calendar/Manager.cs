@@ -62,6 +62,7 @@ namespace Acco.Calendar
 
         public void StartLookingForChanges(TimeSpan updateInterval)
         {
+            UpdateInterval = updateInterval;
             var timer = new Timer(LookForCalendarChanges);
             timer.Change(updateInterval, TimeSpan.FromMilliseconds(-1));
         }
@@ -73,7 +74,7 @@ namespace Acco.Calendar
             t.Dispose();
             await UpdateAsync();
             var timer = new Timer(LookForCalendarChanges);
-            timer.Change(TimeSpan.FromSeconds(30), TimeSpan.FromMilliseconds(-1));
+            timer.Change(UpdateInterval, TimeSpan.FromMilliseconds(-1));
         }
 
         protected internal Task UpdateAsync()
@@ -106,5 +107,7 @@ namespace Acco.Calendar
         }
 
         protected internal ICalendar LastCalendar { get; set; }
+
+        private TimeSpan UpdateInterval { get; set; }
     }
 }
