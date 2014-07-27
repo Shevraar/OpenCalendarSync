@@ -482,8 +482,19 @@ namespace Acco.Calendar.Manager
         {
             foreach (var evt in eventsToRemove)
             {
-                var res = await Service.Events.Delete(_settings.CalendarId, evt.Id).ExecuteAsync();
-                Log.Debug(res);
+                try
+                {
+                    var res = await Service.Events.Delete(_settings.CalendarId, evt.Id).ExecuteAsync();
+                    Log.Debug(res);
+                }
+                catch (GoogleApiException ex)
+                {
+                    Log.Error("GoogleApiException", ex);
+                }
+                catch (Exception ex)
+                {
+                    Log.Error("Exception", ex);
+                }
             }
         }
     }

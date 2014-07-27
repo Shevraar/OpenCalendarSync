@@ -73,7 +73,7 @@ namespace Acco.Calendar
             t.Dispose();
             await UpdateAsync();
             var timer = new Timer(LookForCalendarChanges);
-            timer.Change(TimeSpan.FromSeconds(15), TimeSpan.FromMilliseconds(-1));
+            timer.Change(TimeSpan.FromSeconds(30), TimeSpan.FromMilliseconds(-1));
         }
 
         protected internal Task UpdateAsync()
