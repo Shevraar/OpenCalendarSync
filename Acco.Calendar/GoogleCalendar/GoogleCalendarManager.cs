@@ -66,6 +66,15 @@ namespace Acco.Calendar.Manager
         public override async Task<bool> PushAsync(ICalendar calendar)
         {
             Log.Info(String.Format("Pushing calendar to google [{0}]", calendar.Id));
+            if(LastCalendar != null)
+            {
+                var eventsToRemove = LastCalendar.Events.Where(e => !calendar.Events.Any(elc => elc.Id != e.Id));
+                RemoveEvents(eventsToRemove);
+            }
+            else
+            {
+                LastCalendar = calendar;
+            }
             var res = await PushEvents(calendar.Events);
             return res;
         }
@@ -79,6 +88,7 @@ namespace Acco.Calendar.Manager
                 Id = _settings.CalendarId,
                 Name = _settings.CalendarName
             };
+            LastCalendar = calendar;
             return calendar;
         }
 
@@ -251,7 +261,7 @@ namespace Acco.Calendar.Manager
                     myEvt.Attendees = new List<Google.Apis.Calendar.v3.Data.EventAttendee>();
                     foreach (var person in evt.Attendees)
                     {
-                        var r = EnumHelper.GetAttributeOfType<GoogleResponseStatus>(person.Response);
+                        var r = person.Response.GetAttributeOfType<GoogleResponseStatus>();
                         myEvt.Attendees.Add(new Google.Apis.Calendar.v3.Data.EventAttendee
                         {
                             Email = person.Email,
@@ -450,7 +460,7 @@ namespace Acco.Calendar.Manager
 
         public override ICalendar Pull(DateTime from, DateTime to)
         {
-            var pullTask = PullAsync();
+            var pullTask = PullAsync(from, to);
             pullTask.RunSynchronously();
             return pullTask.Result;
         }
@@ -463,8 +473,18 @@ namespace Acco.Calendar.Manager
             };
             calendar.Events = await PullEvents(from, to) as DbCollection<GenericEvent>;
             calendar.Id = _settings.CalendarId;
-            calendar.Name = _settings.CalendarId;
+            calendar.Name = _settings.CalendarName;
+            LastCalendar = calendar;
             return calendar;
+        }
+
+        private async void RemoveEvents(IEnumerable<GenericEvent> eventsToRemove)
+        {
+            foreach (var evt in eventsToRemove)
+            {
+                var res = await Service.Events.Delete(_settings.CalendarId, evt.Id).ExecuteAsync();
+                Log.Debug(res);
+            }
         }
     }
 

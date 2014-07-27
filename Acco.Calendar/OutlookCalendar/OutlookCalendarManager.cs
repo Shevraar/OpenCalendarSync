@@ -1,4 +1,4 @@
-﻿using System.Linq;
+﻿
 using Acco.Calendar.Event;
 using Acco.Calendar.Location;
 
@@ -14,6 +14,7 @@ using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using System.Linq;
 
 //
 
@@ -248,7 +249,7 @@ namespace Acco.Calendar.Manager
             {
                 Log.Error("Exception", ex);
             }
-            //
+            LastCalendar = myCalendar;
             return myCalendar;
         }
 
@@ -256,6 +257,11 @@ namespace Acco.Calendar.Manager
         {
             var pull = Task.Factory.StartNew(() => Pull(from, to));
             return await pull;
+        }
+
+        private async void RemoveEvents(IEnumerable<GenericEvent> eventsToRemove)
+        {
+            //todo: do something here..
         }
     }
 }
