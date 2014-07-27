@@ -19,6 +19,8 @@ namespace Acco.Calendar
     {
         private static readonly log4net.ILog Log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
+        public bool AddDuplicates { get; set; }
+
         public void Save(T item)
         {
             var r = Storage.Instance.Appointments.Save(item);
@@ -69,12 +71,18 @@ namespace Acco.Calendar
             if(IsAlreadySynced(item) == false)
             {
                 Save(item); 
-                base.InsertItem(index, item);
+                item.EventAction = EventAction.Add;
             }
+            else
+            {
+                item.EventAction = EventAction.Duplicate;
+            }
+            base.InsertItem(index, item);
         }
 
         protected override void RemoveItem(int index)
         {
+            Items[index].EventAction = EventAction.Remove;
             Delete(Items[index]);
             base.RemoveItem(index);
         }

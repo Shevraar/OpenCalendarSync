@@ -85,6 +85,15 @@ namespace Acco.Calendar.Event
         GenericRecurrence Recurrence { get; set; }
 
         List<GenericAttendee> Attendees { get; set; }
+
+        EventAction EventAction { get; set; }
+    }
+
+    public enum EventAction : sbyte
+    {
+        Add = 0,
+        Remove,
+        Duplicate
     }
 
     public class GenericEvent : IEvent
@@ -148,5 +157,7 @@ namespace Acco.Calendar.Event
             eventString += "]";
             return eventString;
         }
+
+        public EventAction EventAction { get; set; }
     }
 }
