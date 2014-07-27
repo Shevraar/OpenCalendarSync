@@ -1,9 +1,5 @@
-﻿using Acco.Calendar.Database;
-using Acco.Calendar.Event;
-using MongoDB.Bson;
-using MongoDB.Driver.Builders;
+﻿using Acco.Calendar.Event;
 using System;
-using System.Collections.Specialized;
 
 //
 using System.Threading.Tasks;

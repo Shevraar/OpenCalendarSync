@@ -59,7 +59,6 @@ namespace Acco.Calendar.Event
     public interface IEvent
     {
         [Required(ErrorMessage = "This field is required")]
-        // todo: add other DataAnnotations validation stuff (such as min lenght and max lenght, etc)
         string Id { get; set; }
 
         GenericPerson Organizer { get; set; }

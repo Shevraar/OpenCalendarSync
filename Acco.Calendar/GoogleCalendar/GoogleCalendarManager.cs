@@ -196,7 +196,7 @@ namespace Acco.Calendar.Manager
             var res = false;
             var deleteResult = await Service.Calendars.Delete(calendarId).ExecuteAsync();
             if (deleteResult == "") { res = true; }
-            else { Log.Error(String.Format("Error removing calendar [{0}], deleteResult [{1}]", calendarId, deleteResult)); ; }
+            else { Log.Error(String.Format("Error removing calendar [{0}], deleteResult [{1}]", calendarId, deleteResult)); }
             return res;
         }
 
@@ -387,7 +387,7 @@ namespace Acco.Calendar.Manager
                         myEvt.Attendees = new List<GenericAttendee>();
                         foreach (var attendee in evt.Attendees)
                         {
-                            var r = ResponseStatus.None;
+                            ResponseStatus r;
                             switch(attendee.ResponseStatus)
                             {
                                 case "accepted":
