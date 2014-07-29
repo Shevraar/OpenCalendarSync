@@ -66,6 +66,14 @@ namespace Acco.Calendar.Manager
         public override async Task<bool> PushAsync(ICalendar calendar)
         {
             Log.Info(String.Format("Pushing calendar to google [{0}]", calendar.Id));
+            if(LastCalendar != null)
+            {
+                var eventsToRemove = LastCalendar.Events.Where(e => !calendar.Events.Any(elc => elc.Id == e.Id));
+                //var eventsToRemove = calendar.Events.Except(LastCalendar.Events);
+                //var eventsToRemove = LastCalendar.Events.Except(calendar.Events);
+                RemoveEvents(eventsToRemove);
+            }
+            LastCalendar = calendar;
             var res = await PushEvents(calendar.Events);
             return res;
         }
@@ -79,6 +87,7 @@ namespace Acco.Calendar.Manager
                 Id = _settings.CalendarId,
                 Name = _settings.CalendarName
             };
+            LastCalendar = calendar;
             return calendar;
         }
 
@@ -196,7 +205,7 @@ namespace Acco.Calendar.Manager
             var res = false;
             var deleteResult = await Service.Calendars.Delete(calendarId).ExecuteAsync();
             if (deleteResult == "") { res = true; }
-            else { Log.Error(String.Format("Error removing calendar [{0}], deleteResult [{1}]", calendarId, deleteResult)); ; }
+            else { Log.Error(String.Format("Error removing calendar [{0}], deleteResult [{1}]", calendarId, deleteResult)); }
             return res;
         }
 
@@ -207,9 +216,16 @@ namespace Acco.Calendar.Manager
             //
             try
             {
+                /*
+                    Identifier of the event. When creating new single or recurring events, you can specify their IDs. Provided IDs must follow these rules:
+                    characters allowed in the ID are those used in base32hex encoding, i.e. lowercase letters a-v and digits 0-9, see section 3.1.2 in RFC2938
+                    the length of the ID must be between 5 and 1024 characters
+                    the ID must be unique per calendar
+                    Due to the globally distributed nature of the system, we cannot guarantee that ID collisions will be detected at event creation time. To minimize the risk of collisions we recommend using an established UUID algorithm such as one described in RFC4122.
+                 */
                 var myEvt = new Google.Apis.Calendar.v3.Data.Event
                 {
-                    ICalUID = evt.Id
+                    Id = evt.Id.ToLower()
                 };
                 // Id
                 // Organizer
@@ -251,7 +267,7 @@ namespace Acco.Calendar.Manager
                     myEvt.Attendees = new List<Google.Apis.Calendar.v3.Data.EventAttendee>();
                     foreach (var person in evt.Attendees)
                     {
-                        var r = EnumHelper.GetAttributeOfType<GoogleResponseStatus>(person.Response);
+                        var r = person.Response.GetAttributeOfType<GoogleResponseStatus>();
                         myEvt.Attendees.Add(new Google.Apis.Calendar.v3.Data.EventAttendee
                         {
                             Email = person.Email,
@@ -319,10 +335,13 @@ namespace Acco.Calendar.Manager
             //
             foreach (var evt in evts)
             {
-                res = await PushEvent(evt);
-                if (res == false)
+                if (evt.EventAction == EventAction.Add)
                 {
-                    throw new PushException("PushEvent failed", evt as GenericEvent);
+                    res = await PushEvent(evt);
+                    if (res == false)
+                    {
+                        throw new PushException("PushEvent failed", evt as GenericEvent);
+                    }
                 }
             }
             //
@@ -387,7 +406,7 @@ namespace Acco.Calendar.Manager
                         myEvt.Attendees = new List<GenericAttendee>();
                         foreach (var attendee in evt.Attendees)
                         {
-                            var r = ResponseStatus.None;
+                            ResponseStatus r;
                             switch(attendee.ResponseStatus)
                             {
                                 case "accepted":
@@ -450,7 +469,7 @@ namespace Acco.Calendar.Manager
 
         public override ICalendar Pull(DateTime from, DateTime to)
         {
-            var pullTask = PullAsync();
+            var pullTask = PullAsync(from, to);
             pullTask.RunSynchronously();
             return pullTask.Result;
         }
@@ -463,8 +482,29 @@ namespace Acco.Calendar.Manager
             };
             calendar.Events = await PullEvents(from, to) as DbCollection<GenericEvent>;
             calendar.Id = _settings.CalendarId;
-            calendar.Name = _settings.CalendarId;
+            calendar.Name = _settings.CalendarName;
+            LastCalendar = calendar;
             return calendar;
+        }
+
+        private async void RemoveEvents(IEnumerable<GenericEvent> eventsToRemove)
+        {
+            foreach (var evt in eventsToRemove)
+            {
+                try
+                {
+                    var res = await Service.Events.Delete(_settings.CalendarId, evt.Id.ToLower()).ExecuteAsync(); //todo: this fails, probably because iCalUID is different from google Id
+                    Log.Debug(res);
+                }
+                catch (GoogleApiException ex)
+                {
+                    Log.Error("GoogleApiException", ex);
+                }
+                catch (Exception ex)
+                {
+                    Log.Error("Exception", ex);
+                }
+            }
         }
     }
 
