@@ -284,14 +284,12 @@ namespace Acco.Calendar.Manager
                 //
                 if (createdEvent != null) { res = true; }
             }
-            catch (GoogleApiException ex)
+            catch (AggregateException ex)
             {
-                Log.Error("GoogleApiException", ex);
-                res = false;
-            }
-            catch (Exception ex)
-            {
-                Log.Error("Exception", ex);
+                foreach (var e in ex.InnerExceptions)
+                {
+                    Log.Error(e.GetType().ToString(), e);
+                }
                 res = false;
             }
             //
