@@ -24,7 +24,8 @@ namespace Acco.Calendar.Manager
     /// </summary>
     public sealed class GoogleCalendarManager : GenericCalendarManager
     {
-        private static readonly log4net.ILog Log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+        private static readonly log4net.ILog Log =
+            log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
         private CalendarService Service { get; set; }
 
@@ -32,9 +33,15 @@ namespace Acco.Calendar.Manager
 
         private FileDataStore DataStore { get; set; }
 
-        private static string DataStorePath { get { return "outlook2googlecalendar"; } }
+        private static string DataStorePath
+        {
+            get { return "outlook2googlecalendar"; }
+        }
 
-        private static string SettingsPath { get { return "googlecalendarsettings.json";  } }
+        private static string SettingsPath
+        {
+            get { return "googlecalendarsettings.json"; }
+        }
 
         private GoogleCalendarSettings _settings = new GoogleCalendarSettings();
         private static readonly GoogleCalendarManager instance = new GoogleCalendarManager();
@@ -44,7 +51,10 @@ namespace Acco.Calendar.Manager
         {
         }
 
-        public static GoogleCalendarManager Instance { get { return instance; } }
+        public static GoogleCalendarManager Instance
+        {
+            get { return instance; }
+        }
 
         public override bool Push(ICalendar calendar)
         {
@@ -64,7 +74,7 @@ namespace Acco.Calendar.Manager
         public override async Task<bool> PushAsync(ICalendar calendar)
         {
             Log.Info(String.Format("Pushing calendar to google [{0}]", calendar.Id));
-            if(LastCalendar != null)
+            if (LastCalendar != null)
             {
                 var eventsToRemove = LastCalendar.Events.Where(e => !calendar.Events.Any(elc => elc.Id == e.Id));
                 RemoveEvents(eventsToRemove);
@@ -93,7 +103,7 @@ namespace Acco.Calendar.Manager
             var authenticated = await Authenticate(clientId, clientSecret);
             if (authenticated)
             {
-                CreateSettings(calendarName);
+                await CreateSettings(calendarName); //todo: await doesn't seem to work very well... it doesn't await fuck all.
                 var theirCalendarId = (await GetCalendar(_settings.CalendarId)).Id;
                 if (_settings.CalendarId == theirCalendarId)
                 {
@@ -101,7 +111,8 @@ namespace Acco.Calendar.Manager
                 }
                 else
                 {
-                    throw new Exception(String.Format("Stored calendar id [{0}] doesn't match the one on google [{1}]", _settings.CalendarId, theirCalendarId));
+                    throw new Exception(String.Format("Stored calendar id [{0}] doesn't match the one on google [{1}]",
+                        _settings.CalendarId, theirCalendarId));
                 }
             }
             return authenticated;
@@ -120,10 +131,10 @@ namespace Acco.Calendar.Manager
                         ClientId = clientId,
                         ClientSecret = clientSecret
                     },
-                    new[] { CalendarService.Scope.Calendar },
-                    "user",
-                    CancellationToken.None,
-                    DataStore);
+                        new[] {CalendarService.Scope.Calendar},
+                        "user",
+                        CancellationToken.None,
+                        DataStore);
                 //
                 Service = new CalendarService(new BaseClientService.Initializer
                 {
@@ -149,13 +160,12 @@ namespace Acco.Calendar.Manager
             Log.Info("Creating calendar");
             try
             {
-                var calendar = await Service.Calendars.Insert(new Google.Apis.Calendar.v3.Data.Calendar
+                return await Service.Calendars.Insert(new Google.Apis.Calendar.v3.Data.Calendar
                 {
                     Summary = calendarName,
                     TimeZone = "Europe/Rome", //todo: configurable
                     Description = "Automatically created: " + DateTime.Now.ToString("g")
                 }).ExecuteAsync();
-                return calendar;
             }
             catch (GoogleApiException ex)
             {
@@ -173,8 +183,14 @@ namespace Acco.Calendar.Manager
             Log.Info(String.Format("Removing calendar [{0}]", calendarId));
             var res = false;
             var deleteResult = await Service.Calendars.Delete(calendarId).ExecuteAsync();
-            if (deleteResult == "") { res = true; }
-            else { Log.Error(String.Format("Error removing calendar [{0}], deleteResult [{1}]", calendarId, deleteResult)); }
+            if (deleteResult == "")
+            {
+                res = true;
+            }
+            else
+            {
+                Log.Error(String.Format("Error removing calendar [{0}], deleteResult [{1}]", calendarId, deleteResult));
+            }
             return res;
         }
 
@@ -270,7 +286,7 @@ namespace Acco.Calendar.Manager
                 // Recurrency
                 if (evt.Recurrence != null)
                 {
-                    myEvt.Recurrence = new List<string> { evt.Recurrence.Get() };
+                    myEvt.Recurrence = new List<string> {evt.Recurrence.Get()};
                 }
                 // Creation date
                 if (evt.Created.HasValue)
@@ -278,11 +294,14 @@ namespace Acco.Calendar.Manager
                     myEvt.Created = evt.Created;
                 }
                 //
-                myEvt.Reminders = new Google.Apis.Calendar.v3.Data.Event.RemindersData { UseDefault = true };
+                myEvt.Reminders = new Google.Apis.Calendar.v3.Data.Event.RemindersData {UseDefault = true};
                 //
                 var createdEvent = await Service.Events.Insert(myEvt, _settings.CalendarId).ExecuteAsync();
                 //
-                if (createdEvent != null) { res = true; }
+                if (createdEvent != null)
+                {
+                    res = true;
+                }
             }
             catch (AggregateException ex)
             {
@@ -325,9 +344,9 @@ namespace Acco.Calendar.Manager
                 foreach (var evt in evts.Items)
                 {
                     var myEvt = new GenericEvent(id: evt.Id,
-                                                    summary: evt.Summary,
-                                                    description: evt.Description,
-                                                    location: new GenericLocation { Name = evt.Location });
+                        summary: evt.Summary,
+                        description: evt.Description,
+                        location: new GenericLocation {Name = evt.Location});
                     // Organizer
                     if (evt.Organizer != null)
                     {
@@ -365,7 +384,8 @@ namespace Acco.Calendar.Manager
                     if (evt.Recurrence != null)
                     {
                         myEvt.Recurrence = new GoogleRecurrence();
-                        ((GoogleRecurrence)myEvt.Recurrence).Parse(evt.Recurrence[0]); //warning: this only parses one line inside Recurrence...
+                        ((GoogleRecurrence) myEvt.Recurrence).Parse(evt.Recurrence[0]);
+                            //warning: this only parses one line inside Recurrence...
                     }
                     // Attendees
                     if (evt.Attendees != null)
@@ -374,7 +394,7 @@ namespace Acco.Calendar.Manager
                         foreach (var attendee in evt.Attendees)
                         {
                             ResponseStatus r;
-                            switch(attendee.ResponseStatus)
+                            switch (attendee.ResponseStatus)
                             {
                                 case "accepted":
                                     r = ResponseStatus.Accepted;
@@ -399,7 +419,7 @@ namespace Acco.Calendar.Manager
                                     Name = attendee.DisplayName,
                                     Response = r
                                 }
-                            );
+                                );
                         }
                     }
                     myEvts.Add(myEvt);
@@ -460,7 +480,8 @@ namespace Acco.Calendar.Manager
             {
                 try
                 {
-                    var res = await Service.Events.Delete(_settings.CalendarId, evt.Id.ToLower()).ExecuteAsync(); //todo: this fails, probably because iCalUID is different from google Id
+                    var res = await Service.Events.Delete(_settings.CalendarId, evt.Id.ToLower()).ExecuteAsync();
+                        //todo: this fails, probably because iCalUID is different from google Id
                     Log.Debug(res);
                 }
                 catch (GoogleApiException ex)
@@ -474,62 +495,75 @@ namespace Acco.Calendar.Manager
             }
         }
 
-        private async void CreateSettings(string calendarName)
+        private Task CreateSettings(string calendarName)
         {
-            if (File.Exists(SettingsPath))
-            {
-                using (var r = new StreamReader(SettingsPath))
-                {
-                    var json = r.ReadToEnd();
-                    _settings = JsonConvert.DeserializeObject<GoogleCalendarSettings>(json);
-                    if (_settings.CalendarName != calendarName)
+            Task t =
+                Task.Factory.StartNew(
+                    async () =>
                     {
-                        Log.Warn(String.Format("Calendar name mismatch stored:[{0}], provided:[{1}]", _settings.CalendarName, calendarName));
-                        Log.Warn("Deleting old calendar and making a new one");
-                        var isCalendarDeleted = await RemoveCalendar(_settings.CalendarId);
-                        if (isCalendarDeleted)
+                        if (File.Exists(SettingsPath))
                         {
+                            using (var r = new StreamReader(SettingsPath))
+                            {
+                                var json = r.ReadToEnd();
+                                _settings = JsonConvert.DeserializeObject<GoogleCalendarSettings>(json);
+                                if (_settings.CalendarName != calendarName)
+                                {
+                                    Log.Warn(String.Format("Calendar name mismatch stored:[{0}], provided:[{1}]",
+                                        _settings.CalendarName, calendarName));
+                                    Log.Warn("Deleting old calendar and making a new one");
+                                    var isCalendarDeleted = await RemoveCalendar(_settings.CalendarId);
+                                    if (isCalendarDeleted)
+                                    {
 
+                                    }
+                                    else
+                                    {
+                                        throw new Exception(
+                                            String.Format("Failed to delete calendar id[{0}] and name [{1}]",
+                                                _settings.CalendarId, _settings.CalendarId));
+                                    }
+                                }
+                            }
                         }
                         else
                         {
-                            throw new Exception(String.Format("Failed to delete calendar id[{0}] and name [{1}]", _settings.CalendarId, _settings.CalendarId));
+                            try
+                            {
+                                var calendarId = (await CreateCalendar(calendarName)).Id;
+                                _settings = new GoogleCalendarSettings
+                                {
+                                    CalendarName = calendarName,
+                                    CalendarId = calendarId
+                                };
+                            }
+                            catch (Exception ex)
+                            {
+                                Log.Error("Exception", ex);
+                            }
+                            var jsonSettings = JsonConvert.SerializeObject(_settings);
+                            using (var sw = new StreamWriter(SettingsPath))
+                            {
+                                await sw.WriteAsync(jsonSettings);
+                            }
                         }
+                        Log.Info(_settings.ToJson());
                     }
-                }
-            }
-            else
-            {
-                try
-                {
-                    var calendarId = (await CreateCalendar(calendarName)).Id;
-                    _settings = new GoogleCalendarSettings
-                    {
-                        CalendarName = calendarName,
-                        CalendarId = calendarId
-                    };
-                }
-                catch (Exception ex)
-                {
-                    Log.Error("Exception", ex);
-                }
-                var jsonSettings = JsonConvert.SerializeObject(_settings);
-                using (var sw = new StreamWriter(SettingsPath))
-                {
-                    await sw.WriteAsync(jsonSettings);
-                }
-            }
-            Log.Info(_settings.ToJson());
+                    );
+            return t;
         }
-    }
 
-    [Serializable]
-    internal class GoogleCalendarSettings
-    {
-        public string CalendarId { get; set; }
+        [Serializable]
+        internal class GoogleCalendarSettings
+        {
+            public string CalendarId { get; set; }
 
-        public string CalendarName { get; set; }
+            public string CalendarName { get; set; }
 
-        public string ApplicationName { get { return "Outlook2GoogleCalendar"; } }
+            public string ApplicationName
+            {
+                get { return "Outlook2GoogleCalendar"; }
+            }
+        }
     }
 }
