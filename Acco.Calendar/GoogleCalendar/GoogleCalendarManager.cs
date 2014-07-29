@@ -216,9 +216,16 @@ namespace Acco.Calendar.Manager
             //
             try
             {
+                /*
+                    Identifier of the event. When creating new single or recurring events, you can specify their IDs. Provided IDs must follow these rules:
+                    characters allowed in the ID are those used in base32hex encoding, i.e. lowercase letters a-v and digits 0-9, see section 3.1.2 in RFC2938
+                    the length of the ID must be between 5 and 1024 characters
+                    the ID must be unique per calendar
+                    Due to the globally distributed nature of the system, we cannot guarantee that ID collisions will be detected at event creation time. To minimize the risk of collisions we recommend using an established UUID algorithm such as one described in RFC4122.
+                 */
                 var myEvt = new Google.Apis.Calendar.v3.Data.Event
                 {
-                    ICalUID = evt.Id
+                    Id = evt.Id.ToLower()
                 };
                 // Id
                 // Organizer
@@ -486,7 +493,7 @@ namespace Acco.Calendar.Manager
             {
                 try
                 {
-                    var res = await Service.Events.Delete(_settings.CalendarId, evt.Id).ExecuteAsync(); //todo: this fails, probably because iCalUID is different from google Id
+                    var res = await Service.Events.Delete(_settings.CalendarId, evt.Id.ToLower()).ExecuteAsync(); //todo: this fails, probably because iCalUID is different from google Id
                     Log.Debug(res);
                 }
                 catch (GoogleApiException ex)
