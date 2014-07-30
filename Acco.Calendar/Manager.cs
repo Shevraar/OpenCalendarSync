@@ -9,7 +9,7 @@ using MongoDB.Driver.Builders;
 using System.Collections.Generic;
 using System.Threading;
 
-namespace Acco.Calendar
+namespace Acco.Calendar.Manager
 {
     [Serializable]
     public class PushException : Exception

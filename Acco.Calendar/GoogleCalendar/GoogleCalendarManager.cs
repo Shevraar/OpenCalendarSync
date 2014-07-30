@@ -40,7 +40,7 @@ namespace Acco.Calendar.Manager
 
         private static string SettingsPath
         {
-            get { return "googlecalendarsettings.json"; }
+            get { return "googlecalendar.settings"; }
         }
 
         private GoogleCalendarSettings _settings = new GoogleCalendarSettings();
@@ -103,7 +103,7 @@ namespace Acco.Calendar.Manager
             var authenticated = await Authenticate(clientId, clientSecret);
             if (authenticated)
             {
-                await CreateSettings(calendarName); //todo: await doesn't seem to work very well... it doesn't await fuck all.
+                _settings = await CreateSettings(calendarName); 
                 var theirCalendarId = (await GetCalendar(_settings.CalendarId)).Id;
                 if (_settings.CalendarId == theirCalendarId)
                 {
@@ -481,7 +481,6 @@ namespace Acco.Calendar.Manager
                 try
                 {
                     var res = await Service.Events.Delete(_settings.CalendarId, evt.Id.ToLower()).ExecuteAsync();
-                        //todo: this fails, probably because iCalUID is different from google Id
                     Log.Debug(res);
                 }
                 catch (GoogleApiException ex)
@@ -495,62 +494,57 @@ namespace Acco.Calendar.Manager
             }
         }
 
-        private Task CreateSettings(string calendarName)
+        private async Task<GoogleCalendarSettings> CreateSettings(string calendarName)
         {
-            Task t =
-                Task.Factory.StartNew(
-                    async () =>
+            GoogleCalendarSettings _temporarySettings = null;
+            if (File.Exists(SettingsPath))
+            {
+                using (var r = new StreamReader(SettingsPath))
+                {
+                    var json = r.ReadToEnd();
+                    _temporarySettings = JsonConvert.DeserializeObject<GoogleCalendarSettings>(json);
+                    if (_temporarySettings.CalendarName != calendarName)
                     {
-                        if (File.Exists(SettingsPath))
+                        Log.Warn(String.Format("Calendar name mismatch stored:[{0}], provided:[{1}]",
+                            _temporarySettings.CalendarName, calendarName));
+                        Log.Warn("Deleting old calendar and making a new one");
+                        var isCalendarDeleted = await RemoveCalendar(_temporarySettings.CalendarId);
+                        if (isCalendarDeleted)
                         {
-                            using (var r = new StreamReader(SettingsPath))
-                            {
-                                var json = r.ReadToEnd();
-                                _settings = JsonConvert.DeserializeObject<GoogleCalendarSettings>(json);
-                                if (_settings.CalendarName != calendarName)
-                                {
-                                    Log.Warn(String.Format("Calendar name mismatch stored:[{0}], provided:[{1}]",
-                                        _settings.CalendarName, calendarName));
-                                    Log.Warn("Deleting old calendar and making a new one");
-                                    var isCalendarDeleted = await RemoveCalendar(_settings.CalendarId);
-                                    if (isCalendarDeleted)
-                                    {
-
-                                    }
-                                    else
-                                    {
-                                        throw new Exception(
-                                            String.Format("Failed to delete calendar id[{0}] and name [{1}]",
-                                                _settings.CalendarId, _settings.CalendarId));
-                                    }
-                                }
-                            }
+                            Log.Info("Calendar successfully deleted");
                         }
                         else
                         {
-                            try
-                            {
-                                var calendarId = (await CreateCalendar(calendarName)).Id;
-                                _settings = new GoogleCalendarSettings
-                                {
-                                    CalendarName = calendarName,
-                                    CalendarId = calendarId
-                                };
-                            }
-                            catch (Exception ex)
-                            {
-                                Log.Error("Exception", ex);
-                            }
-                            var jsonSettings = JsonConvert.SerializeObject(_settings);
-                            using (var sw = new StreamWriter(SettingsPath))
-                            {
-                                await sw.WriteAsync(jsonSettings);
-                            }
+                            throw new Exception(
+                                String.Format("Failed to delete calendar id[{0}] and name [{1}]",
+                                    _temporarySettings.CalendarId, _temporarySettings.CalendarId));
                         }
-                        Log.Info(_settings.ToJson());
                     }
-                    );
-            return t;
+                }
+            }
+            else
+            {
+                try
+                {
+                    var calendarId = (await CreateCalendar(calendarName)).Id;
+                    _temporarySettings = new GoogleCalendarSettings
+                    {
+                        CalendarName = calendarName,
+                        CalendarId = calendarId
+                    };
+                }
+                catch (Exception ex)
+                {
+                    Log.Error("Exception", ex);
+                }
+                var jsonSettings = JsonConvert.SerializeObject(_temporarySettings);
+                using (var sw = new StreamWriter(SettingsPath))
+                {
+                    await sw.WriteAsync(jsonSettings);
+                }
+            }
+            Log.Info(_temporarySettings.ToJson());
+            return _temporarySettings;
         }
 
         [Serializable]
