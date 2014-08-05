@@ -210,7 +210,7 @@ namespace Acco.Calendar.Manager
                  */
                 var myEvt = new Google.Apis.Calendar.v3.Data.Event
                 {
-                    Id = evt.Id.ToLower()
+                    Id = Base32.ToBase32String(StringHelper.GetBytes(evt.Id))
                 };
                 // Id
                 // Organizer
@@ -343,10 +343,10 @@ namespace Acco.Calendar.Manager
                 var evts = await Service.Events.List(_settings.CalendarId).ExecuteAsync();
                 foreach (var evt in evts.Items)
                 {
-                    var myEvt = new GenericEvent(id: evt.Id,
-                        summary: evt.Summary,
-                        description: evt.Description,
-                        location: new GenericLocation {Name = evt.Location});
+                    var myEvt = new GenericEvent(   id: StringHelper.GetString(Base32.FromBase32String(evt.Id)),
+                                                    summary: evt.Summary,
+                                                    description: evt.Description,
+                                                    location: new GenericLocation {Name = evt.Location});
                     // Organizer
                     if (evt.Organizer != null)
                     {
@@ -480,7 +480,7 @@ namespace Acco.Calendar.Manager
             {
                 try
                 {
-                    var res = await Service.Events.Delete(_settings.CalendarId, evt.Id.ToLower()).ExecuteAsync();
+                    var res = await Service.Events.Delete(_settings.CalendarId, Base32.ToBase32String(StringHelper.GetBytes(evt.Id))).ExecuteAsync();
                     Log.Debug(res);
                 }
                 catch (GoogleApiException ex)
