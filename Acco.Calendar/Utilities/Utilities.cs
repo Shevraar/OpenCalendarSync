@@ -44,7 +44,7 @@ namespace Acco.Calendar.Utilities
     public sealed class Base32 
     {
         // the valid chars for the encoding
-        private static string ValidChars = "QAZ2WSX3" + "EDC4RFV5" + "TGB6YHN7" + "UJM8K9LP";
+        private static string ValidChars = "0123456789ABCDEFGHIJKLMNOPQRSTUV";
  
         /// <summary>
         /// Converts an array of bytes to a Base32-k string.

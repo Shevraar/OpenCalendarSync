@@ -196,7 +196,9 @@ namespace Acco.Calendar.Manager
 
         private async Task<bool> PushEvent(IEvent evt)
         {
-            Log.Debug(String.Format("Pushing event [{0}]", Base32.ToBase32String(StringHelper.GetBytes(evt.Id)).ToLower()));
+            var base32EventId = Base32.ToBase32String(StringHelper.GetBytes(evt.Id)).ToLower();
+            Log.Debug(String.Format("Pushing event with googleId[{0}]", base32EventId));
+            Log.Debug(String.Format("and iCalUID [{0}]", evt.Id));
             var res = false;
             //
             try
@@ -210,7 +212,7 @@ namespace Acco.Calendar.Manager
                  */
                 var myEvt = new Google.Apis.Calendar.v3.Data.Event
                 {
-                    Id = Base32.ToBase32String(StringHelper.GetBytes(evt.Id)).ToLower()
+                    Id = base32EventId
                 };
                 // Id
                 // Organizer
@@ -343,7 +345,8 @@ namespace Acco.Calendar.Manager
                 var evts = await Service.Events.List(_settings.CalendarId).ExecuteAsync();
                 foreach (var evt in evts.Items)
                 {
-                    var myEvt = new GenericEvent(   id: StringHelper.GetString(Base32.FromBase32String(evt.Id)),
+                    var iCalUID = StringHelper.GetString(Base32.FromBase32String(evt.Id));
+                    var myEvt = new GenericEvent(   id: iCalUID,
                                                     summary: evt.Summary,
                                                     description: evt.Description,
                                                     location: new GenericLocation {Name = evt.Location});
@@ -480,6 +483,8 @@ namespace Acco.Calendar.Manager
             {
                 try
                 {
+                    Log.Debug(String.Format("Remove event with google id [{0}]", Base32.ToBase32String(StringHelper.GetBytes(evt.Id)).ToLower()));
+                    Log.Debug(String.Format("and iCalUID [{0}]", evt.Id));
                     var res = await Service.Events.Delete(_settings.CalendarId, Base32.ToBase32String(StringHelper.GetBytes(evt.Id)).ToLower()).ExecuteAsync();
                     Log.Debug(res);
                 }
