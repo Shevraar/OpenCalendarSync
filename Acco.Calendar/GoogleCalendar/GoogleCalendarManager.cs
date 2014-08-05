@@ -15,6 +15,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using WallF.BaseNEncodings;
 
 namespace Acco.Calendar.Manager
 {
@@ -196,8 +197,8 @@ namespace Acco.Calendar.Manager
 
         private async Task<bool> PushEvent(IEvent evt)
         {
-            var base32EventId = Base32.ToBase32String(StringHelper.GetBytes(evt.Id)).ToLower();
-            Log.Debug(String.Format("Pushing event with googleId[{0}]", base32EventId));
+            var googleEventId = StringHelper.GoogleBase32.ToBaseString(StringHelper.GetBytes(evt.Id)).ToLower();
+            Log.Debug(String.Format("Pushing event with googleEventId[{0}]", googleEventId));
             Log.Debug(String.Format("and iCalUID [{0}]", evt.Id));
             var res = false;
             //
@@ -212,7 +213,7 @@ namespace Acco.Calendar.Manager
                  */
                 var myEvt = new Google.Apis.Calendar.v3.Data.Event
                 {
-                    Id = base32EventId
+                    Id = googleEventId
                 };
                 // Id
                 // Organizer
@@ -305,6 +306,11 @@ namespace Acco.Calendar.Manager
                     res = true;
                 }
             }
+            catch(GoogleApiException ex)
+            {
+                Log.Error("GoogleApiException", ex);
+                res = false;
+            }
             catch (AggregateException ex)
             {
                 foreach (var e in ex.InnerExceptions)
@@ -345,7 +351,7 @@ namespace Acco.Calendar.Manager
                 var evts = await Service.Events.List(_settings.CalendarId).ExecuteAsync();
                 foreach (var evt in evts.Items)
                 {
-                    var iCalUID = StringHelper.GetString(Base32.FromBase32String(evt.Id));
+                    var iCalUID = StringHelper.GetString(StringHelper.GoogleBase32.FromBaseString(evt.Id));
                     var myEvt = new GenericEvent(   id: iCalUID,
                                                     summary: evt.Summary,
                                                     description: evt.Description,
@@ -483,9 +489,9 @@ namespace Acco.Calendar.Manager
             {
                 try
                 {
-                    Log.Debug(String.Format("Remove event with google id [{0}]", Base32.ToBase32String(StringHelper.GetBytes(evt.Id)).ToLower()));
+                    Log.Debug(String.Format("Remove event with google id [{0}]", StringHelper.GoogleBase32.ToBaseString(StringHelper.GetBytes(evt.Id))));
                     Log.Debug(String.Format("and iCalUID [{0}]", evt.Id));
-                    var res = await Service.Events.Delete(_settings.CalendarId, Base32.ToBase32String(StringHelper.GetBytes(evt.Id)).ToLower()).ExecuteAsync();
+                    var res = await Service.Events.Delete(_settings.CalendarId, StringHelper.GoogleBase32.ToBaseString(StringHelper.GetBytes(evt.Id))).ExecuteAsync();
                     Log.Debug(res);
                 }
                 catch (GoogleApiException ex)
