@@ -196,7 +196,7 @@ namespace Acco.Calendar.Manager
 
         private async Task<bool> PushEvent(IEvent evt)
         {
-            Log.Debug(String.Format("Pushing event [{0}]", evt.Id));
+            Log.Debug(String.Format("Pushing event [{0}]", Base32.ToBase32String(StringHelper.GetBytes(evt.Id)).ToLower()));
             var res = false;
             //
             try
@@ -210,7 +210,7 @@ namespace Acco.Calendar.Manager
                  */
                 var myEvt = new Google.Apis.Calendar.v3.Data.Event
                 {
-                    Id = Base32.ToBase32String(StringHelper.GetBytes(evt.Id))
+                    Id = Base32.ToBase32String(StringHelper.GetBytes(evt.Id)).ToLower()
                 };
                 // Id
                 // Organizer
@@ -480,7 +480,7 @@ namespace Acco.Calendar.Manager
             {
                 try
                 {
-                    var res = await Service.Events.Delete(_settings.CalendarId, Base32.ToBase32String(StringHelper.GetBytes(evt.Id))).ExecuteAsync();
+                    var res = await Service.Events.Delete(_settings.CalendarId, Base32.ToBase32String(StringHelper.GetBytes(evt.Id)).ToLower()).ExecuteAsync();
                     Log.Debug(res);
                 }
                 catch (GoogleApiException ex)
