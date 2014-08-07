@@ -1,7 +1,7 @@
 CalendarSync
 ============
 
-->A library to help you manage calendar imports on various calendar services, such as Outlook and Google Calendar.<-
+A library to help you manage calendar imports on various calendar services, such as Outlook and Google Calendar.
 
 ___
 
@@ -17,6 +17,8 @@ System Requirements
 
 You will need to setup MongoDB accordingly to http://docs.mongodb.org/manual/tutorial/install-mongodb-on-windows/ or to http://docs.mongodb.org/manual/tutorial/install-mongodb-on-windows/#manually-create-windows-service otherwise the library won't work.
 
+Also, to compile the library you'll also have to install http://msdn.microsoft.com/en-us/library/15s06t57.aspx (Microsoft Office Interop Assemblies) which are used by the OutlookCalendarManager to interact with Outlook and its calendar service.
+
 ___
 
 How it works
@@ -30,7 +32,7 @@ Each calendar "manager" derives from the basic ``ICalendarManager``, that forces
 ### Simple usage
 Each calendar manager provides an instance (singleton) that lets you pull their calendar into a GenericCalendar object, which is then pushable inside a new calendar manager, without any further modifications:
 
-```
+```C#
 // take events from outlook and push em to google
 var calendar = await OutlookCalendarManager.Instance.PullAsync() as GenericCalendar;
 var isLoggedIn = await GoogleCalendarManager.Instance.Initialize("your-google-client-id", "your-google-client-secret", "your-calendar-name");
@@ -44,7 +46,7 @@ if (isLoggedIn) //logged in to google, go on!
 
 If you want to integrate your application inside a service or whatsoever a timed event is provided by using a subscribing policy:
 
-```
+```C#
 var isLoggedIn = await GoogleCalendarManager.Instance.Initialize(Settings.Default.ClientId, Settings.Default.ClientSecret, "Home.Meetings");
 OutlookCalendarManager.Instance.Subscribers = new List<ICalendarManager>
 	{
