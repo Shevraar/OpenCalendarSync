@@ -1,4 +1,4 @@
-CalendarSync
+OpenCalendarSync
 ============
 
 A library to help you manage calendar imports on various calendar services, such as Outlook and Google Calendar.
