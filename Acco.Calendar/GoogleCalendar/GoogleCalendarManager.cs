@@ -59,7 +59,7 @@ namespace Acco.Calendar.Manager
         public override bool Push(ICalendar calendar)
         {
             var pushTask = PushAsync(calendar);
-            pushTask.RunSynchronously();
+            pushTask.Wait();
             return pushTask.Result;
         }
 
@@ -317,17 +317,14 @@ namespace Acco.Calendar.Manager
 
         private async Task<bool> PushEvents(IEnumerable<IEvent> evts)
         {
-            var res = false;
+            var res = true;
             //
-            foreach (var evt in evts)
+            foreach (var evt in evts.Where(evt => evt.EventAction == EventAction.Add))
             {
-                if (evt.EventAction == EventAction.Add)
+                res = await PushEvent(evt);
+                if (res == false)
                 {
-                    res = await PushEvent(evt);
-                    if (res == false)
-                    {
-                        throw new PushException("PushEvent failed", evt as GenericEvent);
-                    }
+                    throw new PushException("PushEvent failed", evt as GenericEvent);
                 }
             }
             //
@@ -496,19 +493,19 @@ namespace Acco.Calendar.Manager
 
         private async Task<GoogleCalendarSettings> CreateSettings(string calendarName)
         {
-            GoogleCalendarSettings _temporarySettings = null;
+            GoogleCalendarSettings temporarySettings = null;
             if (File.Exists(SettingsPath))
             {
                 using (var r = new StreamReader(SettingsPath))
                 {
                     var json = r.ReadToEnd();
-                    _temporarySettings = JsonConvert.DeserializeObject<GoogleCalendarSettings>(json);
-                    if (_temporarySettings.CalendarName != calendarName)
+                    temporarySettings = JsonConvert.DeserializeObject<GoogleCalendarSettings>(json);
+                    if (temporarySettings.CalendarName != calendarName)
                     {
                         Log.Warn(String.Format("Calendar name mismatch stored:[{0}], provided:[{1}]",
-                            _temporarySettings.CalendarName, calendarName));
+                            temporarySettings.CalendarName, calendarName));
                         Log.Warn("Deleting old calendar and making a new one");
-                        var isCalendarDeleted = await RemoveCalendar(_temporarySettings.CalendarId);
+                        var isCalendarDeleted = await RemoveCalendar(temporarySettings.CalendarId);
                         if (isCalendarDeleted)
                         {
                             Log.Info("Calendar successfully deleted");
@@ -517,7 +514,7 @@ namespace Acco.Calendar.Manager
                         {
                             throw new Exception(
                                 String.Format("Failed to delete calendar id[{0}] and name [{1}]",
-                                    _temporarySettings.CalendarId, _temporarySettings.CalendarId));
+                                    temporarySettings.CalendarId, temporarySettings.CalendarId));
                         }
                     }
                 }
@@ -527,7 +524,7 @@ namespace Acco.Calendar.Manager
                 try
                 {
                     var calendarId = (await CreateCalendar(calendarName)).Id;
-                    _temporarySettings = new GoogleCalendarSettings
+                    temporarySettings = new GoogleCalendarSettings
                     {
                         CalendarName = calendarName,
                         CalendarId = calendarId
@@ -537,14 +534,14 @@ namespace Acco.Calendar.Manager
                 {
                     Log.Error("Exception", ex);
                 }
-                var jsonSettings = JsonConvert.SerializeObject(_temporarySettings);
+                var jsonSettings = JsonConvert.SerializeObject(temporarySettings);
                 using (var sw = new StreamWriter(SettingsPath))
                 {
                     await sw.WriteAsync(jsonSettings);
                 }
             }
-            Log.Info(_temporarySettings.ToJson());
-            return _temporarySettings;
+            Log.Info(temporarySettings.ToJson());
+            return temporarySettings;
         }
 
         [Serializable]
