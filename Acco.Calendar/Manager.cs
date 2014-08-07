@@ -1,15 +1,14 @@
-﻿using Acco.Calendar.Database;
-using Acco.Calendar.Event;
-using MongoDB.Driver.Builders;
+﻿using Acco.Calendar.Event;
 using System;
-using System.Collections.Specialized;
 
 //
 using System.Threading.Tasks;
 
 //
+using System.Collections.Generic;
+using System.Threading;
 
-namespace Acco.Calendar
+namespace Acco.Calendar.Manager
 {
     [Serializable]
     public class PushException : Exception
@@ -36,77 +35,78 @@ namespace Acco.Calendar
         ICalendar Pull(DateTime from, DateTime to);
 
         Task<ICalendar> PullAsync(DateTime from, DateTime to);
+
+        IEnumerable<ICalendarManager> Subscribers { get; set; }
+
+        void StartLookingForChanges(TimeSpan updateInterval);
     }
 
     public abstract class GenericCalendarManager : ICalendarManager
     {
+        private static readonly log4net.ILog Log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+
         public abstract bool Push(ICalendar calendar);
 
         public abstract Task<bool> PushAsync(ICalendar calendar);
 
         public abstract ICalendar Pull(); // this gets all the events synchronously
 
-        public abstract Task<ICalendar> PullAsync();  // this gets all the events asynchronously
+        public abstract Task<ICalendar> PullAsync(); // this gets all the events asynchronously
 
         public abstract ICalendar Pull(DateTime from, DateTime to);
 
         public abstract Task<ICalendar> PullAsync(DateTime from, DateTime to);
 
-        protected void Events_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
+        public IEnumerable<ICalendarManager> Subscribers { get; set; }
+
+        public void StartLookingForChanges(TimeSpan updateInterval)
         {
-            if (e.Action == NotifyCollectionChangedAction.Add)
-            {
-                // note: to know which item was added, use NewItems.
-                foreach (GenericEvent item in e.NewItems) //todo: check if its possible to add the list of added events
-                {
-                    // first: check if the item has already been added to the shared database
-                    var query = Query<GenericEvent>.EQ(x => x.Id, item.Id);
-                    var isAlreadyPresent = Storage.Instance.Appointments.FindOneAs<GenericEvent>(query);
-                    if (isAlreadyPresent != null)
-                    {
-                        //todo: fire an event to state that this event is a duplicate
-                        Console.BackgroundColor = ConsoleColor.Yellow; // add these in utils.
-                        Console.ForegroundColor = ConsoleColor.DarkGray;
-                        // add these in utils. (Utilities.Warning(...) - Utilities.Error(...) - Utilities.Info(...)
-                        Console.WriteLine("Event [{0}] is already present on database", item.Id);
-                        Console.ResetColor();
-                    }
-                    else
-                    {
-                        var r = Storage.Instance.Appointments.Save(item);
-                        if (!r.Ok)
-                        {
-                            Console.BackgroundColor = ConsoleColor.Red; // add these in utils.
-                            Console.ForegroundColor = ConsoleColor.White;
-                            // add these in utils. (Utilities.Warning(...) - Utilities.Error(...) - Utilities.Info(...)
-                            Console.WriteLine("Event [{0}] was not added", item.Id);
-                            Console.ResetColor();
-                        }
-                        else
-                        {
-                            Console.BackgroundColor = ConsoleColor.Green; // add these in utils.
-                            Console.ForegroundColor = ConsoleColor.Black;
-                            // add these in utils. (Utilities.Warning(...) - Utilities.Error(...) - Utilities.Info(...)
-                            Console.WriteLine("Event [{0}] added", item.Id);
-                            Console.ResetColor();
-                        }
-                    }
-                }
-            }
-            else if (e.Action == NotifyCollectionChangedAction.Remove)
-            {
-                foreach (GenericEvent item in e.OldItems)
-                //todo: check if its possible to delete the list of removed events
-                {
-                    Console.WriteLine("Event [{0}] removed", item.Id);
-                    var query = Query<GenericEvent>.EQ(evt => evt.Id, item.Id);
-                    Storage.Instance.Appointments.Remove(query);
-                }
-            }
-            else
-            {
-                throw new Exception("Unmanaged Action => " + e.Action);
-            }
+            UpdateInterval = updateInterval;
+            var timer = new Timer(LookForCalendarChanges);
+            timer.Change(updateInterval, TimeSpan.FromMilliseconds(-1));
         }
+
+        private async void LookForCalendarChanges(object state)
+        {
+            Log.Info("Updating calendar...");
+            var t = (Timer) state;
+            t.Dispose();
+            await UpdateAsync();
+            var timer = new Timer(LookForCalendarChanges);
+            timer.Change(UpdateInterval, TimeSpan.FromMilliseconds(-1));
+        }
+
+        protected internal Task UpdateAsync()
+        {
+            var t = Task.Factory.StartNew(async () =>
+            {
+                try
+                {
+                    var newCalendar = await PullAsync();
+                    if (newCalendar != null && LastCalendar != null)
+                    {
+                        foreach (var subscriber in Subscribers)
+                        {
+                            var res = await subscriber.PushAsync(newCalendar);
+                            Log.Debug(res);
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.Error("Exception", ex);
+                }
+            });
+            return t;
+        }
+
+        protected void Update()
+        {
+            UpdateAsync().RunSynchronously();
+        }
+
+        protected internal ICalendar LastCalendar { get; set; }
+
+        private TimeSpan UpdateInterval { get; set; }
     }
 }

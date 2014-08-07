@@ -11,11 +11,14 @@ namespace Acco.Calendar.Event
 {
     public class OutlookRecurrence : GenericRecurrence
     {
+        private static readonly log4net.ILog Log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
         public override void Parse<T>(T rules)
         {
             if (rules is OutlookRecurrencePattern)
             {
+                Log.Info("Parsing OutlookRecurrencePattern...");
                 var outlookRp = rules as OutlookRecurrencePattern;
+                Log.Info(String.Format("Recurrence type is [{0}]", outlookRp.RecurrenceType));
                 switch (outlookRp.RecurrenceType)
                 {
                     case OlRecurrenceType.olRecursDaily:
@@ -39,7 +42,7 @@ namespace Acco.Calendar.Event
                             };
                             if (outlookRp.Occurrences > 0) { Pattern.Count = outlookRp.Occurrences; }
                             else if (outlookRp.PatternEndDate > DateTime.Now) { Pattern.Until = outlookRp.PatternEndDate; }
-                            Pattern.ByDay = extractDaysOfWeek(outlookRp.DayOfWeekMask);
+                            Pattern.ByDay = ExtractDaysOfWeek(outlookRp.DayOfWeekMask);
                         }
                         break;
 
@@ -70,7 +73,7 @@ namespace Acco.Calendar.Event
                             if (outlookRp.Occurrences > 0) { Pattern.Count = outlookRp.Occurrences; }
                             // instance states e.g.: "The Nth Tuesday"
                             if (outlookRp.Instance > 0) { Pattern.BySetPosition = new List<int> { outlookRp.Instance }; }
-                            if (outlookRp.DayOfWeekMask > 0) { Pattern.ByDay = extractDaysOfWeek(outlookRp.DayOfWeekMask); }
+                            if (outlookRp.DayOfWeekMask > 0) { Pattern.ByDay = ExtractDaysOfWeek(outlookRp.DayOfWeekMask); }
                         }
                         break;
 
@@ -84,7 +87,7 @@ namespace Acco.Calendar.Event
                             };
                             if (outlookRp.Occurrences > 0) { Pattern.Count = outlookRp.Occurrences; }
                             else if (outlookRp.PatternEndDate > DateTime.Now) { Pattern.Until = outlookRp.PatternEndDate; }
-                            if (outlookRp.DayOfWeekMask > 0) { Pattern.ByDay = extractDaysOfWeek(outlookRp.DayOfWeekMask); }
+                            if (outlookRp.DayOfWeekMask > 0) { Pattern.ByDay = ExtractDaysOfWeek(outlookRp.DayOfWeekMask); }
                             else if (outlookRp.DayOfMonth > 0) { Pattern.ByMonthDay = new List<int> { outlookRp.DayOfMonth }; }
                         }
                         break;
@@ -99,11 +102,12 @@ namespace Acco.Calendar.Event
                             };
                             if (outlookRp.Occurrences > 0) { Pattern.Count = outlookRp.Occurrences; }
                             else if (outlookRp.PatternEndDate > DateTime.Now) { Pattern.Until = outlookRp.PatternEndDate; }
-                            if (outlookRp.DayOfWeekMask > 0) { Pattern.ByDay = extractDaysOfWeek(outlookRp.DayOfWeekMask); }
+                            if (outlookRp.DayOfWeekMask > 0) { Pattern.ByDay = ExtractDaysOfWeek(outlookRp.DayOfWeekMask); }
                             else if (outlookRp.DayOfMonth > 0) { Pattern.ByMonthDay = new List<int> { outlookRp.DayOfMonth }; }
                         }
                         break;
                 }
+                Log.Debug(String.Format("iCalendar recurrence pattern is [{0}]", Pattern));
             }
             else
             {
@@ -120,12 +124,14 @@ namespace Acco.Calendar.Event
             return modifiedPattern;
         }
 
-        private List<IWeekDay> extractDaysOfWeek(OlDaysOfWeek outlookDaysOfWeekMask)
+        private static List<IWeekDay> ExtractDaysOfWeek(OlDaysOfWeek outlookDaysOfWeekMask)
         {
+            Log.Info(String.Format("Extracting days of week from outlookDaysOfWeekMask [{0}]", outlookDaysOfWeekMask));
             var myDaysOfWeekMask = new List<IWeekDay>();
             //
             if (outlookDaysOfWeekMask.HasFlag(OlDaysOfWeek.olMonday))
             {
+                Log.Debug("Monday");
                 myDaysOfWeekMask.Add(new WeekDay
                 {
                     DayOfWeek = DayOfWeek.Monday
@@ -133,6 +139,7 @@ namespace Acco.Calendar.Event
             }
             if (outlookDaysOfWeekMask.HasFlag(OlDaysOfWeek.olTuesday))
             {
+                Log.Debug("Tuesday");
                 myDaysOfWeekMask.Add(new WeekDay
                 {
                     DayOfWeek = DayOfWeek.Tuesday
@@ -140,6 +147,7 @@ namespace Acco.Calendar.Event
             }
             if (outlookDaysOfWeekMask.HasFlag(OlDaysOfWeek.olWednesday))
             {
+                Log.Debug("Wednesday");
                 myDaysOfWeekMask.Add(new WeekDay
                 {
                     DayOfWeek = DayOfWeek.Wednesday
@@ -147,6 +155,7 @@ namespace Acco.Calendar.Event
             }
             if (outlookDaysOfWeekMask.HasFlag(OlDaysOfWeek.olThursday))
             {
+                Log.Debug("Thursday");
                 myDaysOfWeekMask.Add(new WeekDay
                 {
                     DayOfWeek = DayOfWeek.Thursday
@@ -154,6 +163,7 @@ namespace Acco.Calendar.Event
             }
             if (outlookDaysOfWeekMask.HasFlag(OlDaysOfWeek.olFriday))
             {
+                Log.Debug("Friday");
                 myDaysOfWeekMask.Add(new WeekDay
                 {
                     DayOfWeek = DayOfWeek.Friday
@@ -161,6 +171,7 @@ namespace Acco.Calendar.Event
             }
             if (outlookDaysOfWeekMask.HasFlag(OlDaysOfWeek.olSaturday))
             {
+                Log.Debug("Saturday");
                 myDaysOfWeekMask.Add(new WeekDay
                 {
                     DayOfWeek = DayOfWeek.Saturday
@@ -168,6 +179,7 @@ namespace Acco.Calendar.Event
             }
             if (outlookDaysOfWeekMask.HasFlag(OlDaysOfWeek.olSunday))
             {
+                Log.Debug("Sunday");
                 myDaysOfWeekMask.Add(new WeekDay
                 {
                     DayOfWeek = DayOfWeek.Sunday

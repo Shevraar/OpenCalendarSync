@@ -1,4 +1,5 @@
-﻿using Acco.Calendar.Event;
+﻿
+using Acco.Calendar.Event;
 using Acco.Calendar.Location;
 
 //
@@ -11,9 +12,9 @@ using Microsoft.Office.Interop.Outlook;
 //
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using System.Linq;
 
 //
 
@@ -21,6 +22,8 @@ namespace Acco.Calendar.Manager
 {
     public sealed class OutlookCalendarManager : GenericCalendarManager
     {
+        private static readonly log4net.ILog Log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+
         private Application OutlookApplication { get; set; }
 
         private NameSpace MapiNameSpace { get; set; }
@@ -39,6 +42,7 @@ namespace Acco.Calendar.Manager
 
         private void Initialize()
         {
+            Log.Info("Initializing...");
             OutlookApplication = new Application();
             MapiNameSpace = OutlookApplication.GetNamespace("MAPI");
             CalendarFolder = MapiNameSpace.GetDefaultFolder(OlDefaultFolders.olFolderCalendar);
@@ -46,7 +50,8 @@ namespace Acco.Calendar.Manager
 
         public override bool Push(ICalendar calendar)
         {
-            bool result = true;
+            Log.Info(String.Format("Pushing calendar [{0}] to outlook", calendar.Id));
+            var result = true;
             // TODO: set various infos here
             //
             foreach (var evt in calendar.Events)
@@ -58,15 +63,16 @@ namespace Acco.Calendar.Manager
 
         public override ICalendar Pull()
         {
+            Log.Info("Pulling calendar from outlook");
             return Pull(from: DateTime.Now.Add(new TimeSpan(-30 /*days*/, 0 /* hours */, 0 /*minutes*/, 0 /* seconds*/)),
                         to: DateTime.Now.Add(new TimeSpan(30 /*days*/, 0 /* hours */, 0 /*minutes*/, 0 /* seconds*/)));
         }
 
-        private static List<GenericPerson> ExtractRecipientInfos(AppointmentItem item)
+        private static List<GenericAttendee> ExtractRecipientInfos(AppointmentItem item)
         {
+            Log.Info("Extracting recipients infos");
             const string prSmtpAddress = @"http://schemas.microsoft.com/mapi/proptag/0x39FE001E";
-            var emails = new List<string>();
-            var people = new List<GenericPerson>();
+            var people = new List<GenericAttendee>();
             if (item == null)
             {
                 throw new ArgumentNullException();
@@ -74,12 +80,14 @@ namespace Acco.Calendar.Manager
             //
             foreach (Recipient recipient in item.Recipients)
             {
-                var person = new GenericPerson
+                var person = new GenericAttendee
                 {
-                    Name = recipient.Name
+                    Name = recipient.Name,
+                    Response = ResponseStatus.None
                 };
                 //
                 var recipientAddressEntry = recipient.AddressEntry;
+                // find attedee's email
                 if (recipientAddressEntry.Type == "EX")
                 {
                     if (recipientAddressEntry != null)
@@ -92,7 +100,6 @@ namespace Acco.Calendar.Manager
                             var exchUser = recipientAddressEntry.GetExchangeUser();
                             if (exchUser != null)
                             {
-                                emails.Add(exchUser.PrimarySmtpAddress);
                                 person.Email = exchUser.PrimarySmtpAddress;
                             }
                             else
@@ -102,7 +109,6 @@ namespace Acco.Calendar.Manager
                         }
                         else
                         {
-                            emails.Add(recipientAddressEntry.PropertyAccessor.GetProperty(prSmtpAddress) as string);
                             person.Email = recipientAddressEntry.PropertyAccessor.GetProperty(prSmtpAddress) as string;
                         }
                     }
@@ -115,14 +121,44 @@ namespace Acco.Calendar.Manager
                 {
                     // try to match the address against a regex
                     var email = new Regex(Defines.EmailRegularExpression);
-                    if (email.IsMatch(recipient.Address) &&
-                        !emails.Contains(recipient.Address)) // avoid unnecessary duplicates
+                    if (email.IsMatch(recipient.Address)) 
                     {
-                        emails.Add(recipient.Address);
                         person.Email = recipient.Address;
                     }
                 }
-                people.Add(person);
+                // find attendee's response to the meeting 
+                // todo: check why OlResponseStatus is always olResponseNone
+                Log.Debug(String.Format("[{0}] response status is [{1}]", person.Email, recipient.MeetingResponseStatus));
+                switch (recipient.MeetingResponseStatus)
+                {
+                    case OlResponseStatus.olResponseAccepted:
+                        person.Response = ResponseStatus.Accepted;
+                        break;
+                    case OlResponseStatus.olResponseTentative:
+                        person.Response = ResponseStatus.Tentative;
+                        break;
+                    case OlResponseStatus.olResponseDeclined:
+                        person.Response = ResponseStatus.Declined;
+                        break;
+                    case OlResponseStatus.olResponseOrganized:
+                        person.Response = ResponseStatus.Organized;
+                        break;
+                    case OlResponseStatus.olResponseNone:
+                        person.Response = ResponseStatus.None;
+                        break;
+                    case OlResponseStatus.olResponseNotResponded:
+                        person.Response = ResponseStatus.NotResponded;
+                        break;
+                }
+                // free busy
+                // todo: finish parsing freebusy info
+                //var fb = recipient.FreeBusy(DateTime.Now /* what date do we pass here? */, 30 /* minutes */); // every "1" means that 30 minutes are busy
+                //
+                if (people.All(p => p.Name != person.Name) && people.All(e => e.Email != person.Email))
+                {
+                    Log.Info(String.Format("Adding [{0}] to people", person.Email));
+                    people.Add(person);
+                }
             }
             //
             return people;
@@ -142,7 +178,11 @@ namespace Acco.Calendar.Manager
 
         public override ICalendar Pull(DateTime from, DateTime to)
         {
-            var myCalendar = new GenericCalendar();
+            Log.Info(String.Format("Pulling calendar from outlook, from[{0}] to [{1}]", from, to));
+            var myCalendar = new GenericCalendar
+            {
+                Events = new DbCollection<GenericEvent>()
+            };
             try
             {
                 myCalendar.Id = CalendarFolder.EntryID;
@@ -154,21 +194,19 @@ namespace Acco.Calendar.Manager
                 };
 #endif
                 //
-                myCalendar.Events = new ObservableCollection<GenericEvent>();
-                myCalendar.Events.CollectionChanged += Events_CollectionChanged;
-                //
-                Items evts = CalendarFolder.Items;
-                evts.Sort("[Start]");
+                var items = CalendarFolder.Items;
+                items.Sort("[Start]");
                 var filter = "[Start] >= '"
                             + from.ToString("g")
                             + "' AND [End] <= '"
                             + to.ToString("g") + "'";
-                evts = evts.Restrict(filter);
+                Log.Debug(String.Format("Filter string [{0}]", filter));
+                items = items.Restrict(filter);
                 //
-                foreach (AppointmentItem evt in evts)
+                foreach (AppointmentItem evt in items)
                 {
                     //
-                    var myEvt = new GenericEvent(id: evt.EntryID,
+                    var myEvt = new GenericEvent(   id: evt.EntryID,
                                                     summary: evt.Subject,
                                                     description: evt.Body,
                                                     location: new GenericLocation { Name = evt.Location });
@@ -206,14 +244,12 @@ namespace Acco.Calendar.Manager
                     // add it to calendar events.
                     myCalendar.Events.Add(myEvt);
                 }
-                //
-                myCalendar.Events.CollectionChanged -= Events_CollectionChanged;
             }
             catch (System.Exception ex)
             {
-                Console.WriteLine("Exception: [{0}]", ex.Message);
+                Log.Error("Exception", ex);
             }
-            //
+            LastCalendar = myCalendar;
             return myCalendar;
         }
 
@@ -221,6 +257,11 @@ namespace Acco.Calendar.Manager
         {
             var pull = Task.Factory.StartNew(() => Pull(from, to));
             return await pull;
+        }
+
+        private async void RemoveEvents(IEnumerable<GenericEvent> eventsToRemove)
+        {
+            //todo: do something here..
         }
     }
 }

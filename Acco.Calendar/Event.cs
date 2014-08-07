@@ -35,7 +35,7 @@ namespace Acco.Calendar.Event
 
         public override string ToString()
         {
-            string s = "";
+            var s = "";
             if (Pattern != null)
             {
                 s = Pattern.ToString();
@@ -59,7 +59,6 @@ namespace Acco.Calendar.Event
     public interface IEvent
     {
         [Required(ErrorMessage = "This field is required")]
-        // todo: add other DataAnnotations validation stuff (such as min lenght and max lenght, etc)
         string Id { get; set; }
 
         GenericPerson Organizer { get; set; }
@@ -85,7 +84,16 @@ namespace Acco.Calendar.Event
 
         GenericRecurrence Recurrence { get; set; }
 
-        List<GenericPerson> Attendees { get; set; }
+        List<GenericAttendee> Attendees { get; set; }
+
+        EventAction EventAction { get; set; }
+    }
+
+    public enum EventAction : sbyte
+    {
+        Add = 0,
+        Remove,
+        Duplicate
     }
 
     public class GenericEvent : IEvent
@@ -136,11 +144,11 @@ namespace Acco.Calendar.Event
 
         public GenericRecurrence Recurrence { get; set; }
 
-        public List<GenericPerson> Attendees { get; set; }
+        public List<GenericAttendee> Attendees { get; set; }
 
         public override string ToString()
         {
-            string eventString = "[";
+            var eventString = "[";
             eventString += "Id: " + Id;
             eventString += "\n";
             eventString += "Summary: " + Summary;
@@ -149,5 +157,7 @@ namespace Acco.Calendar.Event
             eventString += "]";
             return eventString;
         }
+
+        public EventAction EventAction { get; set; }
     }
 }
