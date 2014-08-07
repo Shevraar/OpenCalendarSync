@@ -15,7 +15,6 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using WallF.BaseNEncodings;
 
 namespace Acco.Calendar.Manager
 {
@@ -348,8 +347,8 @@ namespace Acco.Calendar.Manager
                 var evts = await Service.Events.List(_settings.CalendarId).ExecuteAsync();
                 foreach (var evt in evts.Items)
                 {
-                    var iCalUID = StringHelper.GetString(StringHelper.GoogleBase32.FromBaseString(evt.Id));
-                    var myEvt = new GenericEvent(   id: iCalUID,
+                    var iCalUid = StringHelper.GetString(StringHelper.GoogleBase32.FromBaseString(evt.Id));
+                    var myEvt = new GenericEvent(   id: iCalUid,
                                                     summary: evt.Summary,
                                                     description: evt.Description,
                                                     location: new GenericLocation {Name = evt.Location});

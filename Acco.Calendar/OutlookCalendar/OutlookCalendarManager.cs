@@ -194,7 +194,7 @@ namespace Acco.Calendar.Manager
                 };
 #endif
                 //
-                Items items = CalendarFolder.Items;
+                var items = CalendarFolder.Items;
                 items.Sort("[Start]");
                 var filter = "[Start] >= '"
                             + from.ToString("g")

@@ -35,7 +35,7 @@ namespace Acco.Calendar.Event
 
         public override string ToString()
         {
-            string s = "";
+            var s = "";
             if (Pattern != null)
             {
                 s = Pattern.ToString();
@@ -148,7 +148,7 @@ namespace Acco.Calendar.Event
 
         public override string ToString()
         {
-            string eventString = "[";
+            var eventString = "[";
             eventString += "Id: " + Id;
             eventString += "\n";
             eventString += "Summary: " + Summary;

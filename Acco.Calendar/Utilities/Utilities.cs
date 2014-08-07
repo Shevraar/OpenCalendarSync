@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Text;
 using WallF.BaseNEncodings;
 
 namespace Acco.Calendar.Utilities
@@ -30,21 +29,21 @@ namespace Acco.Calendar.Utilities
     {
         public static byte[] GetBytes(string str)
         {
-            byte[] bytes = new byte[str.Length * sizeof(char)];
-            System.Buffer.BlockCopy(str.ToCharArray(), 0, bytes, 0, bytes.Length);
+            var bytes = new byte[str.Length * sizeof(char)];
+            Buffer.BlockCopy(str.ToCharArray(), 0, bytes, 0, bytes.Length);
             return bytes;
         }
 
         public static string GetString(byte[] bytes)
         {
-            char[] chars = new char[bytes.Length / sizeof(char)];
+            var chars = new char[bytes.Length / sizeof(char)];
             System.Buffer.BlockCopy(bytes, 0, chars, 0, bytes.Length);
             return new string(chars);
         }
 
-        private static readonly char[] alphabet = "0123456789abcdefghijklmnopqrstuv".ToCharArray();
-        private static readonly char padding = '\0';
-        private static readonly BaseEncoding googleBase32 = new Base32Encoding(alphabet, padding, "GoogleBase32Enconding");
+        private static readonly char[] Alphabet = "0123456789abcdefghijklmnopqrstuv".ToCharArray();
+        private const char Padding = '\0';
+        private static readonly BaseEncoding googleBase32 = new Base32Encoding(Alphabet, Padding, "GoogleBase32Enconding");
 
         public static BaseEncoding GoogleBase32
         {
