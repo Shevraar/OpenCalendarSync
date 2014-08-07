@@ -5,11 +5,7 @@ VisualStudioVersion = 12.0.21005.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Acco.Calendar", "Acco.Calendar\Acco.Calendar.csproj", "{65997903-F6AD-4E4E-8C75-14703819882B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Acco.CalendarTests", "Acco.CalendarTests\Acco.CalendarTests.csproj", "{A2BD1E8B-7879-4A2F-855F-A565ADA0B1F6}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Acco.Calendar.ConsoleTest", "Acco.Calendar.Console\Acco.Calendar.ConsoleTest.csproj", "{2200CBC7-4ED3-4614-B23A-6ABBCA44623E}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CalendarApiConsoleTest", "CalendarApi.ConsoleTest\CalendarApiConsoleTest.csproj", "{4E87351E-9120-4A60-9038-443FE214D0BC}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{2E7B7FB2-5190-4BA5-AA98-EF19E6F4600D}"
 	ProjectSection(SolutionItems) = preProject
@@ -28,18 +24,10 @@ Global
 		{65997903-F6AD-4E4E-8C75-14703819882B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{65997903-F6AD-4E4E-8C75-14703819882B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{65997903-F6AD-4E4E-8C75-14703819882B}.Release|Any CPU.Build.0 = Release|Any CPU
-		{A2BD1E8B-7879-4A2F-855F-A565ADA0B1F6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{A2BD1E8B-7879-4A2F-855F-A565ADA0B1F6}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{A2BD1E8B-7879-4A2F-855F-A565ADA0B1F6}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{A2BD1E8B-7879-4A2F-855F-A565ADA0B1F6}.Release|Any CPU.Build.0 = Release|Any CPU
 		{2200CBC7-4ED3-4614-B23A-6ABBCA44623E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{2200CBC7-4ED3-4614-B23A-6ABBCA44623E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2200CBC7-4ED3-4614-B23A-6ABBCA44623E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2200CBC7-4ED3-4614-B23A-6ABBCA44623E}.Release|Any CPU.Build.0 = Release|Any CPU
-		{4E87351E-9120-4A60-9038-443FE214D0BC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{4E87351E-9120-4A60-9038-443FE214D0BC}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{4E87351E-9120-4A60-9038-443FE214D0BC}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{4E87351E-9120-4A60-9038-443FE214D0BC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
