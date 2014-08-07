@@ -5,7 +5,6 @@ using DDay.iCal;
 using Microsoft.Office.Interop.Outlook;
 using System;
 using System.Collections.Generic;
-using MongoDB.Bson;
 using OutlookRecurrencePattern = Microsoft.Office.Interop.Outlook.RecurrencePattern;
 
 namespace Acco.Calendar.Event
