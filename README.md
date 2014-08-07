@@ -47,7 +47,7 @@ if (isLoggedIn) //logged in to google, go on!
 If you want to integrate your application inside a service or whatsoever a timed event is provided by using a subscribing policy:
 
 ```C#
-var isLoggedIn = await GoogleCalendarManager.Instance.Initialize(Settings.Default.ClientId, Settings.Default.ClientSecret, "Home.Meetings");
+var isLoggedIn = await GoogleCalendarManager.Instance.Initialize("your-google-client-id", "your-google-client-secret", "your-calendar-name");
 OutlookCalendarManager.Instance.Subscribers = new List<ICalendarManager>
 	{
 		GoogleCalendarManager.Instance
