@@ -4,48 +4,119 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="chrome=1">
     <title>Acco.calendar by Shevraar</title>
+
     <link rel="stylesheet" href="stylesheets/styles.css">
     <link rel="stylesheet" href="stylesheets/pygment_trac.css">
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
-    <script src="javascripts/respond.js"></script>
-    <!--[if lt IE 9]>
-      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
-    <![endif]-->
-    <!--[if lt IE 8]>
-    <link rel="stylesheet" href="stylesheets/ie.css">
-    <![endif]-->
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
-
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
   </head>
   <body>
-      <div id="header">
-        <nav>
-          <li class="fork"><a href="https://github.com/Shevraar/Acco.Calendar">View On GitHub</a></li>
-          <li class="downloads"><a href="https://github.com/Shevraar/Acco.Calendar/zipball/master">ZIP</a></li>
-          <li class="downloads"><a href="https://github.com/Shevraar/Acco.Calendar/tarball/master">TAR</a></li>
-          <li class="title">DOWNLOADS</li>
-        </nav>
-      </div><!-- end header -->
-
     <div class="wrapper">
+      <header>
+        <h1>Acco.calendar</h1>
+        <p>Manage calendar imports (future: on various platforms)</p>
 
+        <p class="view"><a href="https://github.com/Shevraar/CalendarSync">View the Project on GitHub <small>Shevraar/CalendarSync</small></a></p>
+
+
+        <ul>
+          <li><a href="https://github.com/Shevraar/CalendarSync/zipball/master">Download <strong>ZIP File</strong></a></li>
+          <li><a href="https://github.com/Shevraar/CalendarSync/tarball/master">Download <strong>TAR Ball</strong></a></li>
+          <li><a href="https://github.com/Shevraar/CalendarSync">View On <strong>GitHub</strong></a></li>
+        </ul>
+      </header>
       <section>
-        <div id="title">
-          <h1>Acco.calendar</h1>
-          <p>Manage calendar imports (future: on various platforms)</p>
-          <hr>
-          <span class="credits left">Project maintained by <a href="https://github.com/Shevraar">Shevraar</a></span>
-          <span class="credits right">Hosted on GitHub Pages &mdash; Theme by <a href="https://twitter.com/michigangraham">mattgraham</a></span>
-        </div>
-
         <h1>
-<a name="accocalendar" class="anchor" href="#accocalendar"><span class="octicon octicon-link"></span></a>Acco.Calendar</h1>
+<a name="calendarsync" class="anchor" href="#calendarsync"><span class="octicon octicon-link"></span></a>CalendarSync</h1>
 
-<p>Manage calendar imports (future: on various platforms)</p>
+<p>A library to help you manage calendar imports on various calendar services, such as Outlook and Google Calendar.</p>
+
+<hr><h1>
+<a name="system-requirements" class="anchor" href="#system-requirements"><span class="octicon octicon-link"></span></a>System Requirements</h1>
+
+<table>
+<thead><tr>
+<th>Requirement</th>
+<th>Download</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>.Net Framework 4.5</td>
+<td><a href="http://www.microsoft.com/en-US/download/details.aspx?id=30653">http://www.microsoft.com/en-US/download/details.aspx?id=30653</a></td>
+</tr>
+<tr>
+<td>MongoDB</td>
+<td><a href="http://www.mongodb.org/downloads">http://www.mongodb.org/downloads</a></td>
+</tr>
+</tbody>
+</table><h3>
+<a name="notes" class="anchor" href="#notes"><span class="octicon octicon-link"></span></a>Notes</h3>
+
+<p>You will need to setup MongoDB accordingly to <a href="http://docs.mongodb.org/manual/tutorial/install-mongodb-on-windows/">http://docs.mongodb.org/manual/tutorial/install-mongodb-on-windows/</a> or to <a href="http://docs.mongodb.org/manual/tutorial/install-mongodb-on-windows/#manually-create-windows-service">http://docs.mongodb.org/manual/tutorial/install-mongodb-on-windows/#manually-create-windows-service</a> otherwise the library won't work.</p>
+
+<p>Also, to compile the library you'll also have to install <a href="http://msdn.microsoft.com/en-us/library/15s06t57.aspx">http://msdn.microsoft.com/en-us/library/15s06t57.aspx</a> (Microsoft Office Interop Assemblies) which are used by the OutlookCalendarManager to interact with Outlook and its calendar service.</p>
+
+<hr><h1>
+<a name="how-it-works" class="anchor" href="#how-it-works"><span class="octicon octicon-link"></span></a>How it works</h1>
+
+<p>Each calendar "manager" derives from the basic <code>ICalendarManager</code>, that forces you to implement various generic functions:</p>
+
+<ul>
+<li><code>Push</code></li>
+<li>
+<code>Pull</code> and <code>Pull</code> with begin date and end date.</li>
+<li>and their <strong>Async</strong> versions (<code>PushAsync</code> and <code>PullAsync</code>).</li>
+</ul><h3>
+<a name="simple-usage" class="anchor" href="#simple-usage"><span class="octicon octicon-link"></span></a>Simple usage</h3>
+
+<p>Each calendar manager provides an instance (singleton) that lets you pull their calendar into a GenericCalendar object, which is then pushable inside a new calendar manager, without any further modifications:</p>
+
+<div class="highlight highlight-C#"><pre><span class="c1">// take events from outlook and push em to google</span>
+<span class="kt">var</span> <span class="n">calendar</span> <span class="p">=</span> <span class="k">await</span> <span class="n">OutlookCalendarManager</span><span class="p">.</span><span class="n">Instance</span><span class="p">.</span><span class="n">PullAsync</span><span class="p">()</span> <span class="k">as</span> <span class="n">GenericCalendar</span><span class="p">;</span>
+<span class="kt">var</span> <span class="n">isLoggedIn</span> <span class="p">=</span> <span class="k">await</span> <span class="n">GoogleCalendarManager</span><span class="p">.</span><span class="n">Instance</span><span class="p">.</span><span class="n">Initialize</span><span class="p">(</span><span class="s">"your-google-client-id"</span><span class="p">,</span> <span class="s">"your-google-client-secret"</span><span class="p">,</span> <span class="s">"your-calendar-name"</span><span class="p">);</span>
+<span class="k">if</span> <span class="p">(</span><span class="n">isLoggedIn</span><span class="p">)</span> <span class="c1">//logged in to google, go on!</span>
+<span class="p">{</span>
+    <span class="kt">var</span> <span class="n">ret</span> <span class="p">=</span> <span class="k">await</span> <span class="n">GoogleCalendarManager</span><span class="p">.</span><span class="n">Instance</span><span class="p">.</span><span class="n">PushAsync</span><span class="p">(</span><span class="n">calendar</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">ret</span><span class="p">)</span> <span class="n">Log</span><span class="p">.</span><span class="n">Info</span><span class="p">(</span><span class="s">"Success"</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+
+<h3>
+<a name="subscription" class="anchor" href="#subscription"><span class="octicon octicon-link"></span></a>Subscription</h3>
+
+<p>If you want to integrate your application inside a service or whatsoever a timed event is provided by using a subscribing policy:</p>
+
+<div class="highlight highlight-C#"><pre><span class="kt">var</span> <span class="n">isLoggedIn</span> <span class="p">=</span> <span class="k">await</span> <span class="n">GoogleCalendarManager</span><span class="p">.</span><span class="n">Instance</span><span class="p">.</span><span class="n">Initialize</span><span class="p">(</span><span class="n">Settings</span><span class="p">.</span><span class="n">Default</span><span class="p">.</span><span class="n">ClientId</span><span class="p">,</span> <span class="n">Settings</span><span class="p">.</span><span class="n">Default</span><span class="p">.</span><span class="n">ClientSecret</span><span class="p">,</span> <span class="s">"Home.Meetings"</span><span class="p">);</span>
+<span class="n">OutlookCalendarManager</span><span class="p">.</span><span class="n">Instance</span><span class="p">.</span><span class="n">Subscribers</span> <span class="p">=</span> <span class="k">new</span> <span class="n">List</span><span class="p">&lt;</span><span class="n">ICalendarManager</span><span class="p">&gt;</span>
+    <span class="p">{</span>
+        <span class="n">GoogleCalendarManager</span><span class="p">.</span><span class="n">Instance</span>
+    <span class="p">};</span>
+<span class="k">if</span> <span class="p">(</span><span class="n">isLoggedIn</span><span class="p">)</span> <span class="p">{</span> <span class="n">OutlookCalendarManager</span><span class="p">.</span><span class="n">Instance</span><span class="p">.</span><span class="n">StartLookingForChanges</span><span class="p">(</span><span class="n">TimeSpan</span><span class="p">.</span><span class="n">FromSeconds</span><span class="p">(</span><span class="m">10</span><span class="p">));</span> <span class="p">}</span>
+</pre></div>
+
+<p><code>OutlookCalendarManager</code> now holds a list of subscribed calendar managers and every <strong>N</strong> milliseconds/seconds/minutes/hours/whatever (see arguments for <code>StartLookingForChanges</code>)  it will look for changes inside their managed calendar and push the changes inside their subsribed calendar managers.</p>
+
+<h1>
+<a name="status" class="anchor" href="#status"><span class="octicon octicon-link"></span></a>Status</h1>
+
+<ul>
+<li>
+<strong>Outlook</strong> =&gt; <strong>Google</strong> calendar import works successfully.</li>
+<li>
+<strong>Google</strong> =&gt; <strong>Outlook</strong> calendar import are not yet implemented.</li>
+</ul><h1>
+<a name="contribute" class="anchor" href="#contribute"><span class="octicon octicon-link"></span></a>Contribute</h1>
+
+<p>If you have any calendar service you would like to implement feel free to contribute.</p>
       </section>
-
+      <footer>
+        <p>This project is maintained by <a href="https://github.com/Shevraar">Shevraar</a></p>
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
+      </footer>
     </div>
-    <!--[if !IE]><script>fixScale(document);</script><![endif]-->
+    <script src="javascripts/scale.fix.js"></script>
     
   </body>
 </html>
