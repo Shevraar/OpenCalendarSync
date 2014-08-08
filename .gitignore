@@ -16,3 +16,4 @@ bin
 *.work*
 *.exe
 /Dasi.CalendarSync.Tray/GoogleToken.cs
+*.DotSettings
