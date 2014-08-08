@@ -130,8 +130,8 @@ namespace Dasi.CalendarSync.Tray
 
         private async Task OutlookToGoogle()
         {
-            var client_id = "";
-            var secret    = "";
+            var client_id = GoogleToken.ClientId;
+            var secret    = GoogleToken.ClientSecret;
             var cal_name  = "GVR.Meetings";
 
             try

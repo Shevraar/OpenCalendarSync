@@ -15,3 +15,4 @@ bin
 *.user
 *.work*
 *.exe
+/Dasi.CalendarSync.Tray/GoogleToken.cs
