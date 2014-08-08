@@ -6,7 +6,8 @@ MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Acco.Calendar", "Acco.Calendar\Acco.Calendar.csproj", "{65997903-F6AD-4E4E-8C75-14703819882B}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dasi.CalendarSync.Tray", "Dasi.CalendarSync.Tray\Dasi.CalendarSync.Tray.csproj", "{E8561D8E-715B-487E-900C-29CEB6AFA2B8}"
-EndProjectProject("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{CF78FE49-85E1-4815-9016-9A88612B6C25}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{0EE9B601-28DB-41D8-B118-8B8EA7C70E40}"
 	ProjectSection(SolutionItems) = preProject
 		.nuget\NuGet.Config = .nuget\NuGet.Config
 		.nuget\NuGet.exe = .nuget\NuGet.exe
