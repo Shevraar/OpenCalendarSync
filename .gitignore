@@ -14,3 +14,4 @@ bin
 /Acco.Calendar.Console.Work
 *.TMP
 *.user
+*.work*
