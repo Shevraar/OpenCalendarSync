@@ -325,16 +325,21 @@ namespace Acco.Calendar.Manager
         private async Task<bool> PushEvents(IEnumerable<IEvent> evts)
         {
             var res = true;
-            //
+            // handle exceptions in a bulk
+            var pushExceptions = new List<Exception>();
             foreach (var evt in evts.Where(evt => evt.EventAction == EventAction.Add))
             {
                 res = await PushEvent(evt);
                 if (res == false)
                 {
-                    throw new PushException("PushEvent failed", evt as GenericEvent);
+                    pushExceptions.Add(new PushException("PushEvent failed", evt as GenericEvent));
                 }
             }
-            //
+            // throw the exceptions, if any
+            if (pushExceptions.Count > 0)
+            {
+                throw new AggregateException(pushExceptions);
+            }
             return res;
         }
 
