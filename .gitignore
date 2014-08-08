@@ -5,7 +5,6 @@ packages
 obj
 bin
 /Acco.Calendar.Console
-/.nuget
 /Acco.Calendar/Acco.Calendar.work.csproj
 /CalendarApi.work.sln
 /Acco.Calendar/GoogleCalendar/*.TMP
