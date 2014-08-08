@@ -1,0 +1,30 @@
+﻿<Window x:Class="Dasi.CalendarSync.Tray.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:tb="http://www.hardcodet.net/taskbar" 
+        Title="MainWindow" Height="350" Width="525" Visibility="Hidden">
+    <Grid>
+        <!--
+      in order to create a NotifyIcon, all you need is the
+      namespace declaration (see above on line 4) and a simple
+      declaration
+    -->
+        <tb:TaskbarIcon
+            x:Name="trayIcon"
+            IconSource="/icons/calendar.ico"
+            ToolTipText="Sincronizza il calendario di Outlook con quello di Google"
+            MenuActivation="LeftOrRightClick">
+
+            <!-- Set a simple context menu  -->
+            <tb:TaskbarIcon.ContextMenu>
+                <ContextMenu>
+                    <MenuItem Header="In attesa..." x:Name="miStatus" IsEnabled="False"/>
+                    <MenuItem Header="Sincronizza ora" x:Name="miSync" Click="miSync_Click"/>
+                    <Separator/>
+                    <MenuItem Header="Esci" x:Name="miExit" Click="miExit_Click"/>
+                </ContextMenu>
+            </tb:TaskbarIcon.ContextMenu>
+
+        </tb:TaskbarIcon>
+    </Grid>
+</Window>
