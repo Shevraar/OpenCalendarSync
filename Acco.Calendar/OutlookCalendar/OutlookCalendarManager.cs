@@ -48,16 +48,13 @@ namespace Acco.Calendar.Manager
             CalendarFolder = MapiNameSpace.GetDefaultFolder(OlDefaultFolders.olFolderCalendar);
         }
 
-        public override bool Push(ICalendar calendar)
+        public override IEnumerable<PushedEvent> Push(ICalendar calendar)
         {
             Log.Info(String.Format("Pushing calendar [{0}] to outlook", calendar.Id));
-            var result = true;
-            // TODO: set various infos here
-            //
+            var result = new List<PushedEvent>();
             foreach (var evt in calendar.Events)
             {
             }
-            //
             return result;
         }
 
@@ -164,7 +161,7 @@ namespace Acco.Calendar.Manager
             return people;
         }
 
-        public override async Task<bool> PushAsync(ICalendar calendar)
+        public override async Task<IEnumerable<PushedEvent>> PushAsync(ICalendar calendar)
         {
             var push = Task.Factory.StartNew(() => Push(calendar));
             return await push;
