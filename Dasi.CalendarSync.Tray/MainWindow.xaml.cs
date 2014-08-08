@@ -145,12 +145,14 @@ namespace Dasi.CalendarSync.Tray
                     try
                     {
                         var ret = await GoogleCalendarManager.Instance.PushAsync(calendar);
-                        SyncSuccess();
-                        /*if (ret)
+                        if (ret)
                         {
                             SyncSuccess();
                         }
-                        else { SyncFailure(); }*/
+                        else
+                        {
+                            SyncFailure();
+                        }
                     }
                     catch (PushException ex)
                     {
