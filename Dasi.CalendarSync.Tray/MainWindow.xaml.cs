@@ -4,29 +4,18 @@ using Google;
 using Hardcodet.Wpf.TaskbarNotification;
 using log4net.Config;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
-using System.Resources;
-using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 using System.Windows.Threading;
+using System.Collections.Generic;
 
 namespace Dasi.CalendarSync.Tray
 {
     /// <summary>
     /// Logica di interazione per MainWindow.xaml
     /// </summary>
-    public partial class MainWindow : Window
+    public partial class MainWindow
     {
         private DispatcherTimer _timer;
         private DispatcherTimer _icon_animation_timer;
@@ -73,17 +62,16 @@ namespace Dasi.CalendarSync.Tray
             // Set the callback to just show the time ticking away
             // NOTE: We are using a control so this has to run on 
             // the UI thread
-            _timer.Tick += new EventHandler(delegate(object s, EventArgs a)
-            {
+            _timer.Tick += delegate {
                 StartSync();
-            });
+            };
 
             _timer.Start();
 
             _icon_animation_timer = new DispatcherTimer();
             _icon_animation_timer.Interval = TimeSpan.FromMilliseconds(100);
 
-            _icon_animation_timer.Tick += new EventHandler(delegate(object s, EventArgs a)
+            _icon_animation_timer.Tick += delegate
             {
                 if (animation_stopping && current_icon_index == 0)
                 {
@@ -96,7 +84,7 @@ namespace Dasi.CalendarSync.Tray
                     current_icon_index = ++current_icon_index % 11;
                     trayIcon.Icon = animation_icons[current_icon_index];
                 }
-            });
+            };
 
             
         }
@@ -145,14 +133,8 @@ namespace Dasi.CalendarSync.Tray
                     try
                     {
                         var ret = await GoogleCalendarManager.Instance.PushAsync(calendar);
-                        if (ret)
-                        {
-                            SyncSuccess();
-                        }
-                        else
-                        {
-                            SyncFailure();
-                        }
+                        SyncSuccess(ret);
+                        //todo: do something with the list returned from PushAsync.
                     }
                     catch (PushException ex)
                     {
@@ -166,10 +148,13 @@ namespace Dasi.CalendarSync.Tray
             }
         }
 
-        private void SyncSuccess()
+        private void SyncSuccess(IEnumerable<PushedEvent> pushedEvents)
         {
             string title = "Risultato sincronizzazione";
             string text  = "La sincronizzazione e' terminata con successo";
+            var events = pushedEvents as List<PushedEvent>;
+            if (events != null)
+                text += "\n" + String.Format("{0} eventi aggiunti al calendario", events.Count);
 
             //show balloon with built-in icon
             trayIcon.ShowBalloonTip(title, text, BalloonIcon.Info);
@@ -194,12 +179,12 @@ namespace Dasi.CalendarSync.Tray
         {
             var tmr = new DispatcherTimer();
             tmr.Interval = TimeSpan.FromSeconds(seconds);
-            tmr.Tick += new EventHandler(delegate(object s, EventArgs a)
+            tmr.Tick += delegate
             {
                 tmr.Stop();
                 //hide balloon
                 trayIcon.HideBalloonTip();                
-            });
+            };
             tmr.Start();
         }
     }
