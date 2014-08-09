@@ -1,4 +1,5 @@
-﻿using Acco.Calendar;
+﻿using System.Linq;
+using Acco.Calendar;
 using Acco.Calendar.Manager;
 using Google;
 using Hardcodet.Wpf.TaskbarNotification;
@@ -154,7 +155,7 @@ namespace Dasi.CalendarSync.Tray
             string text  = "La sincronizzazione e' terminata con successo";
             var events = pushedEvents as List<PushedEvent>;
             if (events != null)
-                text += "\n" + String.Format("{0} eventi aggiunti al calendario", events.Count);
+                text += "\n" + String.Format("{0} eventi aggiunti al calendario", events.Count(e => e.EventIsPushed));
 
             //show balloon with built-in icon
             trayIcon.ShowBalloonTip(title, text, BalloonIcon.Info);
