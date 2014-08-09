@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Threading;
 using System.Collections.Generic;
+using Dasi.CalendarSync.Tray.Properties;
 
 namespace Dasi.CalendarSync.Tray
 {
@@ -121,7 +122,7 @@ namespace Dasi.CalendarSync.Tray
         {
             var client_id = GoogleToken.ClientId;
             var secret    = GoogleToken.ClientSecret;
-            var cal_name  = "GVR.Meetings";
+            var cal_name  = Settings.Default.CalendarName;
 
             try
             {
