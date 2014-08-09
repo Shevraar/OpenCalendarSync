@@ -5,7 +5,6 @@ packages
 obj
 bin
 /Acco.Calendar.Console
-/.nuget
 /Acco.Calendar/Acco.Calendar.work.csproj
 /CalendarApi.work.sln
 /Acco.Calendar/GoogleCalendar/*.TMP
@@ -14,3 +13,7 @@ bin
 /Acco.Calendar.Console.Work
 *.TMP
 *.user
+*.work*
+*.exe
+/Dasi.CalendarSync.Tray/GoogleToken.cs
+*.DotSettings

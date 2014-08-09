@@ -56,7 +56,7 @@ namespace Acco.Calendar.Manager
             get { return instance; }
         }
 
-        public override bool Push(ICalendar calendar)
+        public override IEnumerable<PushedEvent> Push(ICalendar calendar)
         {
             var pushTask = PushAsync(calendar);
             pushTask.Wait();
@@ -71,7 +71,7 @@ namespace Acco.Calendar.Manager
             return pullTask.Result;
         }
 
-        public override async Task<bool> PushAsync(ICalendar calendar)
+        public override async Task<IEnumerable<PushedEvent>> PushAsync(ICalendar calendar)
         {
             Log.Info(String.Format("Pushing calendar to google [{0}]", calendar.Id));
             if (LastCalendar != null)
@@ -194,12 +194,12 @@ namespace Acco.Calendar.Manager
             return res;
         }
 
-        private async Task<bool> PushEvent(IEvent evt)
+        private async Task<PushedEvent> PushEvent(IEvent evt)
         {
             var googleEventId = StringHelper.GoogleBase32.ToBaseString(StringHelper.GetBytes(evt.Id)).ToLower();
             Log.Debug(String.Format("Pushing event with googleEventId[{0}]", googleEventId));
             Log.Debug(String.Format("and iCalUID [{0}]", evt.Id));
-            var res = false;
+            var res = new PushedEvent {Event = evt as GenericEvent};
             //
             try
             {
@@ -302,13 +302,13 @@ namespace Acco.Calendar.Manager
                 //
                 if (createdEvent != null)
                 {
-                    res = true;
+                    res.EventIsPushed = true;
                 }
             }
             catch(GoogleApiException ex)
             {
                 Log.Error("GoogleApiException", ex);
-                res = false;
+                res.EventIsPushed = false;
             }
             catch (AggregateException ex)
             {
@@ -316,25 +316,28 @@ namespace Acco.Calendar.Manager
                 {
                     Log.Error(e.GetType().ToString(), e);
                 }
-                res = false;
+                res.EventIsPushed = false;
             }
             //
             return res;
         }
 
-        private async Task<bool> PushEvents(IEnumerable<IEvent> evts)
+        private async Task<IEnumerable<PushedEvent>> PushEvents(IEnumerable<IEvent> evts)
         {
-            var res = true;
-            //
+            var res = new List<PushedEvent>();
+            // handle exceptions in a bulk
+            var pushExceptions = new List<Exception>();
             foreach (var evt in evts.Where(evt => evt.EventAction == EventAction.Add))
             {
-                res = await PushEvent(evt);
-                if (res == false)
-                {
-                    throw new PushException("PushEvent failed", evt as GenericEvent);
-                }
+                var currentEvent = await PushEvent(evt);
+                res.Add(currentEvent); // add it anyway
+                if (currentEvent.EventIsPushed == false) { pushExceptions.Add(new PushException("PushEvent failed", evt as GenericEvent)); }
             }
-            //
+            // throw the exceptions, if any
+            if (pushExceptions.Count > 0)
+            {
+                throw new AggregateException(pushExceptions);
+            }
             return res;
         }
 
