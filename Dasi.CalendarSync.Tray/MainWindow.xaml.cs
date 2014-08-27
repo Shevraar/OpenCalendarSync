@@ -136,7 +136,6 @@ namespace Dasi.CalendarSync.Tray
                     {
                         var ret = await GoogleCalendarManager.Instance.PushAsync(calendar);
                         SyncSuccess(ret);
-                        //todo: do something with the list returned from PushAsync.
                     }
                     catch (PushException ex)
                     {
@@ -155,14 +154,14 @@ namespace Dasi.CalendarSync.Tray
             string title = "Risultato sincronizzazione";
             string text  = "La sincronizzazione e' terminata con successo";
             var events = pushedEvents as List<PushedEvent>;
-            if (events != null)
+            if (events != null && (events.Count(e => e.EventIsPushed) > 0))
+            { 
                 text += "\n" + String.Format("{0} eventi aggiunti al calendario", events.Count(e => e.EventIsPushed));
-
-            //show balloon with built-in icon
-            trayIcon.ShowBalloonTip(title, text, BalloonIcon.Info);
-            
-            // hide baloon in 3 seconds
-            HideBalloonAfterSeconds(3);
+                //show balloon with built-in icon
+                trayIcon.ShowBalloonTip(title, text, BalloonIcon.Info);
+                // hide baloon in 3 seconds
+                HideBalloonAfterSeconds(3);
+            }
         }
 
         private void SyncFailure()
