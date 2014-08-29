@@ -21,6 +21,8 @@
                     <MenuItem Header="In attesa..." x:Name="miStatus" IsEnabled="False"/>
                     <MenuItem Header="Sincronizza ora" x:Name="miSync" Click="miSync_Click"/>
                     <Separator/>
+                    <MenuItem Header="Resetta" x:Name="miReset" Click="miReset_Click"/>
+                    <Separator/>
                     <MenuItem Header="Esci" x:Name="miExit" Click="miExit_Click"/>
                 </ContextMenu>
             </tb:TaskbarIcon.ContextMenu>

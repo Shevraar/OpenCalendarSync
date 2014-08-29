@@ -1,6 +1,8 @@
 ﻿using System.Linq;
 using Acco.Calendar;
 using Acco.Calendar.Manager;
+using Acco.Calendar.Database;
+using MongoDB.Driver;
 using Google;
 using Hardcodet.Wpf.TaskbarNotification;
 using log4net.Config;
@@ -11,6 +13,7 @@ using System.Windows;
 using System.Windows.Threading;
 using System.Collections.Generic;
 using Dasi.CalendarSync.Tray.Properties;
+using System.IO;
 
 namespace Dasi.CalendarSync.Tray
 {
@@ -187,6 +190,36 @@ namespace Dasi.CalendarSync.Tray
                 trayIcon.HideBalloonTip();                
             };
             tmr.Start();
+        }
+
+        private void miReset_Click(object sender, RoutedEventArgs e)
+        {
+            var title = "Risultato reset";
+            var text = "";
+            var drop = Storage.Instance.Appointments.Drop();
+            if(drop.Ok)            
+            {
+                text += "- Database appuntamenti svuotato correttamente\n";
+            }
+            else
+            {
+                text += "- atabase appuntamenti *NON* svuotato!";
+            }
+            //
+            try
+            {
+                File.Delete("googlecalendar.settings");
+                text += "- Impostazioni di google calendar cancellate correttamente";
+            }
+            catch(Exception ex)
+            {
+                text += "- Impostazioni di google calendar *NON* cancellate!";
+                Log.Error("Failed to delete googlecalendar.settings", ex);
+            }
+            //
+            trayIcon.ShowBalloonTip(title, text, BalloonIcon.Warning);
+            // hide baloon in 3 seconds
+            HideBalloonAfterSeconds(3);
         }
     }
 }
