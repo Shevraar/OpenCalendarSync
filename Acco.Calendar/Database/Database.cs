@@ -18,7 +18,7 @@ namespace Acco.Calendar.Database
             Log.Info("Initializing storage...");
             Client = new MongoClient(ConnectionString);
             Server = Client.GetServer();
-            Database = Server.GetDatabase("AccoCalendar");
+            Database = Server.GetDatabase("AccoCalendar"); //todo: change name to open-calendar-sync
             Appointments = Database.GetCollection<GenericEvent>("appointments");
         }
 
