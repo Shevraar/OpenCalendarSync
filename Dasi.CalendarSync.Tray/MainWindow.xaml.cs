@@ -53,7 +53,7 @@ namespace Dasi.CalendarSync.Tray
                 }
                 catch (Exception e)
                 {
-
+                    Log.Error("Exception", e);
                 }
             }
 
@@ -142,13 +142,23 @@ namespace Dasi.CalendarSync.Tray
                     }
                     catch (PushException ex)
                     {
-                        SyncFailure();
+                        SyncFailure(ex.Message);
+                    }
+                    catch(Exception ex)
+                    {
+                        SyncFailure(ex.Message);
                     }
                 }
             }
             catch (GoogleApiException ex)
             {
-                SyncFailure();
+                Log.Error("GoogleApiException", ex);
+                SyncFailure(ex.Message);
+            }
+            catch(Exception ex)
+            {
+                Log.Error("Exception", ex);
+                SyncFailure(ex.Message);
             }
         }
 
@@ -167,16 +177,15 @@ namespace Dasi.CalendarSync.Tray
             }
         }
 
-        private void SyncFailure()
+        private void SyncFailure(string message)
         {
             string title = "Risultato sincronizzazione";
-            string text = "La sincronizzazione e' fallita";
+            string text = "La sincronizzazione e' fallita\n";
+            string details = message;
+            text += details;
 
             //show balloon with built-in icon
             trayIcon.ShowBalloonTip(title, text, BalloonIcon.Error);
-
-            // hide baloon in 3 seconds
-            HideBalloonAfterSeconds(3);
         }
 
         private void HideBalloonAfterSeconds(int seconds)
@@ -203,7 +212,8 @@ namespace Dasi.CalendarSync.Tray
             }
             else
             {
-                text += "- atabase appuntamenti *NON* svuotato!";
+                text += "- Database appuntamenti *NON* svuotato!\n";
+                Log.Error("Failed to delete drop appointments database");
             }
             //
             try
@@ -218,8 +228,6 @@ namespace Dasi.CalendarSync.Tray
             }
             //
             trayIcon.ShowBalloonTip(title, text, BalloonIcon.Warning);
-            // hide baloon in 3 seconds
-            HideBalloonAfterSeconds(3);
         }
     }
 }
