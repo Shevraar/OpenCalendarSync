@@ -7,6 +7,7 @@ using RecPatt = DDay.iCal.RecurrencePattern;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using MongoDB.Bson.Serialization;
 
 //
 
@@ -22,6 +23,14 @@ namespace Acco.Calendar.Event
     public class GenericRecurrence : IRecurrence
     {
         public RecPatt Pattern { get; set; }
+
+        public GenericRecurrence()
+        {
+            if (!BsonClassMap.IsClassMapRegistered(typeof(RecPatt)))
+            {
+                BsonClassMap.RegisterClassMap<RecPatt>();
+            }
+        }
 
         public virtual void Parse<T>(T rules)
         {
