@@ -1,5 +1,6 @@
 ﻿//
-using DDay.iCal;
+using RecPatt = DDay.iCal.RecurrencePattern;
+using iCal = DDay.iCal;
 
 //
 using Microsoft.Office.Interop.Outlook;
@@ -23,10 +24,10 @@ namespace Acco.Calendar.Event
                 {
                     case OlRecurrenceType.olRecursDaily:
                         {
-                            Pattern = new DDay.iCal.RecurrencePattern(FrequencyType.Daily, outlookRp.Interval)
+                            Pattern = new RecPatt(iCal.FrequencyType.Daily, outlookRp.Interval)
                             {
                                 FirstDayOfWeek = DayOfWeek.Monday,
-                                RestrictionType = RecurrenceRestrictionType.Default
+                                RestrictionType = iCal.RecurrenceRestrictionType.Default
                             };
                             if (outlookRp.Occurrences > 0) { Pattern.Count = outlookRp.Occurrences; }
                             else if (outlookRp.PatternEndDate > DateTime.Now) { Pattern.Until = outlookRp.PatternEndDate; }
@@ -35,10 +36,10 @@ namespace Acco.Calendar.Event
 
                     case OlRecurrenceType.olRecursWeekly:
                         {
-                            Pattern = new DDay.iCal.RecurrencePattern(FrequencyType.Weekly, outlookRp.Interval)
+                            Pattern = new RecPatt(iCal.FrequencyType.Weekly, outlookRp.Interval)
                             {
                                 FirstDayOfWeek = DayOfWeek.Monday,
-                                RestrictionType = RecurrenceRestrictionType.NoRestriction
+                                RestrictionType = iCal.RecurrenceRestrictionType.NoRestriction
                             };
                             if (outlookRp.Occurrences > 0) { Pattern.Count = outlookRp.Occurrences; }
                             else if (outlookRp.PatternEndDate > DateTime.Now) { Pattern.Until = outlookRp.PatternEndDate; }
@@ -50,10 +51,10 @@ namespace Acco.Calendar.Event
                         {
                             // warning: untested
                             // see also: http://msdn.microsoft.com/en-us/library/office/aa211012(v=office.11).aspx
-                            Pattern = new DDay.iCal.RecurrencePattern(FrequencyType.Monthly, outlookRp.Interval)
+                            Pattern = new RecPatt(iCal.FrequencyType.Monthly, outlookRp.Interval)
                             {
                                 FirstDayOfWeek = DayOfWeek.Monday,
-                                RestrictionType = RecurrenceRestrictionType.NoRestriction
+                                RestrictionType = iCal.RecurrenceRestrictionType.NoRestriction
                             };
                             // how many times this is going to occur
                             if (outlookRp.Occurrences > 0) { Pattern.Count = outlookRp.Occurrences; }
@@ -64,10 +65,10 @@ namespace Acco.Calendar.Event
                     case OlRecurrenceType.olRecursMonthNth:
                         {
                             // see also: http://msdn.microsoft.com/en-us/library/office/aa211012(v=office.11).aspx
-                            Pattern = new DDay.iCal.RecurrencePattern(FrequencyType.Monthly, outlookRp.Interval)
+                            Pattern = new DDay.iCal.RecurrencePattern(iCal.FrequencyType.Monthly, outlookRp.Interval)
                             {
                                 FirstDayOfWeek = DayOfWeek.Monday,
-                                RestrictionType = RecurrenceRestrictionType.NoRestriction
+                                RestrictionType = iCal.RecurrenceRestrictionType.NoRestriction
                             };
                             // how many times this is going to occur
                             if (outlookRp.Occurrences > 0) { Pattern.Count = outlookRp.Occurrences; }
@@ -80,10 +81,10 @@ namespace Acco.Calendar.Event
                     case OlRecurrenceType.olRecursYearly:
                         {
                             // warning: untested
-                            Pattern = new DDay.iCal.RecurrencePattern(FrequencyType.Yearly, outlookRp.Interval)
+                            Pattern = new RecPatt(iCal.FrequencyType.Yearly, outlookRp.Interval)
                             {
                                 FirstDayOfWeek = DayOfWeek.Monday,
-                                RestrictionType = RecurrenceRestrictionType.NoRestriction
+                                RestrictionType = iCal.RecurrenceRestrictionType.NoRestriction
                             };
                             if (outlookRp.Occurrences > 0) { Pattern.Count = outlookRp.Occurrences; }
                             else if (outlookRp.PatternEndDate > DateTime.Now) { Pattern.Until = outlookRp.PatternEndDate; }
@@ -95,10 +96,10 @@ namespace Acco.Calendar.Event
                     case OlRecurrenceType.olRecursYearNth:
                         {
                             // warning: untested
-                            Pattern = new DDay.iCal.RecurrencePattern(FrequencyType.Yearly, outlookRp.Interval)
+                            Pattern = new RecPatt(iCal.FrequencyType.Yearly, outlookRp.Interval)
                             {
                                 FirstDayOfWeek = DayOfWeek.Monday,
-                                RestrictionType = RecurrenceRestrictionType.NoRestriction
+                                RestrictionType = iCal.RecurrenceRestrictionType.NoRestriction
                             };
                             if (outlookRp.Occurrences > 0) { Pattern.Count = outlookRp.Occurrences; }
                             else if (outlookRp.PatternEndDate > DateTime.Now) { Pattern.Until = outlookRp.PatternEndDate; }
@@ -124,15 +125,15 @@ namespace Acco.Calendar.Event
             return modifiedPattern;
         }
 
-        private static List<IWeekDay> ExtractDaysOfWeek(OlDaysOfWeek outlookDaysOfWeekMask)
+        private static List<iCal.IWeekDay> ExtractDaysOfWeek(OlDaysOfWeek outlookDaysOfWeekMask)
         {
             Log.Info(String.Format("Extracting days of week from outlookDaysOfWeekMask [{0}]", outlookDaysOfWeekMask));
-            var myDaysOfWeekMask = new List<IWeekDay>();
+            var myDaysOfWeekMask = new List<iCal.IWeekDay>();
             //
             if (outlookDaysOfWeekMask.HasFlag(OlDaysOfWeek.olMonday))
             {
                 Log.Debug("Monday");
-                myDaysOfWeekMask.Add(new WeekDay
+                myDaysOfWeekMask.Add(new iCal.WeekDay
                 {
                     DayOfWeek = DayOfWeek.Monday
                 });
@@ -140,7 +141,7 @@ namespace Acco.Calendar.Event
             if (outlookDaysOfWeekMask.HasFlag(OlDaysOfWeek.olTuesday))
             {
                 Log.Debug("Tuesday");
-                myDaysOfWeekMask.Add(new WeekDay
+                myDaysOfWeekMask.Add(new iCal.WeekDay
                 {
                     DayOfWeek = DayOfWeek.Tuesday
                 });
@@ -148,7 +149,7 @@ namespace Acco.Calendar.Event
             if (outlookDaysOfWeekMask.HasFlag(OlDaysOfWeek.olWednesday))
             {
                 Log.Debug("Wednesday");
-                myDaysOfWeekMask.Add(new WeekDay
+                myDaysOfWeekMask.Add(new iCal.WeekDay
                 {
                     DayOfWeek = DayOfWeek.Wednesday
                 });
@@ -156,7 +157,7 @@ namespace Acco.Calendar.Event
             if (outlookDaysOfWeekMask.HasFlag(OlDaysOfWeek.olThursday))
             {
                 Log.Debug("Thursday");
-                myDaysOfWeekMask.Add(new WeekDay
+                myDaysOfWeekMask.Add(new iCal.WeekDay
                 {
                     DayOfWeek = DayOfWeek.Thursday
                 });
@@ -164,7 +165,7 @@ namespace Acco.Calendar.Event
             if (outlookDaysOfWeekMask.HasFlag(OlDaysOfWeek.olFriday))
             {
                 Log.Debug("Friday");
-                myDaysOfWeekMask.Add(new WeekDay
+                myDaysOfWeekMask.Add(new iCal.WeekDay
                 {
                     DayOfWeek = DayOfWeek.Friday
                 });
@@ -172,7 +173,7 @@ namespace Acco.Calendar.Event
             if (outlookDaysOfWeekMask.HasFlag(OlDaysOfWeek.olSaturday))
             {
                 Log.Debug("Saturday");
-                myDaysOfWeekMask.Add(new WeekDay
+                myDaysOfWeekMask.Add(new iCal.WeekDay
                 {
                     DayOfWeek = DayOfWeek.Saturday
                 });
@@ -180,7 +181,7 @@ namespace Acco.Calendar.Event
             if (outlookDaysOfWeekMask.HasFlag(OlDaysOfWeek.olSunday))
             {
                 Log.Debug("Sunday");
-                myDaysOfWeekMask.Add(new WeekDay
+                myDaysOfWeekMask.Add(new iCal.WeekDay
                 {
                     DayOfWeek = DayOfWeek.Sunday
                 });

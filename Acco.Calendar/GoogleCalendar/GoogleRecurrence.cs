@@ -1,7 +1,7 @@
 ﻿//
 
 using System;
-using DDay.iCal;
+using RecPatt = DDay.iCal.RecurrencePattern;
 
 //
 namespace Acco.Calendar.Event
@@ -23,7 +23,7 @@ namespace Acco.Calendar.Event
             {
                 Log.Info(String.Format("Parsing GoogleRecurrence [{0}]", rules));
                 var stringRules = rules as string;
-                Pattern = new RecurrencePattern(stringRules);
+                Pattern = new RecPatt(stringRules);
                 Log.Debug(String.Format("iCalendar recurrence pattern is [{0}]", Pattern));
             }
             else

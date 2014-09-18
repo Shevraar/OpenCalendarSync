@@ -27,6 +27,50 @@ namespace Acco.Calendar.Person
         public string FirstName { get; set; }
 
         public string LastName { get; set; }
+
+        public static bool operator ==(GenericPerson p1, GenericPerson p2)
+        {
+            if((object)p1 != null && (object)p2 != null)
+            {
+                return  (p1.Email == p2.Email) &&
+                        (p1.Name == p2.Email) &&
+                        (p1.FirstName == p2.FirstName) &&
+                        (p1.LastName == p2.LastName);
+            }
+            else
+            {
+                return (object)p1 == (object)p2;
+            }
+        }
+
+        public static bool operator !=(GenericPerson p1, GenericPerson p2)
+        {
+            return !(p1 == p2);
+        }
+
+
+        public override bool Equals(object obj)
+        {
+            // If parameter is null return false.
+            if (obj == null)
+            {
+                return false;
+            }
+
+            // If parameter cannot be cast to Point return false.
+            var p = obj as GenericPerson;
+            if ((object)p == null)
+            {
+                return false;
+            }
+
+            return (this == p);
+        }
+
+        public override int GetHashCode()
+        {
+            return base.GetHashCode();
+        }
     }
 
     class GoogleResponseStatus : Attribute

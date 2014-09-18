@@ -1,7 +1,7 @@
 ﻿using Acco.Calendar.Location;
 using Acco.Calendar.Person;
 using DDay.iCal;
-
+using RecPatt = DDay.iCal.RecurrencePattern;
 //
 //
 using System;
@@ -21,7 +21,7 @@ namespace Acco.Calendar.Event
 
     public class GenericRecurrence : IRecurrence
     {
-        protected RecurrencePattern Pattern { get; set; }
+        public RecPatt Pattern { get; set; }
 
         public virtual void Parse<T>(T rules)
         {
@@ -92,6 +92,7 @@ namespace Acco.Calendar.Event
     public enum EventAction : sbyte
     {
         Add = 0,
+        Update,
         Remove,
         Duplicate
     }
@@ -159,5 +160,53 @@ namespace Acco.Calendar.Event
         }
 
         public EventAction EventAction { get; set; }
+
+        public override bool Equals(object obj)
+        {
+            // If parameter is null return false.
+            if (obj == null)
+            {
+                return false;
+            }
+
+            // If parameter cannot be cast to Point return false.
+            var p = obj as GenericEvent;
+            if ((object)p == null)
+            {
+                return false;
+            }
+
+            // Event comparison - Id, Dates, Location, Recurrence, Attendees
+            return (this == p);
+        }
+
+        public override int GetHashCode()
+        {
+            return base.GetHashCode();
+        }
+
+        public static bool operator ==(GenericEvent e1, GenericEvent e2)
+        {
+            if((object)e1 != null &&
+                (object)e2 != null)
+            { 
+                return  (e1.Id == e2.Id) &&
+                        (e1.Start == e2.Start) && 
+                        (e1.End == e2.End) &&
+                        (e1.Location == e2.Location) &&
+                        (e1.Recurrence != null && e2.Recurrence != null) &&
+                        (e1.Recurrence.Pattern == e2.Recurrence.Pattern) &&
+                        (e1.Attendees.Count == e2.Attendees.Count /* stupid comparison, but enough to trigger the update */);
+            }
+            else
+            {
+                return (object)e1 == (object)e2;
+            }
+        }
+
+        public static bool operator !=(GenericEvent e1, GenericEvent e2)
+        {
+            return !(e1 == e2);
+        }
     }
 }
