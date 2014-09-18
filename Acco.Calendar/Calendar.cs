@@ -53,15 +53,27 @@ namespace Acco.Calendar
             bool isPresent;
             // first: check if the item has already been added to the shared database
             var query = Query<T>.EQ(x => x.Id, item.Id);
-            if (Storage.Instance.Appointments.FindOneAs<T>(query) == null)
+            var appointment = Storage.Instance.Appointments.FindOneAs<T>(query);
+            if (appointment == null)
             {
                 Log.Debug(String.Format("[{0}] was not found", item.Id));
                 isPresent = false;
             }
             else 
             { 
-                Log.Warn(String.Format("[{0}] already on database", item.Id));
-                isPresent = true;
+                // todo: add item comparison here
+                if(appointment as GenericEvent == item as GenericEvent)
+                {
+                    Log.Info(String.Format("[{0}] is a duplicate", item.Id));
+                    isPresent = true;
+                    item.EventAction = EventAction.Duplicate;
+                }
+                else
+                {
+                    isPresent = true;
+                    Log.Info(String.Format("[{0}] has to be updated", item.Id));
+                    item.EventAction = EventAction.Update;
+                }
             }
             return isPresent;
         }
@@ -72,10 +84,6 @@ namespace Acco.Calendar
             {
                 Save(item); 
                 item.EventAction = EventAction.Add;
-            }
-            else
-            {
-                item.EventAction = EventAction.Duplicate;
             }
             base.InsertItem(index, item);
         }

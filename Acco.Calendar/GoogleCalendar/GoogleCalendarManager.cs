@@ -327,11 +327,25 @@ namespace Acco.Calendar.Manager
             var res = new List<PushedEvent>();
             // handle exceptions in a bulk
             var pushExceptions = new List<Exception>();
-            foreach (var evt in evts.Where(evt => evt.EventAction == EventAction.Add))
+            // new events management
+            foreach (var newEvent in evts.Where(evt => evt.EventAction == EventAction.Add))
             {
-                var currentEvent = await PushEvent(evt);
+                var currentEvent = await PushEvent(newEvent);
                 res.Add(currentEvent); // add it anyway
-                if (currentEvent.EventIsPushed == false) { pushExceptions.Add(new PushException("PushEvent failed", evt as GenericEvent)); }
+                if (currentEvent.EventIsPushed == false) { pushExceptions.Add(new PushException("PushEvent failed", newEvent as GenericEvent)); }
+            }
+            // updated events management
+            foreach(var updatedEvent in evts.Where(evt => evt.EventAction == EventAction.Update))
+            {
+                try 
+                { 
+                    UpdateEvent(updatedEvent);
+                }
+                catch(Exception ex)
+                {
+                    Log.Error("Exception", ex);
+                    pushExceptions.Add(new PushException("UpdateEvent failed", updatedEvent as GenericEvent));
+                }
             }
             // throw the exceptions, if any
             if (pushExceptions.Count > 0)
@@ -502,6 +516,111 @@ namespace Acco.Calendar.Manager
                     Log.Error("Exception", ex);
                 }
             }
+        }
+
+        private async void UpdateEvent(IEvent updatedEvent)
+        {
+            Log.Debug(String.Format("Updating existing event [{0}]...", updatedEvent.Id));
+            var googleEventId = StringHelper.GoogleBase32.ToBaseString(StringHelper.GetBytes(updatedEvent.Id)).ToLower();
+            /*
+                Identifier of the event. When creating new single or recurring events, you can specify their IDs. Provided IDs must follow these rules:
+                characters allowed in the ID are those used in base32hex encoding, i.e. lowercase letters a-v and digits 0-9, see section 3.1.2 in RFC2938
+                the length of the ID must be between 5 and 1024 characters
+                the ID must be unique per calendar
+                Due to the globally distributed nature of the system, we cannot guarantee that ID collisions will be detected at event creation time. To minimize the risk of collisions we recommend using an established UUID algorithm such as one described in RFC4122.
+             */
+            var myEvt = new Google.Apis.Calendar.v3.Data.Event
+            {
+                Id = googleEventId
+            };
+            //
+            // Id
+            // Organizer
+            if (updatedEvent.Organizer != null)
+            {
+                myEvt.Organizer = new Google.Apis.Calendar.v3.Data.Event.OrganizerData
+                {
+                    DisplayName = updatedEvent.Organizer.Name,
+                    Email = updatedEvent.Organizer.Email
+                };
+            }
+            // Creator
+            if (updatedEvent.Creator != null)
+            {
+                myEvt.Creator = new Google.Apis.Calendar.v3.Data.Event.CreatorData
+                {
+                    DisplayName = updatedEvent.Creator.Name,
+                    Email = updatedEvent.Creator.Email
+                };
+            }
+            // Summary
+            if (updatedEvent.Summary != "")
+            {
+                myEvt.Summary = updatedEvent.Summary;
+            }
+            // Description
+            if (updatedEvent.Description != "")
+            {
+                myEvt.Description = updatedEvent.Description;
+            }
+            // Location
+            if (updatedEvent.Location != null)
+            {
+                myEvt.Location = updatedEvent.Location.Name;
+            }
+            // Attendees
+            if (updatedEvent.Attendees != null)
+            {
+                myEvt.Attendees = new List<Google.Apis.Calendar.v3.Data.EventAttendee>();
+                foreach (var person in updatedEvent.Attendees)
+                {
+                    var r = person.Response.GetAttributeOfType<GoogleResponseStatus>();
+                    myEvt.Attendees.Add(new Google.Apis.Calendar.v3.Data.EventAttendee
+                    {
+                        Email = person.Email,
+                        DisplayName = person.Name,
+                        ResponseStatus = r.Text
+                    });
+                }
+            }
+            // Start
+            if (updatedEvent.Start.HasValue)
+            {
+                myEvt.Start = new Google.Apis.Calendar.v3.Data.EventDateTime
+                {
+                    DateTime = updatedEvent.Start,
+                    TimeZone = "Europe/Rome"
+                };
+            }
+            // End
+            if (updatedEvent.End.HasValue)
+            {
+                myEvt.End = new Google.Apis.Calendar.v3.Data.EventDateTime
+                {
+                    DateTime = updatedEvent.End,
+                    TimeZone = "Europe/Rome"
+                };
+            }
+            else
+            {
+                myEvt.EndTimeUnspecified = true;
+            }
+            // Recurrency
+            if (updatedEvent.Recurrence != null)
+            {
+                myEvt.Recurrence = new List<string> { updatedEvent.Recurrence.Get() };
+            }
+            // Creation date
+            if (updatedEvent.Created.HasValue)
+            {
+                myEvt.Created = updatedEvent.Created;
+            }
+            //
+            myEvt.Reminders = new Google.Apis.Calendar.v3.Data.Event.RemindersData { UseDefault = true };
+            var existingEvent = await Service.Events.Get(_settings.CalendarId, myEvt.Id).ExecuteAsync();
+            myEvt.Sequence = existingEvent.Sequence + 1; // todo: improve this shit..
+            //
+            var createdEvent = await Service.Events.Update(myEvt, _settings.CalendarId, myEvt.Id).ExecuteAsync();
         }
 
         private async Task<GoogleCalendarSettings> CreateSettings(string calendarName)
