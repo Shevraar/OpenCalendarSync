@@ -15,6 +15,7 @@ namespace Acco.Calendar
         bool IsAlreadySynced(T item);
     }
 
+    // todo: move this somewhere else
     public class DbCollection<T> : Collection<T>, IDbActions<T> where T: IEvent
     {
         private static readonly log4net.ILog Log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
@@ -73,6 +74,9 @@ namespace Acco.Calendar
                     isPresent = true;
                     Log.Info(String.Format("[{0}] has to be updated", item.Id));
                     item.EventAction = EventAction.Update;
+                    //todo: more specifically -> update only needed fields.. and use the update function..
+                    //var update = Update<T>.Set(x => x, item); 
+                    Storage.Instance.Appointments.Save(item); // todo: parse the result and gg - also change 
                 }
             }
             return isPresent;
