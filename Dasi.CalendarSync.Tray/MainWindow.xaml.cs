@@ -123,9 +123,16 @@ namespace Dasi.CalendarSync.Tray
 
         private async Task OutlookToGoogle()
         {
-            var client_id = GoogleToken.ClientId;
-            var secret    = GoogleToken.ClientSecret;
+            var client_id = Settings.Default.ClientID;
+            var secret    = Settings.Default.ClientSecret;
             var cal_name  = Settings.Default.CalendarName;
+
+            if ( string.IsNullOrEmpty(client_id) )
+                client_id = GoogleToken.ClientId;
+            if ( string.IsNullOrEmpty(secret) )
+                secret    = GoogleToken.ClientSecret;
+            if (string.IsNullOrEmpty(cal_name))
+                secret = "GVR.Meetings";
 
             try
             {
@@ -220,6 +227,18 @@ namespace Dasi.CalendarSync.Tray
             trayIcon.ShowBalloonTip(title, text, BalloonIcon.Warning);
             // hide baloon in 3 seconds
             HideBalloonAfterSeconds(3);
+        }
+
+        private void miSettings_Click(object sender, RoutedEventArgs e)
+        {
+            var sd = new SettingsDialog();
+            bool? result = sd.ShowDialog();
+            if (result.HasValue && result.Value)
+            {
+                Properties.Settings.Default.Save();
+                // save settings! YEAH
+                // write your code here!
+            }
         }
     }
 }
