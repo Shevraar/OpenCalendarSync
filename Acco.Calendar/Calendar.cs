@@ -76,7 +76,7 @@ namespace Acco.Calendar
                     item.EventAction = EventAction.Update;
                     //todo: more specifically -> update only needed fields.. and use the update function..
                     //var update = Update<T>.Set(x => x, item); 
-                    Storage.Instance.Appointments.Save(item); // todo: parse the result and gg - also change 
+                    var saveResult = Storage.Instance.Appointments.Save(item); // todo: parse the result and gg - also change 
                 }
             }
             return isPresent;
