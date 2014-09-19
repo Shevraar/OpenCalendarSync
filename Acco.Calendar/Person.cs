@@ -37,10 +37,7 @@ namespace Acco.Calendar.Person
                         (p1.FirstName == p2.FirstName) &&
                         (p1.LastName == p2.LastName);
             }
-            else
-            {
-                return (object)p1 == (object)p2;
-            }
+            return (object)p1 == (object)p2;
         }
 
         public static bool operator !=(GenericPerson p1, GenericPerson p2)

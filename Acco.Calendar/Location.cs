@@ -25,10 +25,7 @@
                         (l1.Latitude == l2.Latitude) &&
                         (l1.Longitude == l2.Longitude);
             }
-            else
-            {
-                return (object)l1 == (object)l2;
-            }   
+            return (object)l1 == (object)l2;
         }
 
         public static bool operator !=(GenericLocation l1, GenericLocation l2)

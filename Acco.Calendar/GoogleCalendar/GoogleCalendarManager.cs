@@ -56,7 +56,7 @@ namespace Acco.Calendar.Manager
             get { return instance; }
         }
 
-        public override IEnumerable<PushedEvent> Push(ICalendar calendar)
+        public override IEnumerable<UpdateOutcome> Push(ICalendar calendar)
         {
             var pushTask = PushAsync(calendar);
             pushTask.Wait();
@@ -71,7 +71,7 @@ namespace Acco.Calendar.Manager
             return pullTask.Result;
         }
 
-        public override async Task<IEnumerable<PushedEvent>> PushAsync(ICalendar calendar)
+        public override async Task<IEnumerable<UpdateOutcome>> PushAsync(ICalendar calendar)
         {
             Log.Info(String.Format("Pushing calendar to google [{0}]", calendar.Id));
             if (LastCalendar != null)
@@ -194,12 +194,12 @@ namespace Acco.Calendar.Manager
             return res;
         }
 
-        private async Task<PushedEvent> PushEvent(IEvent evt)
+        private async Task<UpdateOutcome> PushEvent(IEvent evt)
         {
             var googleEventId = StringHelper.GoogleBase32.ToBaseString(StringHelper.GetBytes(evt.Id)).ToLower();
             Log.Debug(String.Format("Pushing event with googleEventId[{0}]", googleEventId));
             Log.Debug(String.Format("and iCalUID [{0}]", evt.Id));
-            var res = new PushedEvent {Event = evt as GenericEvent};
+            var res = new UpdateOutcome {Event = evt as GenericEvent};
             //
             try
             {
@@ -302,13 +302,13 @@ namespace Acco.Calendar.Manager
                 //
                 if (createdEvent != null)
                 {
-                    res.EventIsPushed = true;
+                    res.Successful = true;
                 }
             }
             catch(GoogleApiException ex)
             {
                 Log.Error("GoogleApiException", ex);
-                res.EventIsPushed = false;
+                res.Successful = false;
             }
             catch (AggregateException ex)
             {
@@ -316,30 +316,33 @@ namespace Acco.Calendar.Manager
                 {
                     Log.Error(e.GetType().ToString(), e);
                 }
-                res.EventIsPushed = false;
+                res.Successful = false;
             }
             //
             return res;
         }
 
-        private async Task<IEnumerable<PushedEvent>> PushEvents(IEnumerable<IEvent> evts)
+        private async Task<IEnumerable<UpdateOutcome>> PushEvents(IEnumerable<IEvent> evts)
         {
-            var res = new List<PushedEvent>();
+            var res = new List<UpdateOutcome>();
             // handle exceptions in a bulk
             var pushExceptions = new List<Exception>();
             // new events management
-            foreach (var newEvent in evts.Where(evt => evt.EventAction == EventAction.Add))
+            var events = evts as IList<IEvent> ?? evts.ToList();
+            foreach (var newEvent in events.Where(evt => evt.EventAction == EventAction.Add))
             {
                 var currentEvent = await PushEvent(newEvent);
                 res.Add(currentEvent); // add it anyway
-                if (currentEvent.EventIsPushed == false) { pushExceptions.Add(new PushException("PushEvent failed", newEvent as GenericEvent)); }
+                if (currentEvent.Successful == false) { pushExceptions.Add(new PushException("PushEvent failed", newEvent as GenericEvent)); }
             }
             // updated events management
-            foreach(var updatedEvent in evts.Where(evt => evt.EventAction == EventAction.Update))
+            foreach(var updatedEvent in events.Where(evt => evt.EventAction == EventAction.Update))
             {
                 try 
                 { 
-                    UpdateEvent(updatedEvent);
+                    var currentEvent = await UpdateEvent(updatedEvent);
+                    res.Add(currentEvent);
+                    if (currentEvent.Successful == false) { pushExceptions.Add(new PushException("UpdateEvent failed", updatedEvent as GenericEvent)); }
                 }
                 catch(Exception ex)
                 {
@@ -518,9 +521,11 @@ namespace Acco.Calendar.Manager
             }
         }
 
-        private async void UpdateEvent(IEvent updatedEvent)
+        private async Task<UpdateOutcome> UpdateEvent(IEvent updatedEvent)
         {
             Log.Debug(String.Format("Updating existing event [{0}]...", updatedEvent.Id));
+            var res = new UpdateOutcome { Event = updatedEvent as GenericEvent, Successful = false };
+            //
             var googleEventId = StringHelper.GoogleBase32.ToBaseString(StringHelper.GetBytes(updatedEvent.Id)).ToLower();
             /*
                 Identifier of the event. When creating new single or recurring events, you can specify their IDs. Provided IDs must follow these rules:
@@ -621,12 +626,17 @@ namespace Acco.Calendar.Manager
             myEvt.Sequence = existingEvent.Sequence + 1; // todo: improve this shit..
             //
             var createdEvent = await Service.Events.Update(myEvt, _settings.CalendarId, myEvt.Id).ExecuteAsync();
+            if (createdEvent != null)
+            {
+                res.Successful = true; 
+            }
+            return res;
         }
 
-        public async void DropCurrentCalendar()
+        public async Task<string> DropCurrentCalendar()
         {
             // note: if we are not authenticated, this will throw an exception.
-            var res = await Service.Calendars.Delete(_settings.CalendarId).ExecuteAsync();
+            return await Service.Calendars.Delete(_settings.CalendarId).ExecuteAsync();
         }
 
         private async Task<GoogleCalendarSettings> CreateSettings(string calendarName)

@@ -10,10 +10,10 @@ using System.Threading;
 
 namespace Acco.Calendar.Manager
 {
-    public struct PushedEvent
+    public struct UpdateOutcome
     {
         public IEvent Event { get; set; }
-        public bool EventIsPushed { get; set; }
+        public bool Successful { get; set; }
     }
 
     [Serializable]
@@ -30,9 +30,9 @@ namespace Acco.Calendar.Manager
 
     public interface ICalendarManager
     {
-        IEnumerable<PushedEvent> Push(ICalendar calendar);
+        IEnumerable<UpdateOutcome> Push(ICalendar calendar);
 
-        Task<IEnumerable<PushedEvent>> PushAsync(ICalendar calendar);
+        Task<IEnumerable<UpdateOutcome>> PushAsync(ICalendar calendar);
 
         ICalendar Pull(); // this gets all the events synchronously
 
@@ -51,9 +51,9 @@ namespace Acco.Calendar.Manager
     {
         private static readonly log4net.ILog Log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
-        public abstract IEnumerable<PushedEvent> Push(ICalendar calendar);
+        public abstract IEnumerable<UpdateOutcome> Push(ICalendar calendar);
 
-        public abstract Task<IEnumerable<PushedEvent>> PushAsync(ICalendar calendar);
+        public abstract Task<IEnumerable<UpdateOutcome>> PushAsync(ICalendar calendar);
 
         public abstract ICalendar Pull(); // this gets all the events synchronously
 
