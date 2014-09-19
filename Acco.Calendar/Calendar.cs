@@ -20,8 +20,6 @@ namespace Acco.Calendar
     {
         private static readonly log4net.ILog Log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
-        public bool AddDuplicates { get; set; }
-
         public void Save(T item)
         {
             var r = Storage.Instance.Appointments.Save(item);
