@@ -1,0 +1,54 @@
+﻿<Window x:Class="Dasi.CalendarSync.Tray.SettingsDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"        
+        xmlns:w="clr-namespace:Dasi.CalendarSync.Tray"
+        xmlns:av="clr-namespace:WpfAutoGrid;assembly=WpfAutoGrid"
+        Title="SettingsDialog" Height="500" Width="480">
+
+    <DockPanel>
+
+        <!-- Bottom buttons -->
+        <StackPanel Orientation="Horizontal"  Grid.ColumnSpan="2" HorizontalAlignment="Right" DockPanel.Dock="Bottom">
+            <Button x:Name="btCancel" Margin="10" Width="80" Click="btCancel_Click">Annulla</Button>
+            <Button x:Name="btSave" Margin="10" Width="80" Click="btSave_Click">Salva</Button>
+        </StackPanel>
+        
+        <av:AutoGrid Margin="20" RowCount="10" RowHeight="Auto" Columns="Auto,*" ChildMargin="9">
+                
+            <!-- Options Group -->
+            <Label Grid.ColumnSpan="2" HorizontalAlignment="Center" FontWeight="Bold">Opzioni</Label>
+            <Separator Grid.ColumnSpan="2" />           
+      
+            <!-- Refresh Rate -->
+            <Label>Aggiorna ogni</Label>
+            <DockPanel LastChildFill="True">
+                <Label Content="{Binding ElementName=slRefreshTmo, Path=Value}" DockPanel.Dock="Left" Width="60" ContentStringFormat="{}{0:N0} min"/>
+                <Slider x:Name="slRefreshTmo" 
+                        Value="{Binding Source={StaticResource Settings}, Path=Default.RefreshRate}"
+                        Minimum="5" LargeChange="5" Maximum="300" SmallChange="1" TickPlacement="TopLeft" 
+                        TickFrequency="15" AutoToolTipPlacement="TopLeft" MouseWheel="slRefreshTmo_MouseWheel"/>
+            </DockPanel>
+
+            <!-- Calendar Name -->
+            <Label>Nome calendario</Label>
+            <TextBox Text="{Binding Source={StaticResource Settings}, Path=Default.CalendarName}"></TextBox>
+
+            <!-- Secrets Group -->
+            <Label Grid.ColumnSpan="2" HorizontalAlignment="Center" FontWeight="Bold">Segreti</Label>
+            <Separator Grid.ColumnSpan="2" />
+
+            <!-- Client ID -->
+            <Label>ID. Client</Label>
+            <PasswordBox w:PasswordHelper.Attach="True" 
+                         w:PasswordHelper.Password="{Binding Source={StaticResource Settings}, Path=Default.ClientID, Mode=TwoWay}"/>
+
+            <!-- Client Secret -->
+            <Label>Segreto</Label>       
+            <PasswordBox w:PasswordHelper.Attach="True" 
+                         w:PasswordHelper.Password="{Binding Source={StaticResource Settings}, Path=Default.ClientSecret, Mode=TwoWay}"/>
+
+        </av:AutoGrid>
+
+    </DockPanel>
+
+</Window>
