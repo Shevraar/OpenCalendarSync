@@ -139,7 +139,7 @@ namespace Dasi.CalendarSync.Tray
             if ( string.IsNullOrEmpty(secret) )
                 secret    = GoogleToken.ClientSecret;
             if (string.IsNullOrEmpty(cal_name))
-                secret = "GVR.Meetings";
+                cal_name = "GVR.Meetings";
 
             try
             {
