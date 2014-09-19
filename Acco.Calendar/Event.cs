@@ -22,7 +22,7 @@ namespace Acco.Calendar.Event
 
     public class GenericRecurrence : IRecurrence
     {
-        public RecPatt Pattern { get; set; }
+        protected RecPatt _RecPatt { get; set; }
 
         public GenericRecurrence()
         {
@@ -45,11 +45,23 @@ namespace Acco.Calendar.Event
         public override string ToString()
         {
             var s = "";
-            if (Pattern != null)
+            if (_RecPatt != null)
             {
-                s = Pattern.ToString();
+                s = _RecPatt.ToString();
             }
             return s;
+        }
+
+        public string Pattern
+        {
+            get
+            {
+                return _RecPatt.ToString();
+            }
+            set
+            {
+                _RecPatt = new RecPatt(value);
+            }
         }
     }
 
