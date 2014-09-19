@@ -65,7 +65,7 @@ namespace Acco.Calendar.Event
                     case OlRecurrenceType.olRecursMonthNth:
                         {
                             // see also: http://msdn.microsoft.com/en-us/library/office/aa211012(v=office.11).aspx
-                            _RecPatt = new DDay.iCal.RecurrencePattern(iCal.FrequencyType.Monthly, outlookRp.Interval)
+                            _RecPatt = new iCal.RecurrencePattern(iCal.FrequencyType.Monthly, outlookRp.Interval)
                             {
                                 FirstDayOfWeek = DayOfWeek.Monday,
                                 RestrictionType = iCal.RecurrenceRestrictionType.NoRestriction
