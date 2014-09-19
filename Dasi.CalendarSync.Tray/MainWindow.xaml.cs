@@ -13,7 +13,6 @@ using System.Windows.Threading;
 using System.Collections.Generic;
 using Dasi.CalendarSync.Tray.Properties;
 using System.IO;
-using MongoDB;
 
 namespace Dasi.CalendarSync.Tray
 {
@@ -49,9 +48,7 @@ namespace Dasi.CalendarSync.Tray
             animation_icons    = new System.Drawing.Icon[11];
             animation_stopping = false;
 
-            var my_asm = Assembly.GetExecutingAssembly();
-
-            for ( int i = 0; i < 11; ++i ) {
+            for ( var i = 0; i < 11; ++i ) {
                 try
                 {
                     var res_name = string.Format("_{0}", i + 1);
@@ -268,12 +265,10 @@ namespace Dasi.CalendarSync.Tray
         private void miSettings_Click(object sender, RoutedEventArgs e)
         {
             var sd = new SettingsDialog();
-            bool? result = sd.ShowDialog();
+            var result = sd.ShowDialog();
             if (result.HasValue && result.Value)
             {
-                Properties.Settings.Default.Save();
-                // save settings! YEAH
-                // write your code here!
+                Settings.Default.Save();
             }
         }
     }
