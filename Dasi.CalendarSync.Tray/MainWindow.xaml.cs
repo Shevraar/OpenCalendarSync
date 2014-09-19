@@ -2,7 +2,6 @@
 using Acco.Calendar;
 using Acco.Calendar.Manager;
 using Acco.Calendar.Database;
-using MongoDB.Driver;
 using Google;
 using Hardcodet.Wpf.TaskbarNotification;
 using log4net.Config;
@@ -14,6 +13,7 @@ using System.Windows.Threading;
 using System.Collections.Generic;
 using Dasi.CalendarSync.Tray.Properties;
 using System.IO;
+using MongoDB;
 
 namespace Dasi.CalendarSync.Tray
 {
@@ -33,10 +33,17 @@ namespace Dasi.CalendarSync.Tray
 
         public MainWindow()
         {
-            InitializeComponent();
-
             XmlConfigurator.Configure(); //only once
             Log.Info("Application is starting");
+
+            try
+            {
+                InitializeComponent();
+            }
+            catch (Exception ex)
+            {
+                Log.Error("Exception", ex);    
+            }
 
             current_icon_index = 0;
             animation_icons    = new System.Drawing.Icon[11];
@@ -162,14 +169,14 @@ namespace Dasi.CalendarSync.Tray
             }
         }
 
-        private void SyncSuccess(IEnumerable<PushedEvent> pushedEvents)
+        private void SyncSuccess(IEnumerable<UpdateOutcome> pushedEvents)
         {
             string title = "Risultato sincronizzazione";
             string text  = "La sincronizzazione e' terminata con successo";
-            var events = pushedEvents as List<PushedEvent>;
-            if (events != null && (events.Count(e => e.EventIsPushed) > 0))
+            var events = pushedEvents as List<UpdateOutcome>;
+            if (events != null && (events.Count(e => e.Successful) > 0))
             { 
-                text += "\n" + String.Format("{0} eventi aggiunti al calendario", events.Count(e => e.EventIsPushed));
+                text += "\n" + String.Format("{0} eventi aggiunti al calendario", events.Count(e => e.Successful));
                 //show balloon with built-in icon
                 trayIcon.ShowBalloonTip(title, text, BalloonIcon.Info);
                 // hide baloon in 3 seconds
@@ -203,35 +210,36 @@ namespace Dasi.CalendarSync.Tray
 
         private async void miReset_Click(object sender, RoutedEventArgs e)
         {
-            var title = "Risultato reset";
+            const string title = "Risultato reset";
             var text = "";
             var drop = Storage.Instance.Appointments.Drop();
             if(drop.Ok)            
             {
-                text += "- Database appuntamenti svuotato correttamente\n";
+                text += "Database appuntamenti svuotato correttamente\n";
             }
             else
             {
-                text += "- Database appuntamenti *NON* svuotato!\n";
+                text += "Database appuntamenti *NON* svuotato!\n";
                 Log.Error("Failed to delete drop appointments database");
             }
             try
             {
-                var client_id = GoogleToken.ClientId;
+                var clientId = GoogleToken.ClientId;
                 var secret = GoogleToken.ClientSecret;
-                var cal_name = Settings.Default.CalendarName;
+                var calName = Settings.Default.CalendarName;
                 //
 
-                var isLoggedIn = await GoogleCalendarManager.Instance.Initialize(client_id, secret, cal_name);
+                var isLoggedIn = await GoogleCalendarManager.Instance.Initialize(clientId, secret, calName);
                 if (isLoggedIn) //logged in to google, go on!
                 {
-                    GoogleCalendarManager.Instance.DropCurrentCalendar();
-                    text += "- Calendario su google calendar cancellato correttamente\n";
+                    var calendarDrop = await GoogleCalendarManager.Instance.DropCurrentCalendar();
+                    text += "Calendario su google calendar cancellato correttamente\n";
+                    text += " Dettagli operazione: " + calendarDrop + "\n";
                 }
             }
             catch(Exception ex)
             {
-                text += "- Calendario su google calendar *NON* cancellato\n";
+                text += "Calendario su google calendar *NON* cancellato\n";
                 Log.Error("Failed to delete calendar from google", ex);
             }
             //
@@ -239,11 +247,11 @@ namespace Dasi.CalendarSync.Tray
             {
                 
                 File.Delete("googlecalendar.settings");
-                text += "- Impostazioni di google calendar cancellate correttamente";
+                text += "Impostazioni di google calendar cancellate correttamente";
             }
             catch(Exception ex)
             {
-                text += "- Impostazioni di google calendar *NON* cancellate!";
+                text += "Impostazioni di google calendar *NON* cancellate!";
                 Log.Error("Failed to delete googlecalendar.settings", ex);
             }
             //
