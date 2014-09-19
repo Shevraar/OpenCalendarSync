@@ -623,6 +623,12 @@ namespace Acco.Calendar.Manager
             var createdEvent = await Service.Events.Update(myEvt, _settings.CalendarId, myEvt.Id).ExecuteAsync();
         }
 
+        public async void DropCurrentCalendar()
+        {
+            // note: if we are not authenticated, this will throw an exception.
+            var res = await Service.Calendars.Delete(_settings.CalendarId).ExecuteAsync();
+        }
+
         private async Task<GoogleCalendarSettings> CreateSettings(string calendarName)
         {
             GoogleCalendarSettings temporarySettings = null;

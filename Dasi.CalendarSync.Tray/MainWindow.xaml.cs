@@ -201,7 +201,7 @@ namespace Dasi.CalendarSync.Tray
             tmr.Start();
         }
 
-        private void miReset_Click(object sender, RoutedEventArgs e)
+        private async void miReset_Click(object sender, RoutedEventArgs e)
         {
             var title = "Risultato reset";
             var text = "";
@@ -215,9 +215,29 @@ namespace Dasi.CalendarSync.Tray
                 text += "- Database appuntamenti *NON* svuotato!\n";
                 Log.Error("Failed to delete drop appointments database");
             }
+            try
+            {
+                var client_id = GoogleToken.ClientId;
+                var secret = GoogleToken.ClientSecret;
+                var cal_name = Settings.Default.CalendarName;
+                //
+
+                var isLoggedIn = await GoogleCalendarManager.Instance.Initialize(client_id, secret, cal_name);
+                if (isLoggedIn) //logged in to google, go on!
+                {
+                    GoogleCalendarManager.Instance.DropCurrentCalendar();
+                    text += "- Calendario su google calendar cancellato correttamente\n";
+                }
+            }
+            catch(Exception ex)
+            {
+                text += "- Calendario su google calendar *NON* cancellato\n";
+                Log.Error("Failed to delete calendar from google", ex);
+            }
             //
             try
             {
+                
                 File.Delete("googlecalendar.settings");
                 text += "- Impostazioni di google calendar cancellate correttamente";
             }
