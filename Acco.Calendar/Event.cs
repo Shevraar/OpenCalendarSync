@@ -1,15 +1,10 @@
 ﻿using Acco.Calendar.Location;
 using Acco.Calendar.Person;
-using DDay.iCal;
-using RecPatt = DDay.iCal.RecurrencePattern;
-//
-//
+using MongoDB.Bson.Serialization;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using MongoDB.Bson.Serialization;
-
-//
+using RecPatt = DDay.iCal.RecurrencePattern;
 
 namespace Acco.Calendar.Event
 {
@@ -24,7 +19,7 @@ namespace Acco.Calendar.Event
     {
         protected RecPatt _RecPatt { get; set; }
 
-        public GenericRecurrence()
+        protected GenericRecurrence()
         {
             if (!BsonClassMap.IsClassMapRegistered(typeof(RecPatt)))
             {
@@ -208,21 +203,18 @@ namespace Acco.Calendar.Event
 
         public static bool operator ==(GenericEvent e1, GenericEvent e2)
         {
-            if((object)e1 != null &&
+            if ((object)e1 != null &&
                 (object)e2 != null)
-            { 
-                return  (e1.Id == e2.Id) &&
-                        (e1.Start == e2.Start) && 
+            {
+                return (e1.Id == e2.Id) &&
+                        (e1.Start == e2.Start) &&
                         (e1.End == e2.End) &&
                         (e1.Location == e2.Location) &&
                         (e1.Recurrence != null && e2.Recurrence != null) &&
                         (e1.Recurrence.Pattern == e2.Recurrence.Pattern) &&
                         (e1.Attendees.Count == e2.Attendees.Count /* stupid comparison, but enough to trigger the update */);
             }
-            else
-            {
-                return (object)e1 == (object)e2;
-            }
+            return (object)e1 == (object)e2;
         }
 
         public static bool operator !=(GenericEvent e1, GenericEvent e2)
