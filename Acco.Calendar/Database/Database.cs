@@ -1,8 +1,5 @@
 ﻿using Acco.Calendar.Event;
 using MongoDB.Driver;
-
-//
-//
 using System;
 
 namespace Acco.Calendar.Database
@@ -31,7 +28,7 @@ namespace Acco.Calendar.Database
 
         private MongoServer Server { get; set; }
 
-        public MongoDatabase Database { get; private set; }
+        internal MongoDatabase Database { get; private set; }
 
         public MongoCollection<GenericEvent> Appointments { get; private set; }
 
