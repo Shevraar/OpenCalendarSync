@@ -1,5 +1,6 @@
 ﻿using System.Linq;
 using Acco.Calendar;
+using Acco.Calendar.Event;
 using Acco.Calendar.Manager;
 using Acco.Calendar.Database;
 using Google;
@@ -64,8 +65,7 @@ namespace Dasi.CalendarSync.Tray
             idle_icon = Properties.Resources.calendar;
 
             // Create a Timer with a Normal Priority
-            _timer = new DispatcherTimer();
-            _timer.Interval = TimeSpan.FromHours(1);
+            _timer = new DispatcherTimer {Interval = TimeSpan.FromMinutes(Settings.Default.RefreshRate)};
             //_timer.Interval = TimeSpan.FromSeconds(10);
 
             // Set the callback to just show the time ticking away
@@ -77,8 +77,7 @@ namespace Dasi.CalendarSync.Tray
 
             _timer.Start();
 
-            _icon_animation_timer = new DispatcherTimer();
-            _icon_animation_timer.Interval = TimeSpan.FromMilliseconds(100);
+            _icon_animation_timer = new DispatcherTimer {Interval = TimeSpan.FromMilliseconds(50)};
 
             _icon_animation_timer.Tick += delegate
             {
@@ -130,6 +129,7 @@ namespace Dasi.CalendarSync.Tray
             var client_id = Settings.Default.ClientID;
             var secret    = Settings.Default.ClientSecret;
             var cal_name  = Settings.Default.CalendarName;
+            ICalendar calendar;
 
             if ( string.IsNullOrEmpty(client_id) )
                 client_id = GoogleToken.ClientId;
@@ -141,8 +141,16 @@ namespace Dasi.CalendarSync.Tray
             try
             {
                 // take events from outlook and push em to google
-                var calendar = await OutlookCalendarManager.Instance.PullAsync() as GenericCalendar;
-                //
+                calendar = await OutlookCalendarManager.Instance.PullAsync() as GenericCalendar;
+            }
+            catch (Exception ex)
+            {
+                SyncFailure(ex.Message);
+                return;
+            }
+            //
+            try
+            {
                 var isLoggedIn = await GoogleCalendarManager.Instance.Initialize(client_id, secret, cal_name);
                 if (isLoggedIn) //logged in to google, go on!
                 {
@@ -175,24 +183,33 @@ namespace Dasi.CalendarSync.Tray
 
         private void SyncSuccess(IEnumerable<UpdateOutcome> pushedEvents)
         {
-            string title = "Risultato sincronizzazione";
-            string text  = "La sincronizzazione e' terminata con successo";
+            const string title = "Risultato sincronizzazione";
+            var text  = "La sincronizzazione e' terminata con successo";
             var events = pushedEvents as List<UpdateOutcome>;
-            if (events != null && (events.Count(e => e.Successful) > 0))
-            { 
-                text += "\n" + String.Format("{0} eventi aggiunti al calendario", events.Count(e => e.Successful));
-                //show balloon with built-in icon
+            if (events != null)
+            {
+                if(events.Count(e => e.Successful && e.Event.Action == EventAction.Add) > 0)
+                {
+                    text += "\n" + String.Format("{0} eventi aggiunti al calendario", events.Count(e => e.Successful && e.Event.Action == EventAction.Add));
+                }
+                if (events.Count(e => e.Successful && e.Event.Action == EventAction.Update) > 0)
+                {
+                    text += "\n" + String.Format("{0} eventi aggiornati", events.Count(e => e.Successful && e.Event.Action == EventAction.Update));
+                }
+                if (events.Count(e => e.Event.Action == EventAction.Remove) > 0)
+                {
+                    text += "\n" + String.Format("{0} eventi rimossi", events.Count(e => e.Event.Action == EventAction.Remove));
+                }
                 trayIcon.ShowBalloonTip(title, text, BalloonIcon.Info);
-                // hide baloon in 3 seconds
-                HideBalloonAfterSeconds(3);
+                HideBalloonAfterSeconds(6);
             }
         }
 
         private void SyncFailure(string message)
         {
-            string title = "Risultato sincronizzazione";
-            string text = "La sincronizzazione e' fallita\n";
-            string details = message;
+            const string title = "Risultato sincronizzazione";
+            var text = "La sincronizzazione e' fallita\n";
+            var details = message;
             text += details;
 
             //show balloon with built-in icon
@@ -201,8 +218,7 @@ namespace Dasi.CalendarSync.Tray
 
         private void HideBalloonAfterSeconds(int seconds)
         {
-            var tmr = new DispatcherTimer();
-            tmr.Interval = TimeSpan.FromSeconds(seconds);
+            var tmr = new DispatcherTimer {Interval = TimeSpan.FromSeconds(seconds)};
             tmr.Tick += delegate
             {
                 tmr.Stop();
