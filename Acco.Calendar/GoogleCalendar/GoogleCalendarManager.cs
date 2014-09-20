@@ -329,14 +329,14 @@ namespace Acco.Calendar.Manager
             var pushExceptions = new List<Exception>();
             // new events management
             var events = evts as IList<IEvent> ?? evts.ToList();
-            foreach (var newEvent in events.Where(evt => evt.EventAction == EventAction.Add))
+            foreach (var newEvent in events.Where(evt => evt.Action == EventAction.Add))
             {
                 var currentEvent = await PushEvent(newEvent);
                 res.Add(currentEvent); // add it anyway
                 if (currentEvent.Successful == false) { pushExceptions.Add(new PushException("PushEvent failed", newEvent as GenericEvent)); }
             }
             // updated events management
-            foreach(var updatedEvent in events.Where(evt => evt.EventAction == EventAction.Update))
+            foreach(var updatedEvent in events.Where(evt => evt.Action == EventAction.Update))
             {
                 try 
                 { 

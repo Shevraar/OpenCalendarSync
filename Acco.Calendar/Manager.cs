@@ -1,10 +1,6 @@
 ﻿using Acco.Calendar.Event;
 using System;
-
-//
 using System.Threading.Tasks;
-
-//
 using System.Collections.Generic;
 using System.Threading;
 
@@ -82,7 +78,7 @@ namespace Acco.Calendar.Manager
             timer.Change(UpdateInterval, TimeSpan.FromMilliseconds(-1));
         }
 
-        protected internal Task UpdateAsync()
+        private Task UpdateAsync()
         {
             var t = Task.Factory.StartNew(async () =>
             {
@@ -111,7 +107,7 @@ namespace Acco.Calendar.Manager
             UpdateAsync().RunSynchronously();
         }
 
-        protected internal ICalendar LastCalendar { get; set; }
+        protected ICalendar LastCalendar { get; set; }
 
         private TimeSpan UpdateInterval { get; set; }
     }

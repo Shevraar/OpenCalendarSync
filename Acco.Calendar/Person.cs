@@ -45,7 +45,6 @@ namespace Acco.Calendar.Person
             return !(p1 == p2);
         }
 
-
         public override bool Equals(object obj)
         {
             // If parameter is null return false.
@@ -90,7 +89,7 @@ namespace Acco.Calendar.Person
         }
     }
 
-    public enum ResponseStatus : sbyte
+    public enum ResponseStatus : ushort
     {
         [GoogleResponseStatus("accepted"),
         OutlookResponseStatus(OutlookResponseStatusEnum.olResponseAccepted)]
@@ -120,5 +119,42 @@ namespace Acco.Calendar.Person
     public class GenericAttendee : GenericPerson
     {
         public ResponseStatus Response { get; set; }
+
+        public override bool Equals(object obj)
+        {
+            // If parameter is null return false.
+            if (obj == null)
+            {
+                return false;
+            }
+
+            // If parameter cannot be cast to Point return false.
+            var p = obj as GenericPerson;
+            if ((object)p == null)
+            {
+                return false;
+            }
+
+            return (this == p);
+        }
+
+        public override int GetHashCode()
+        {
+            return base.GetHashCode();
+        }
+
+        public static bool operator == (GenericAttendee a1, GenericAttendee a2)
+        {
+            if ((object)a1 != null && (object)a2 != null)
+            {
+                return a1.Response == a2.Response;
+            }
+            return (object)a1 == (object)a2;
+        }
+
+        public static bool operator !=(GenericAttendee a1, GenericAttendee a2)
+        {
+            return !(a1 == a2);
+        }
     }
 }

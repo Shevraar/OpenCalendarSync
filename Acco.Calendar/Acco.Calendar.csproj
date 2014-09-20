@@ -120,9 +120,11 @@
   <ItemGroup>
     <Compile Include="Calendar.cs" />
     <Compile Include="Database\Database.cs" />
+    <Compile Include="Utilities\DbCollection.cs" />
     <Compile Include="Event.cs" />
     <Compile Include="GoogleCalendar\GoogleCalendarManager.cs" />
     <Compile Include="GoogleCalendar\GoogleRecurrence.cs" />
+    <Compile Include="Recurrence.cs" />
     <Compile Include="OutlookCalendar\OutlookCalendarManager.cs" />
     <Compile Include="Location.cs" />
     <Compile Include="Manager.cs" />
