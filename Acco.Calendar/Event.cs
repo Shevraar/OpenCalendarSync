@@ -160,7 +160,7 @@ namespace Acco.Calendar.Event
                         (e1.Recurrence != null && e2.Recurrence != null) &&
                         (e1.Recurrence.Pattern == e2.Recurrence.Pattern) &&
                         (e1.Attendees.Count == e2.Attendees.Count /* first check if the number of attendees is the same */) &&
-                        (e1.Attendees.Except(e2.Attendees).Any());
+                        (!e1.Attendees.Except(e2.Attendees).Any());
             }
             return (object)e1 == (object)e2;
         }
