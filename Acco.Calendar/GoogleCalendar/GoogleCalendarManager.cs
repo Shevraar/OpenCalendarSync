@@ -8,6 +8,7 @@ using Google.Apis.Calendar.v3;
 using Google.Apis.Services;
 using Google.Apis.Util.Store;
 using MongoDB.Bson;
+using MongoDB.Driver.Linq;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -97,8 +98,30 @@ namespace Acco.Calendar.Manager
             return calendar;
         }
 
+        private static DbCollection<GenericEvent> restoreEvents()
+        {
+            //todo: work in progress - somehow we have to retrieve appointments...
+            var query =
+            from e in Database.Storage.Instance.Appointments.AsQueryable()
+            select e;
+            var ret = new DbCollection<GenericEvent>();
+            foreach (var evt in query)
+            {
+                ret.Add(evt);
+            }
+            return ret;
+        }
+
         public async Task<bool> Initialize(string clientId, string clientSecret, string calendarName)
         {
+            if(LastCalendar == null)
+            {
+                LastCalendar = new GenericCalendar()
+                {
+                    Events = restoreEvents()
+                };
+            }
+            //
             Log.Info(String.Format("Initializing google calendar [{0}]", calendarName));
             var authenticated = await Authenticate(clientId, clientSecret);
             if (authenticated)
@@ -508,7 +531,10 @@ namespace Acco.Calendar.Manager
                     Log.Debug(String.Format("Remove event with google id [{0}]", StringHelper.GoogleBase32.ToBaseString(StringHelper.GetBytes(evt.Id))));
                     Log.Debug(String.Format("and iCalUID [{0}]", evt.Id));
                     var res = await Service.Events.Delete(_settings.CalendarId, StringHelper.GoogleBase32.ToBaseString(StringHelper.GetBytes(evt.Id))).ExecuteAsync();
-                    Log.Debug(res);
+                    if (res != null)
+                    {
+                        Log.Debug(res);
+                    }
                 }
                 catch (GoogleApiException ex)
                 {
