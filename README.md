@@ -1,7 +1,7 @@
 OpenCalendarSync
 ============
 
-A library to help you manage calendar imports on various calendar services, such as Outlook and Google Calendar.
+A tool to help you manage calendar imports on various calendar services, such as Outlook and Google Calendar.
 
 ___
 
@@ -21,7 +21,7 @@ Also, to compile the library you'll also have to install http://msdn.microsoft.c
 
 ___
 
-How it works
+How the code works
 ============
 Each calendar "manager" derives from the basic ``ICalendarManager``, that forces you to implement various generic functions:
 
