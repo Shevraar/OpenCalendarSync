@@ -98,7 +98,7 @@ namespace Acco.Calendar.Manager
             return calendar;
         }
 
-        private static DbCollection<GenericEvent> restoreEvents()
+        private static DbCollection<GenericEvent> RestoreEvents()
         {
             //todo: work in progress - somehow we have to retrieve appointments...
             var query =
@@ -116,9 +116,9 @@ namespace Acco.Calendar.Manager
         {
             if(LastCalendar == null)
             {
-                LastCalendar = new GenericCalendar()
+                LastCalendar = new GenericCalendar
                 {
-                    Events = restoreEvents()
+                    Events = RestoreEvents()
                 };
             }
             //
@@ -162,7 +162,7 @@ namespace Acco.Calendar.Manager
                 Service = new CalendarService(new BaseClientService.Initializer
                 {
                     HttpClientInitializer = Credential,
-                    ApplicationName = _settings.ApplicationName
+                    ApplicationName = GoogleCalendarSettings.ApplicationName
                 });
             }
             catch (Exception ex)
@@ -719,13 +719,13 @@ namespace Acco.Calendar.Manager
         }
 
         [Serializable]
-        internal class GoogleCalendarSettings
+        private class GoogleCalendarSettings
         {
             public string CalendarId { get; set; }
 
             public string CalendarName { get; set; }
 
-            public string ApplicationName
+            public static string ApplicationName
             {
                 get { return "Outlook2GoogleCalendar"; }
             }
