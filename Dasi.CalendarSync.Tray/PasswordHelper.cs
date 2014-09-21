@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
 
 namespace Dasi.CalendarSync.Tray
@@ -57,20 +52,23 @@ namespace Dasi.CalendarSync.Tray
         private static void OnPasswordPropertyChanged(DependencyObject sender,
             DependencyPropertyChangedEventArgs e)
         {
-            PasswordBox passwordBox = sender as PasswordBox;
-            passwordBox.PasswordChanged -= PasswordChanged;
-
-            if (!(bool)GetIsUpdating(passwordBox))
+            var passwordBox = sender as PasswordBox;
+            if (passwordBox != null)
             {
-                passwordBox.Password = (string)e.NewValue;
+                passwordBox.PasswordChanged -= PasswordChanged;
+
+                if (!GetIsUpdating(passwordBox))
+                {
+                    passwordBox.Password = (string)e.NewValue;
+                }
+                passwordBox.PasswordChanged += PasswordChanged;
             }
-            passwordBox.PasswordChanged += PasswordChanged;
         }
 
         private static void Attach(DependencyObject sender,
             DependencyPropertyChangedEventArgs e)
         {
-            PasswordBox passwordBox = sender as PasswordBox;
+            var passwordBox = sender as PasswordBox;
 
             if (passwordBox == null)
                 return;
@@ -88,10 +86,13 @@ namespace Dasi.CalendarSync.Tray
 
         private static void PasswordChanged(object sender, RoutedEventArgs e)
         {
-            PasswordBox passwordBox = sender as PasswordBox;
+            var passwordBox = sender as PasswordBox;
             SetIsUpdating(passwordBox, true);
-            SetPassword(passwordBox, passwordBox.Password);
-            SetIsUpdating(passwordBox, false);
+            if (passwordBox != null)
+            {
+                SetPassword(passwordBox, passwordBox.Password);
+                SetIsUpdating(passwordBox, false);
+            }
         }
     }
 }
