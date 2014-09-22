@@ -659,9 +659,14 @@ namespace Acco.Calendar.Manager
             return res;
         }
 
-        public async Task<Google.Apis.Calendar.v3.Data.CalendarListEntry> SetCalendarColor(string BackgroundColor, string ForegroundColor)
+        public async Task<bool> SetCalendarColor(string BackgroundColor, string ForegroundColor)
         {
-            return await Service.CalendarList.Update(new Google.Apis.Calendar.v3.Data.CalendarListEntry { BackgroundColor = BackgroundColor, ForegroundColor = ForegroundColor }, _settings.CalendarId).ExecuteAsync();
+            var request = Service.CalendarList.Update(new Google.Apis.Calendar.v3.Data.CalendarListEntry { BackgroundColor = BackgroundColor, ForegroundColor = ForegroundColor }, _settings.CalendarId);
+            request.ColorRgbFormat = true;
+            var ret = await request.ExecuteAsync();
+            if (ret != null)
+                return true;
+            return false;
         }
 
         public async Task<string> DropCurrentCalendar()

@@ -28,6 +28,7 @@ namespace Dasi.CalendarSync.Tray
         private System.Drawing.Icon[] animation_icons;
         private System.Drawing.Icon idle_icon;
         private bool animation_stopping;
+        private bool logged_in_google;
 
         private static readonly log4net.ILog Log = log4net.LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
@@ -94,7 +95,6 @@ namespace Dasi.CalendarSync.Tray
                 }
             };
 
-            
         }
 
         private void miExit_Click(object sender, RoutedEventArgs e)
@@ -126,18 +126,19 @@ namespace Dasi.CalendarSync.Tray
 
         private async Task OutlookToGoogle()
         {
+            // settings
             var client_id = Settings.Default.ClientID;
             var secret    = Settings.Default.ClientSecret;
             var cal_name  = Settings.Default.CalendarName;
-            ICalendar calendar;
-
             if ( string.IsNullOrEmpty(client_id) )
                 client_id = GoogleToken.ClientId;
             if ( string.IsNullOrEmpty(secret) )
                 secret    = GoogleToken.ClientSecret;
             if (string.IsNullOrEmpty(cal_name))
                 cal_name = "GVR.Meetings";
-
+            //
+            ICalendar calendar;
+            //
             try
             {
                 // take events from outlook and push em to google
@@ -151,8 +152,11 @@ namespace Dasi.CalendarSync.Tray
             //
             try
             {
-                var isLoggedIn = await GoogleCalendarManager.Instance.Initialize(client_id, secret, cal_name);
-                if (isLoggedIn) //logged in to google, go on!
+                if (!logged_in_google)
+                {
+                    logged_in_google = await GoogleCalendarManager.Instance.Initialize(client_id, secret, cal_name);
+                }
+                if (logged_in_google) //logged in to google, go on!
                 {
                     try
                     {
@@ -163,7 +167,7 @@ namespace Dasi.CalendarSync.Tray
                     {
                         SyncFailure(ex.Message);
                     }
-                    catch(Exception ex)
+                    catch (Exception ex)
                     {
                         SyncFailure(ex.Message);
                     }
@@ -278,14 +282,32 @@ namespace Dasi.CalendarSync.Tray
             trayIcon.ShowBalloonTip(title, text, BalloonIcon.Warning);
         }
 
-        private void miSettings_Click(object sender, RoutedEventArgs e)
+        private async void miSettings_Click(object sender, RoutedEventArgs e)
         {
             var sd = new SettingsDialog();
             var result = sd.ShowDialog();
             if (result.HasValue && result.Value)
             {
                 Settings.Default.Save();
+                var foregroundColor = System.Drawing.ColorTranslator.ToHtml(System.Drawing.Color.FromArgb(Settings.Default.FgColor.A, Settings.Default.FgColor.R, Settings.Default.FgColor.G, Settings.Default.FgColor.B));
+                var backgroundColor = System.Drawing.ColorTranslator.ToHtml(System.Drawing.Color.FromArgb(Settings.Default.BgColor.A, Settings.Default.BgColor.R, Settings.Default.BgColor.G, Settings.Default.BgColor.B));
+                var res = await GoogleCalendarManager.Instance.SetCalendarColor(backgroundColor.ToLower(), foregroundColor.ToLower());
             }
+        }
+
+        private async void Window_Initialized(object sender, EventArgs e)
+        {
+            var client_id = Settings.Default.ClientID;
+            var secret = Settings.Default.ClientSecret;
+            var cal_name = Settings.Default.CalendarName;
+            if (string.IsNullOrEmpty(client_id))
+                client_id = GoogleToken.ClientId;
+            if (string.IsNullOrEmpty(secret))
+                secret = GoogleToken.ClientSecret;
+            if (string.IsNullOrEmpty(cal_name))
+                cal_name = "GVR.Meetings";
+
+            logged_in_google = await GoogleCalendarManager.Instance.Initialize(client_id, secret, cal_name);
         }
     }
 }
