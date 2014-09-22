@@ -251,15 +251,13 @@ namespace Dasi.CalendarSync.Tray
                 var clientId = GoogleToken.ClientId;
                 var secret = GoogleToken.ClientSecret;
                 var calName = Settings.Default.CalendarName;
-                //
-
-                var isLoggedIn = await GoogleCalendarManager.Instance.Initialize(clientId, secret, calName);
-                if (isLoggedIn) //logged in to google, go on!
-                {
-                    var calendarDrop = await GoogleCalendarManager.Instance.DropCurrentCalendar();
-                    text += "Calendario su google calendar cancellato correttamente\n";
-                    text += " Dettagli operazione: " + calendarDrop + "\n";
+                if(!logged_in_google)
+                { 
+                    logged_in_google = await GoogleCalendarManager.Instance.Initialize(clientId, secret, calName);
                 }
+                var calendarDrop = await GoogleCalendarManager.Instance.DropCurrentCalendar();
+                text += "Calendario su google calendar cancellato correttamente\n";
+                text += " Dettagli operazione: " + calendarDrop + "\n";
             }
             catch(Exception ex)
             {
