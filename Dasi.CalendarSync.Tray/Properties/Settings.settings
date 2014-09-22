@@ -14,5 +14,11 @@
     <Setting Name="ClientSecret" Type="System.String" Scope="User">
       <Value Profile="(Default)" />
     </Setting>
+    <Setting Name="FgColor" Type="System.Windows.Media.Color" Scope="User">
+      <Value Profile="(Default)">#FFFFFFFF</Value>
+    </Setting>
+    <Setting Name="BgColor" Type="System.Windows.Media.Color" Scope="User">
+      <Value Profile="(Default)">#FF00EE00</Value>
+    </Setting>
   </Settings>
 </SettingsFile>
