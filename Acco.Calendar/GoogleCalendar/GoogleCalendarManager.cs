@@ -659,6 +659,11 @@ namespace Acco.Calendar.Manager
             return res;
         }
 
+        public async Task<Google.Apis.Calendar.v3.Data.CalendarListEntry> SetCalendarColor(string BackgroundColor, string ForegroundColor)
+        {
+            return await Service.CalendarList.Update(new Google.Apis.Calendar.v3.Data.CalendarListEntry { BackgroundColor = BackgroundColor, ForegroundColor = ForegroundColor }, _settings.CalendarId).ExecuteAsync();
+        }
+
         public async Task<string> DropCurrentCalendar()
         {
             // note: if we are not authenticated, this will throw an exception.
