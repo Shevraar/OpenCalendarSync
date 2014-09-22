@@ -25,7 +25,7 @@
                 <Label Content="{Binding ElementName=slRefreshTmo, Path=Value}" DockPanel.Dock="Left" Width="60" ContentStringFormat="{}{0:N0} min"/>
                 <Slider x:Name="slRefreshTmo" 
                         Value="{Binding Source={StaticResource Settings}, Path=Default.RefreshRate}"
-                        Minimum="5" LargeChange="5" Maximum="300" SmallChange="1" TickPlacement="TopLeft" 
+                        Minimum="5" LargeChange="15" Maximum="300" SmallChange="5" TickPlacement="TopLeft" 
                         TickFrequency="15" AutoToolTipPlacement="TopLeft" MouseWheel="slRefreshTmo_MouseWheel"/>
             </DockPanel>
 
