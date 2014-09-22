@@ -70,5 +70,29 @@ namespace Dasi.CalendarSync.Tray.Properties {
                 this["ClientSecret"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("#FFFFFFFF")]
+        public global::System.Windows.Media.Color FgColor {
+            get {
+                return ((global::System.Windows.Media.Color)(this["FgColor"]));
+            }
+            set {
+                this["FgColor"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("#FF00EE00")]
+        public global::System.Windows.Media.Color BgColor {
+            get {
+                return ((global::System.Windows.Media.Color)(this["BgColor"]));
+            }
+            set {
+                this["BgColor"] = value;
+            }
+        }
     }
 }
