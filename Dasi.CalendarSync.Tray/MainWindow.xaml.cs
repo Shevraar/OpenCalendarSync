@@ -54,8 +54,9 @@ namespace Dasi.CalendarSync.Tray
                 try
                 {
                     var res_name = string.Format("_{0}", i + 1);
-                    var obj = Properties.Resources.ResourceManager.GetObject(res_name, Properties.Resources.Culture);
-                    animation_icons[i] = (System.Drawing.Icon)(obj);
+                    //var obj = Properties.Resources.ResourceManager.GetObject(res_name, Properties.Resources.Culture);
+                    //(System.Drawing.Icon)(obj);
+                    animation_icons[i] = GetAppIcon(res_name, new System.Drawing.Size(32,32));
                 }
                 catch (Exception e)
                 {
@@ -63,7 +64,9 @@ namespace Dasi.CalendarSync.Tray
                 }
             }
 
-            idle_icon = Properties.Resources.calendar;
+            //idle_icon = Properties.Resources.calendar;
+            idle_icon = GetAppIcon("app", new System.Drawing.Size(256, 256));
+            trayIcon.Icon = idle_icon;
 
             // Create a Timer with a Normal Priority
             _timer = new DispatcherTimer {Interval = TimeSpan.FromMinutes(Settings.Default.RefreshRate)};
@@ -95,6 +98,15 @@ namespace Dasi.CalendarSync.Tray
                 }
             };
 
+        }
+
+        private System.Drawing.Icon GetAppIcon(string name, System.Drawing.Size sz)
+        {
+            // se esiste la icona "doge" usa quella :)
+            string doge_file = Path.Combine("doge", name + ".ico");
+            if (File.Exists(doge_file))
+                return new System.Drawing.Icon(doge_file, sz);
+            return (System.Drawing.Icon)Properties.Resources.ResourceManager.GetObject(name, Properties.Resources.Culture);
         }
 
         private void miExit_Click(object sender, RoutedEventArgs e)
