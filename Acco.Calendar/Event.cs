@@ -135,39 +135,33 @@ namespace Acco.Calendar.Event
             }
 
             // Event comparison - Id, Dates, Location, Recurrence, Attendees
-            return (this == p);
+            // wip - move this somewhere else, or use an ordered list to insert attendees in a ordered manner
+            this.Attendees.Sort((a1, a2) => String.Compare(a1.Email, a2.Email, StringComparison.Ordinal));
+            p.Attendees.Sort((a1, a2) => String.Compare(a1.Email, a2.Email, StringComparison.Ordinal));
+            var idIsEqual = this.Id == p.Id;
+            var startDateIsEqual = this.Start == p.Start;
+            var endDateIsEqual = this.End == p.End;
+            var locationIsEqual = this.Location.Equals(p.Location);
+            var descriptionIsEqual = this.Description == p.Description;
+            var recurrenceIsEqual = true;
+            if(this.Recurrence != null && p.Recurrence != null)
+                recurrenceIsEqual = this.Recurrence.Pattern == p.Recurrence.Pattern;
+            var attendeesCountIsEqual = this.Attendees.Count == p.Attendees.Count /* first check if the number of attendees is the same */;
+            var attendeesAreEqual = !this.Attendees.Except(p.Attendees).Any();
+            //
+            return  (idIsEqual) &&
+                    (startDateIsEqual) &&
+                    (endDateIsEqual) &&
+                    (locationIsEqual) &&
+                    (descriptionIsEqual) &&
+                    (recurrenceIsEqual) &&
+                    (attendeesCountIsEqual) &&
+                    (attendeesAreEqual);
         }
 
         public override int GetHashCode()
         {
-            return base.GetHashCode();
-        }
-
-        public static bool operator ==(GenericEvent e1, GenericEvent e2)
-        {
-            if ((object)e1 != null &&
-                (object)e2 != null)
-            {
-                // wip - move this somewhere else, or use an ordered list to insert attendees in a ordered manner
-                e1.Attendees.Sort((a1, a2) => String.Compare(a1.Email, a2.Email, StringComparison.Ordinal));
-                e2.Attendees.Sort((a1, a2) => String.Compare(a1.Email, a2.Email, StringComparison.Ordinal));
-                //
-                return  (e1.Id == e2.Id) &&
-                        (e1.Start == e2.Start) &&
-                        (e1.End == e2.End) &&
-                        (e1.Location == e2.Location) &&
-                        (e1.Description == e2.Description) &&
-                        (e1.Recurrence != null && e2.Recurrence != null) &&
-                        (e1.Recurrence.Pattern == e2.Recurrence.Pattern) &&
-                        (e1.Attendees.Count == e2.Attendees.Count /* first check if the number of attendees is the same */) &&
-                        (!e1.Attendees.Except(e2.Attendees).Any());
-            }
-            return (object)e1 == (object)e2;
-        }
-
-        public static bool operator !=(GenericEvent e1, GenericEvent e2)
-        {
-            return !(e1 == e2);
+            return this.Id.GetHashCode();
         }
     }
 }
