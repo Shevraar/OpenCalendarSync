@@ -3,7 +3,6 @@ using Acco.Calendar;
 using Acco.Calendar.Event;
 using Acco.Calendar.Manager;
 using Acco.Calendar.Database;
-using Google;
 using Hardcodet.Wpf.TaskbarNotification;
 using log4net.Config;
 using System;
@@ -173,11 +172,6 @@ namespace Dasi.CalendarSync.Tray
                     }
                 }
             }
-            catch (GoogleApiException ex)
-            {
-                Log.Error("GoogleApiException", ex);
-                SyncFailure(ex.Message);
-            }
             catch(Exception ex)
             {
                 Log.Error("Exception", ex);
@@ -305,7 +299,15 @@ namespace Dasi.CalendarSync.Tray
             if (string.IsNullOrEmpty(cal_name))
                 cal_name = "GVR.Meetings";
 
-            logged_in_google = await GoogleCalendarManager.Instance.Initialize(client_id, secret, cal_name);
+            try
+            {
+                logged_in_google = await GoogleCalendarManager.Instance.Initialize(client_id, secret, cal_name);
+            }
+            catch(Exception ex)
+            {
+                Log.Error("Exception", ex);
+                logged_in_google = false;
+            }
         }
     }
 }
