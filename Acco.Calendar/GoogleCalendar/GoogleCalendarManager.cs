@@ -684,7 +684,8 @@ namespace Acco.Calendar.Manager
                 {
                     var json = r.ReadToEnd();
                     temporarySettings = JsonConvert.DeserializeObject<GoogleCalendarSettings>(json);
-                    if (temporarySettings.CalendarName != calendarName)
+                    if (temporarySettings != null &&
+                        temporarySettings.CalendarName != calendarName)
                     {
                         Log.Warn(String.Format("Calendar name mismatch stored:[{0}], provided:[{1}]",
                             temporarySettings.CalendarName, calendarName));
@@ -700,6 +701,12 @@ namespace Acco.Calendar.Manager
                                 String.Format("Failed to delete calendar id[{0}] and name [{1}]",
                                     temporarySettings.CalendarId, temporarySettings.CalendarId));
                         }
+                    }
+                    else if(temporarySettings == null)
+                    {
+                        r.Close();
+                        File.Delete(SettingsPath);
+                        return await CreateSettings(calendarName);
                     }
                 }
             }

@@ -28,23 +28,6 @@ namespace Acco.Calendar.Person
 
         public string LastName { get; set; }
 
-        public static bool operator ==(GenericPerson p1, GenericPerson p2)
-        {
-            if((object)p1 != null && (object)p2 != null)
-            {
-                return  (p1.Email == p2.Email) &&
-                        (p1.Name == p2.Email) &&
-                        (p1.FirstName == p2.FirstName) &&
-                        (p1.LastName == p2.LastName);
-            }
-            return (object)p1 == (object)p2;
-        }
-
-        public static bool operator !=(GenericPerson p1, GenericPerson p2)
-        {
-            return !(p1 == p2);
-        }
-
         public override bool Equals(object obj)
         {
             // If parameter is null return false.
@@ -60,12 +43,15 @@ namespace Acco.Calendar.Person
                 return false;
             }
 
-            return (this == p);
+            return  (this.Email == p.Email) &&
+                    (this.Name == p.Name) &&
+                    (this.FirstName == p.FirstName) &&
+                    (this.LastName == p.LastName);
         }
 
         public override int GetHashCode()
         {
-            return base.GetHashCode();
+            return this.Email.GetHashCode();
         }
     }
 
@@ -129,32 +115,19 @@ namespace Acco.Calendar.Person
             }
 
             // If parameter cannot be cast to Point return false.
-            var p = obj as GenericPerson;
+            var p = obj as GenericAttendee;
             if ((object)p == null)
             {
                 return false;
             }
 
-            return (this == p);
+            return (base.Equals(p)) &&
+                   (this.Response == p.Response);
         }
 
         public override int GetHashCode()
         {
             return base.GetHashCode();
-        }
-
-        public static bool operator == (GenericAttendee a1, GenericAttendee a2)
-        {
-            if ((object)a1 != null && (object)a2 != null)
-            {
-                return a1.Response == a2.Response;
-            }
-            return (object)a1 == (object)a2;
-        }
-
-        public static bool operator !=(GenericAttendee a1, GenericAttendee a2)
-        {
-            return !(a1 == a2);
         }
     }
 }

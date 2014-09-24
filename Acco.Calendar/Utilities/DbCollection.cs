@@ -58,7 +58,7 @@ namespace Acco.Calendar
             else 
             { 
                 // todo: add item comparison here
-                if(appointment as GenericEvent == item as GenericEvent)
+                if((appointment as GenericEvent).Equals(item as GenericEvent))
                 {
                     Log.Info(String.Format("[{0}] is a duplicate", item.Id));
                     isPresent = true;
