@@ -28,5 +28,12 @@ namespace Dasi.CalendarSync.Tray
             if (e.Delta > 0) { slRefreshTmo.Value += slRefreshTmo.SmallChange; }
             else { slRefreshTmo.Value -= slRefreshTmo.SmallChange; }
         }
+
+        private void btReset_Click(object sender, RoutedEventArgs e)
+        {
+            Reset = true; //todo: ripensare logica reset
+        }
+
+        public bool Reset = false;
     }
 }

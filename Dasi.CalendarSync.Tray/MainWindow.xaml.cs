@@ -238,8 +238,11 @@ namespace Dasi.CalendarSync.Tray
             tmr.Start();
         }
 
-        private async void miReset_Click(object sender, RoutedEventArgs e)
+        private async void reset()
         {
+            current_icon_index = 0;
+            _icon_animation_timer.Start();
+            //
             const string title = "Risultato reset";
             var text = "";
             var drop = Storage.Instance.Appointments.Drop();
@@ -284,6 +287,8 @@ namespace Dasi.CalendarSync.Tray
             }
             //
             trayIcon.ShowBalloonTip(title, text, BalloonIcon.Warning);
+            //
+            EndSync();
         }
 
         private async void miSettings_Click(object sender, RoutedEventArgs e)
@@ -292,10 +297,41 @@ namespace Dasi.CalendarSync.Tray
             var result = sd.ShowDialog();
             if (result.HasValue && result.Value)
             {
+                current_icon_index = 0;
+                _icon_animation_timer.Start();
                 Settings.Default.Save();
-                var foregroundColor = System.Drawing.ColorTranslator.ToHtml(System.Drawing.Color.FromArgb(Settings.Default.FgColor.A, Settings.Default.FgColor.R, Settings.Default.FgColor.G, Settings.Default.FgColor.B));
-                var backgroundColor = System.Drawing.ColorTranslator.ToHtml(System.Drawing.Color.FromArgb(Settings.Default.BgColor.A, Settings.Default.BgColor.R, Settings.Default.BgColor.G, Settings.Default.BgColor.B));
-                var res = await GoogleCalendarManager.Instance.SetCalendarColor(backgroundColor.ToLower(), foregroundColor.ToLower());
+                if(sd.Reset)
+                {
+                    reset();
+                }
+                else
+                {
+                    if(!logged_in_google)
+                    {
+                        var client_id = Settings.Default.ClientID;
+                        var secret = Settings.Default.ClientSecret;
+                        var cal_name = Settings.Default.CalendarName;
+                        if (string.IsNullOrEmpty(client_id))
+                            client_id = GoogleToken.ClientId;
+                        if (string.IsNullOrEmpty(secret))
+                            secret = GoogleToken.ClientSecret;
+                        if (string.IsNullOrEmpty(cal_name))
+                            cal_name = "GVR.Meetings";
+
+                        try
+                        {
+                            logged_in_google = await GoogleCalendarManager.Instance.Initialize(client_id, secret, cal_name);
+                        }
+                        catch(Exception ex)
+                        {
+                            Log.Error("Exception", ex);
+                        }
+                    }
+                    var foregroundColor = System.Drawing.ColorTranslator.ToHtml(System.Drawing.Color.FromArgb(Settings.Default.FgColor.A, Settings.Default.FgColor.R, Settings.Default.FgColor.G, Settings.Default.FgColor.B));
+                    var backgroundColor = System.Drawing.ColorTranslator.ToHtml(System.Drawing.Color.FromArgb(Settings.Default.BgColor.A, Settings.Default.BgColor.R, Settings.Default.BgColor.G, Settings.Default.BgColor.B));
+                    var res = await GoogleCalendarManager.Instance.SetCalendarColor(backgroundColor.ToLower(), foregroundColor.ToLower());
+                }
+                EndSync();
             }
         }
 
