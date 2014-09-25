@@ -39,11 +39,11 @@
             <Separator Grid.ColumnSpan="2" />
 
             <Label>Testo</Label>
-            <tk:ColorPicker UsingAlphaChannel="False" ShowStandardColors="False" ColorMode="ColorCanvas" 
-                            SelectedColor="{Binding Source={StaticResource Settings}, Path=Default.FgColor}"/>
+            <tk:ColorPicker x:Name="textColorComboBox" UsingAlphaChannel="False" ShowStandardColors="False" ColorMode="ColorCanvas" 
+                            SelectedColor="{Binding Source={StaticResource Settings}, Path=Default.FgColor}" LostFocus="textColorComboBox_LostFocus"/>
             <Label>Sfondo</Label>
-            <tk:ColorPicker UsingAlphaChannel="False" ShowStandardColors="False" ColorMode="ColorCanvas"
-                            SelectedColor="{Binding Source={StaticResource Settings}, Path=Default.BgColor}"/>
+            <tk:ColorPicker x:Name="backgroundColorComboBox" UsingAlphaChannel="False" ShowStandardColors="False" ColorMode="ColorCanvas"
+                            SelectedColor="{Binding Source={StaticResource Settings}, Path=Default.BgColor}" LostFocus="backgroundColorComboBox_LostFocus"/>
 
             <!-- Secrets Group -->
             <Label Grid.ColumnSpan="2" HorizontalAlignment="Center" FontWeight="Bold">Segreti</Label>
@@ -58,7 +58,7 @@
             <Label>Segreto</Label>       
             <PasswordBox w:PasswordHelper.Attach="True" 
                          w:PasswordHelper.Password="{Binding Source={StaticResource Settings}, Path=Default.ClientSecret, Mode=TwoWay}"/>
-            
+
             <Button x:Name="btReset" Margin="10" Width="160" HorizontalAlignment="Center" Grid.ColumnSpan="2" FontSize="14" Click="btReset_Click">Resetta</Button>
         </av:AutoGrid>
 

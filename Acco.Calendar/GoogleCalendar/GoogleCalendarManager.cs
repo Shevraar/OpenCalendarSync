@@ -98,9 +98,8 @@ namespace Acco.Calendar.Manager
             return calendar;
         }
 
-        private static DbCollection<GenericEvent> RestoreEvents()
+        private static DbCollection<GenericEvent> RetrieveEvents()
         {
-            //todo: work in progress - somehow we have to retrieve appointments...
             var query =
             from e in Database.Storage.Instance.Appointments.AsQueryable()
             select e;
@@ -112,21 +111,37 @@ namespace Acco.Calendar.Manager
             return ret;
         }
 
-        public async Task<bool> Initialize(string clientId, string clientSecret, string calendarName)
+        public async Task<bool> Login(string clientId, string clientSecret)
         {
             if(LastCalendar == null)
             {
+                Log.Info("Retrieving events from database");
                 LastCalendar = new GenericCalendar
                 {
-                    Events = RestoreEvents()
+                    Events = RetrieveEvents()
                 };
             }
-            //
-            Log.Info(String.Format("Initializing google calendar [{0}]", calendarName));
-            var authenticated = await Authenticate(clientId, clientSecret);
-            if (authenticated)
+            if(!LoggedIn)
             {
-                _settings = await CreateSettings(calendarName); 
+                LoggedIn = await Authenticate(clientId, clientSecret);
+            }
+            return LoggedIn;
+        }
+
+        public async Task<bool> Initialize(string calendarName)
+        {
+            var res = false;
+            if(LoggedIn)
+            {
+                try
+                {
+                    _settings = await GetSettings(calendarName);
+                }
+                catch(Exception ex)
+                {
+                    throw ex;
+                }
+
                 var theirCalendarId = (await GetCalendar(_settings.CalendarId)).Id;
                 if (_settings.CalendarId == theirCalendarId)
                 {
@@ -138,7 +153,11 @@ namespace Acco.Calendar.Manager
                         _settings.CalendarId, theirCalendarId));
                 }
             }
-            return authenticated;
+            else
+            {
+                Log.Error("Not logged in, try to log in first");
+            }
+            return res;
         }
 
         private async Task<bool> Authenticate(string clientId, string clientSecret)
@@ -649,20 +668,23 @@ namespace Acco.Calendar.Manager
             //
             myEvt.Reminders = new Google.Apis.Calendar.v3.Data.Event.RemindersData { UseDefault = true };
             var existingEvent = await Service.Events.Get(_settings.CalendarId, myEvt.Id).ExecuteAsync();
-            myEvt.Sequence = existingEvent.Sequence + 1; // todo: improve this shit..
+            if (existingEvent.Sequence.HasValue)
+                myEvt.Sequence = existingEvent.Sequence.Value + 1;
+            else
+                throw new Exception(String.Format("Failed to get sequence number for existing event[{0}], better luck next time", existingEvent.Id));
             //
-            var createdEvent = await Service.Events.Update(myEvt, _settings.CalendarId, myEvt.Id).ExecuteAsync();
-            if (createdEvent != null)
+            var update = await Service.Events.Update(myEvt, _settings.CalendarId, myEvt.Id).ExecuteAsync();
+            if (update != null)
             {
                 res.Successful = true; 
             }
             return res;
         }
 
-        public async Task<bool> SetCalendarColor(string BackgroundColor, string ForegroundColor)
+        public async Task<bool> SetCalendarColor(string foregroundColor, string backgroundColor)
         {
-            var request = Service.CalendarList.Update(new Google.Apis.Calendar.v3.Data.CalendarListEntry { BackgroundColor = BackgroundColor, ForegroundColor = ForegroundColor }, _settings.CalendarId);
-            request.ColorRgbFormat = true;
+            var request = Service.CalendarList.Update(new Google.Apis.Calendar.v3.Data.CalendarListEntry { BackgroundColor = backgroundColor, ForegroundColor = foregroundColor }, _settings.CalendarId);
+            request.ColorRgbFormat = true; // if we don't do this, google wants a colorId, which we don't have.
             var ret = await request.ExecuteAsync();
             if (ret != null)
                 return true;
@@ -671,69 +693,78 @@ namespace Acco.Calendar.Manager
 
         public async Task<string> DropCurrentCalendar()
         {
-            // note: if we are not authenticated, this will throw an exception.
             return await Service.Calendars.Delete(_settings.CalendarId).ExecuteAsync();
         }
 
-        private async Task<GoogleCalendarSettings> CreateSettings(string calendarName)
+        private async Task<GoogleCalendarSettings> GetSettings(string calendarName)
         {
-            GoogleCalendarSettings temporarySettings = null;
-            if (File.Exists(SettingsPath))
+            if(_settings == null)
             {
-                using (var r = new StreamReader(SettingsPath))
+                GoogleCalendarSettings temporarySettings = null;
+                if (File.Exists(SettingsPath))
                 {
-                    var json = r.ReadToEnd();
-                    temporarySettings = JsonConvert.DeserializeObject<GoogleCalendarSettings>(json);
-                    if (temporarySettings != null &&
-                        temporarySettings.CalendarName != calendarName)
+                    using (var r = new StreamReader(SettingsPath))
                     {
-                        Log.Warn(String.Format("Calendar name mismatch stored:[{0}], provided:[{1}]",
-                            temporarySettings.CalendarName, calendarName));
-                        Log.Warn("Deleting old calendar and making a new one");
-                        var isCalendarDeleted = await RemoveCalendar(temporarySettings.CalendarId);
-                        if (isCalendarDeleted)
+                        var json = r.ReadToEnd();
+                        temporarySettings = JsonConvert.DeserializeObject<GoogleCalendarSettings>(json);
+                        if (temporarySettings != null &&
+                            temporarySettings.CalendarName != calendarName)
                         {
-                            Log.Info("Calendar successfully deleted");
+                            Log.Warn(String.Format("Calendar name mismatch stored:[{0}], provided:[{1}]",
+                                temporarySettings.CalendarName, calendarName));
+                            Log.Warn("Deleting old calendar and making a new one");
+                            var isCalendarDeleted = await RemoveCalendar(temporarySettings.CalendarId);
+                            if (isCalendarDeleted)
+                            {
+                                Log.Info("Calendar successfully deleted");
+                            }
+                            else
+                            {
+                                throw new Exception(
+                                    String.Format("Failed to delete calendar id[{0}] and name [{1}]",
+                                        temporarySettings.CalendarId, temporarySettings.CalendarId));
+                            }
                         }
-                        else
+                        else if (temporarySettings == null)
                         {
-                            throw new Exception(
-                                String.Format("Failed to delete calendar id[{0}] and name [{1}]",
-                                    temporarySettings.CalendarId, temporarySettings.CalendarId));
+                            r.Close();
+                            File.Delete(SettingsPath);
+                            return await GetSettings(calendarName);
                         }
-                    }
-                    else if(temporarySettings == null)
-                    {
-                        r.Close();
-                        File.Delete(SettingsPath);
-                        return await CreateSettings(calendarName);
                     }
                 }
+                else
+                {
+                    try
+                    {
+                        var calendarId = (await CreateCalendar(calendarName)).Id;
+                        temporarySettings = new GoogleCalendarSettings
+                        {
+                            CalendarName = calendarName,
+                            CalendarId = calendarId
+                        };
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error("Exception", ex);
+                    }
+
+                    var jsonSettings = JsonConvert.SerializeObject(temporarySettings);
+                    using (var sw = new StreamWriter(SettingsPath))
+                    {
+                        await sw.WriteAsync(jsonSettings);
+                    }
+                }
+                Log.Info(temporarySettings.ToJson());
+                return temporarySettings;
             }
             else
             {
-                try
-                {
-                    var calendarId = (await CreateCalendar(calendarName)).Id;
-                    temporarySettings = new GoogleCalendarSettings
-                    {
-                        CalendarName = calendarName,
-                        CalendarId = calendarId
-                    };
-                }
-                catch (Exception ex)
-                {
-                    Log.Error("Exception", ex);
-                }
-                var jsonSettings = JsonConvert.SerializeObject(temporarySettings);
-                using (var sw = new StreamWriter(SettingsPath))
-                {
-                    await sw.WriteAsync(jsonSettings);
-                }
+                return _settings;
             }
-            Log.Info(temporarySettings.ToJson());
-            return temporarySettings;
         }
+
+        public bool LoggedIn { get; set; }
 
         [Serializable]
         private class GoogleCalendarSettings
