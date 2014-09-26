@@ -66,12 +66,25 @@ namespace Dasi.CalendarSync.Tray
 
         private async void btReset_Click(object sender, RoutedEventArgs e)
         {
-            if(!GoogleCalendarManager.Instance.LoggedIn)
+            var askForReset = MessageBox.Show("L'operazione di reset comporta:\n" +
+                                                "\t1. Cancellazione database appuntamenti\n" +
+                                                "\t2. Cancellazione calendario su google (opzionale)\n" +
+                                                "\t3. Cancellazione google.settings\n" +
+                                                "Vuoi proseguire?",
+                                                "Reset",
+                                                MessageBoxButton.YesNo,
+                                                MessageBoxImage.Exclamation,
+                                                MessageBoxResult.No);
+
+            if (askForReset == MessageBoxResult.Yes)
             {
-                var res = await GoogleCalendarManager.Instance.Login(clientId, clientSecret);
+                if (!GoogleCalendarManager.Instance.LoggedIn)
+                {
+                    var res = await GoogleCalendarManager.Instance.Login(clientId, clientSecret);
+                }
+                reset();
             }
-            reset();
-        }
+        }    
 
         private async void reset()
         {
@@ -90,8 +103,8 @@ namespace Dasi.CalendarSync.Tray
             try
             {
                 var res = MessageBox.Show("Vuoi cancellare il calendario su google?",
-                                            "Calendario Google",
-                                            MessageBoxButton.YesNo, MessageBoxImage.Exclamation, MessageBoxResult.No);
+                                           "Calendario Google",
+                                           MessageBoxButton.YesNo, MessageBoxImage.Exclamation, MessageBoxResult.No);
                 if(res == MessageBoxResult.Yes)
                 {
                     var calendarDrop = await GoogleCalendarManager.Instance.DropCurrentCalendar();

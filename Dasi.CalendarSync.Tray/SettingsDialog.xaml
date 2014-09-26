@@ -4,7 +4,7 @@
         xmlns:w="clr-namespace:Dasi.CalendarSync.Tray"
         xmlns:av="clr-namespace:WpfAutoGrid;assembly=WpfAutoGrid"
         xmlns:tk="http://schemas.xceed.com/wpf/xaml/toolkit"
-        Title="SettingsDialog" Height="600" Width="480">
+        Title="SettingsDialog" SizeToContent="WidthAndHeight" ResizeMode="NoResize" MinWidth="480" MinHeight="600">
 
     <DockPanel>
 
@@ -14,7 +14,7 @@
             <Button x:Name="btSave" Margin="10" Width="80" Click="btSave_Click">Salva</Button>
         </StackPanel>
         
-        <av:AutoGrid Margin="20" RowCount="13" RowHeight="Auto" Columns="Auto,*" ChildMargin="9">
+        <av:AutoGrid Margin="20" RowCount="14" RowHeight="Auto" Columns="Auto,*" ChildMargin="9">
                 
             <!-- Options Group -->
             <Label Grid.ColumnSpan="2" HorizontalAlignment="Center" FontWeight="Bold">Opzioni</Label>
@@ -31,8 +31,7 @@
             </DockPanel>
 
             <!-- Calendar Name -->
-            <Label>Nome calendario</Label>
-            <TextBox Text="{Binding Source={StaticResource Settings}, Path=Default.CalendarName}"></TextBox>
+            <tk:WatermarkTextBox Text="{Binding Source={StaticResource Settings}, Path=Default.CalendarName}" Watermark="Nome calendario" Grid.ColumnSpan="2"></tk:WatermarkTextBox>
 
             <!-- Colors Group -->
             <Label Grid.ColumnSpan="2" HorizontalAlignment="Center" FontWeight="Bold">Colori</Label>
@@ -59,7 +58,8 @@
             <PasswordBox w:PasswordHelper.Attach="True" 
                          w:PasswordHelper.Password="{Binding Source={StaticResource Settings}, Path=Default.ClientSecret, Mode=TwoWay}"/>
 
-            <Button x:Name="btReset" Margin="10" Width="160" HorizontalAlignment="Center" Grid.ColumnSpan="2" FontSize="14" Click="btReset_Click">Resetta</Button>
+            <Separator Grid.ColumnSpan="2" />
+            <Button x:Name="btReset" Margin="10"  HorizontalAlignment="Stretch" Grid.ColumnSpan="2" Click="btReset_Click">Resetta</Button>
         </av:AutoGrid>
 
     </DockPanel>
