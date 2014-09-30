@@ -191,5 +191,10 @@ namespace Dasi.CalendarSync.Tray
         {
             changeCalendarColor(textColorComboBox.SelectedColor, backgroundColorComboBox.SelectedColor);
         }
+
+        private void calnameTextBox_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
+        {
+            //todo: add summary customization here
+        }
     }
 }

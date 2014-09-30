@@ -32,7 +32,7 @@
 
             <!-- Calendar Name -->
             <Label>Nome del calendario</Label>
-            <TextBox Text="{Binding Source={StaticResource Settings}, Path=Default.CalendarName}" />
+            <TextBox x:Name="calnameTextBox" Text="{Binding Source={StaticResource Settings}, Path=Default.CalendarName}" TextChanged="calnameTextBox_TextChanged" />
 
             <!-- Calendar ID -->
             <Label>ID. del calendario</Label>
