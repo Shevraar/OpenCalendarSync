@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using WallF.BaseNEncodings;
 
 namespace Acco.Calendar.Utilities
@@ -48,6 +50,18 @@ namespace Acco.Calendar.Utilities
         public static BaseEncoding GoogleBase32
         {
             get { return googleBase32; }
+        }
+    }
+
+    public static class MethodHelper
+    {
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        public static string GetCurrentMethod()
+        {
+            StackTrace st = new StackTrace();
+            StackFrame sf = st.GetFrame(1);
+
+            return sf.GetMethod().Name;
         }
     }
 }

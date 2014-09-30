@@ -25,7 +25,6 @@
                     <MenuItem Header="Esci" x:Name="miExit" Click="miExit_Click"/>
                 </ContextMenu>
             </tb:TaskbarIcon.ContextMenu>
-
         </tb:TaskbarIcon>
     </Grid>
 </Window>

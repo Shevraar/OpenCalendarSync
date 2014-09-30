@@ -20,5 +20,8 @@
     <Setting Name="BgColor" Type="System.Windows.Media.Color" Scope="User">
       <Value Profile="(Default)">#FF00EE00</Value>
     </Setting>
+    <Setting Name="CalendarID" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
   </Settings>
 </SettingsFile>
