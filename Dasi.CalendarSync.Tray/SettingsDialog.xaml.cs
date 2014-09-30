@@ -93,11 +93,11 @@ namespace Dasi.CalendarSync.Tray
             var drop = Storage.Instance.Appointments.Drop();
             if (drop.Ok)
             {
-                text += "Database appuntamenti svuotato correttamente\n";
+                text += "\tDatabase appuntamenti svuotato correttamente\n";
             }
             else
             {
-                text += "Database appuntamenti *NON* svuotato!\n";
+                text += "\tDatabase appuntamenti *NON* svuotato!\n";
                 Log.Error("Failed to delete drop appointments database");
             }
             try
@@ -108,28 +108,18 @@ namespace Dasi.CalendarSync.Tray
                 if(res == MessageBoxResult.Yes)
                 {
                     var calendarDrop = await GoogleCalendarManager.Instance.DropCurrentCalendar();
-                    text += "Calendario su google calendar cancellato correttamente\n";
-                    if(calendarDrop != null)
-                        text += " Dettagli operazione: " + calendarDrop + "\n";
+                    text += "\tCalendario su google calendar cancellato correttamente\n";
+                    if(!string.IsNullOrEmpty(calendarDrop))
+                        text += "\t\tDettagli operazione: " + calendarDrop + "\n";
                 }
             }
             catch (Exception ex)
             {
-                text += "Calendario su google calendar *NON* cancellato\n";
+                text += "\tCalendario su google calendar *NON* cancellato\n";
                 Log.Error("Failed to delete calendar from google", ex);
             }
-            //
-            try
-            {
-                File.Delete("googlecalendar.settings");
-                text += "Impostazioni di google calendar cancellate correttamente";
-            }
-            catch (Exception ex)
-            {
-                text += "Impostazioni di google calendar *NON* cancellate!";
-                Log.Error("Failed to delete googlecalendar.settings", ex);
-            }
-
+            Settings.Default.CalendarID = "";
+            text += "\tID del calendario resettato";
             trayIcon.ShowBalloonTip(title, text, Hardcodet.Wpf.TaskbarNotification.BalloonIcon.Info);
             HideBalloonAfterSeconds(6);
         }
