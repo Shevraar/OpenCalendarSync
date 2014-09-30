@@ -14,7 +14,7 @@
             <Button x:Name="btSave" Margin="10" Width="80" Click="btSave_Click">Salva</Button>
         </StackPanel>
         
-        <av:AutoGrid Margin="20" RowCount="14" RowHeight="Auto" Columns="Auto,*" ChildMargin="9">
+        <av:AutoGrid Margin="20" RowCount="16" RowHeight="Auto" Columns="Auto,*" ChildMargin="9">
                 
             <!-- Options Group -->
             <Label Grid.ColumnSpan="2" HorizontalAlignment="Center" FontWeight="Bold">Opzioni</Label>
@@ -31,7 +31,12 @@
             </DockPanel>
 
             <!-- Calendar Name -->
-            <tk:WatermarkTextBox Text="{Binding Source={StaticResource Settings}, Path=Default.CalendarName}" Watermark="Nome calendario" Grid.ColumnSpan="2"></tk:WatermarkTextBox>
+            <Label>Nome del calendario</Label>
+            <TextBox Text="{Binding Source={StaticResource Settings}, Path=Default.CalendarName}" />
+
+            <!-- Calendar ID -->
+            <Label>ID. del calendario</Label>
+            <TextBox Text="{Binding Source={StaticResource Settings}, Path=Default.CalendarID, Mode=OneWay}" FontFamily="Consolas" FontSize="11" IsReadOnly="True" />
 
             <!-- Colors Group -->
             <Label Grid.ColumnSpan="2" HorizontalAlignment="Center" FontWeight="Bold">Colori</Label>
@@ -57,7 +62,7 @@
             <Label>Segreto</Label>       
             <PasswordBox w:PasswordHelper.Attach="True" 
                          w:PasswordHelper.Password="{Binding Source={StaticResource Settings}, Path=Default.ClientSecret, Mode=TwoWay}"/>
-
+            
             <Separator Grid.ColumnSpan="2" />
             <Button x:Name="btReset" Margin="10"  HorizontalAlignment="Stretch" Grid.ColumnSpan="2" Click="btReset_Click">Resetta</Button>
         </av:AutoGrid>

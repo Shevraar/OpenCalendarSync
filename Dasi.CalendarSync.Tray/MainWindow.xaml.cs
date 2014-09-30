@@ -136,6 +136,7 @@ namespace Dasi.CalendarSync.Tray
             var client_id = Settings.Default.ClientID;
             var secret    = Settings.Default.ClientSecret;
             var cal_name  = Settings.Default.CalendarName;
+            var cal_id    = Settings.Default.CalendarID;   // note: on first startup, this is null or empty.
             if ( string.IsNullOrEmpty(client_id) )
                 client_id = GoogleToken.ClientId;
             if ( string.IsNullOrEmpty(secret) )
@@ -161,7 +162,12 @@ namespace Dasi.CalendarSync.Tray
                 if (!GoogleCalendarManager.Instance.LoggedIn)
                 {
                     var login = await GoogleCalendarManager.Instance.Login(client_id, secret);
-                    var initialize = await GoogleCalendarManager.Instance.Initialize(cal_name);
+                    var google_cal_id = await GoogleCalendarManager.Instance.Initialize(cal_id, cal_name);
+                    if (cal_id != google_cal_id) // if the calendar ids differ
+                    { 
+                        // update the settings, so that the next time we start, we have a calendarId
+                        Settings.Default.CalendarID = google_cal_id;
+                    }
                 }
                 if (GoogleCalendarManager.Instance.LoggedIn) //logged in to google, go on!
                 {
@@ -234,7 +240,7 @@ namespace Dasi.CalendarSync.Tray
             tmr.Start();
         }
 
-        private async void miSettings_Click(object sender, RoutedEventArgs e)
+        private void miSettings_Click(object sender, RoutedEventArgs e)
         {
             var sd = new SettingsDialog(trayIcon);
             var result = sd.ShowDialog();
