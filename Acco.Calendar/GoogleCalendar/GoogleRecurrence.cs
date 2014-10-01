@@ -1,7 +1,7 @@
 ﻿//
 
 using System;
-using DDay.iCal;
+using RecPatt = DDay.iCal.RecurrencePattern;
 
 //
 namespace Acco.Calendar.Event
@@ -11,7 +11,7 @@ namespace Acco.Calendar.Event
         private static readonly log4net.ILog Log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
         public override string Get()
         {
-            var modifiedPattern = Pattern.ToString();
+            var modifiedPattern = _RecPatt.ToString();
             // todo: modify this pattern to add timezones manually...
             modifiedPattern = "RRULE:" + modifiedPattern;
             return modifiedPattern;
@@ -23,8 +23,8 @@ namespace Acco.Calendar.Event
             {
                 Log.Info(String.Format("Parsing GoogleRecurrence [{0}]", rules));
                 var stringRules = rules as string;
-                Pattern = new RecurrencePattern(stringRules);
-                Log.Debug(String.Format("iCalendar recurrence pattern is [{0}]", Pattern));
+                _RecPatt = new RecPatt(stringRules);
+                Log.Debug(String.Format("iCalendar recurrence pattern is [{0}]", _RecPatt));
             }
             else
             {

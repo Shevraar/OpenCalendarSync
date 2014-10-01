@@ -1,8 +1,5 @@
 ﻿using Acco.Calendar.Event;
 using MongoDB.Driver;
-
-//
-//
 using System;
 
 namespace Acco.Calendar.Database
@@ -18,7 +15,7 @@ namespace Acco.Calendar.Database
             Log.Info("Initializing storage...");
             Client = new MongoClient(ConnectionString);
             Server = Client.GetServer();
-            Database = Server.GetDatabase("AccoCalendar");
+            Database = Server.GetDatabase("AccoCalendar"); //todo: change name to open-calendar-sync
             Appointments = Database.GetCollection<GenericEvent>("appointments");
         }
 
@@ -31,7 +28,7 @@ namespace Acco.Calendar.Database
 
         private MongoServer Server { get; set; }
 
-        public MongoDatabase Database { get; private set; }
+        internal MongoDatabase Database { get; private set; }
 
         public MongoCollection<GenericEvent> Appointments { get; private set; }
 

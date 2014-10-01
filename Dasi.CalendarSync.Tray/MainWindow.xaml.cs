@@ -1,7 +1,8 @@
 ﻿using System.Linq;
 using Acco.Calendar;
+using Acco.Calendar.Event;
 using Acco.Calendar.Manager;
-using Google;
+using Acco.Calendar.Database;
 using Hardcodet.Wpf.TaskbarNotification;
 using log4net.Config;
 using System;
@@ -10,6 +11,8 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Threading;
 using System.Collections.Generic;
+using Dasi.CalendarSync.Tray.Properties;
+using System.IO;
 
 namespace Dasi.CalendarSync.Tray
 {
@@ -29,36 +32,39 @@ namespace Dasi.CalendarSync.Tray
 
         public MainWindow()
         {
-            InitializeComponent();
-
             XmlConfigurator.Configure(); //only once
             Log.Info("Application is starting");
+
+            try
+            {
+                InitializeComponent();
+            }
+            catch (Exception ex)
+            {
+                Log.Error("Exception", ex);    
+            }
 
             current_icon_index = 0;
             animation_icons    = new System.Drawing.Icon[11];
             animation_stopping = false;
 
-            var my_asm = Assembly.GetExecutingAssembly();
-
-            for ( int i = 0; i < 11; ++i ) {
+            for ( var i = 0; i < 11; ++i ) {
                 try
                 {
                     var res_name = string.Format("_{0}", i + 1);
-                    var obj = Properties.Resources.ResourceManager.GetObject(res_name, Properties.Resources.Culture);
-                    animation_icons[i] = (System.Drawing.Icon)(obj);
+                    animation_icons[i] = GetAppIcon(res_name, new System.Drawing.Size(32,32));
                 }
                 catch (Exception e)
                 {
-
+                    Log.Error("Exception", e);
                 }
             }
 
-            idle_icon = Properties.Resources.calendar;
+            idle_icon = GetAppIcon("app", new System.Drawing.Size(256, 256));
+            trayIcon.Icon = idle_icon;
 
             // Create a Timer with a Normal Priority
-            _timer = new DispatcherTimer();
-            _timer.Interval = TimeSpan.FromHours(1);
-            //_timer.Interval = TimeSpan.FromSeconds(10);
+            _timer = new DispatcherTimer {Interval = TimeSpan.FromMinutes(Settings.Default.RefreshRate)};
 
             // Set the callback to just show the time ticking away
             // NOTE: We are using a control so this has to run on 
@@ -69,8 +75,7 @@ namespace Dasi.CalendarSync.Tray
 
             _timer.Start();
 
-            _icon_animation_timer = new DispatcherTimer();
-            _icon_animation_timer.Interval = TimeSpan.FromMilliseconds(100);
+            _icon_animation_timer = new DispatcherTimer {Interval = TimeSpan.FromMilliseconds(50)};
 
             _icon_animation_timer.Tick += delegate
             {
@@ -87,7 +92,15 @@ namespace Dasi.CalendarSync.Tray
                 }
             };
 
-            
+        }
+
+        private System.Drawing.Icon GetAppIcon(string name, System.Drawing.Size sz)
+        {
+            // se esiste la icona "doge" usa quella :)
+            string doge_file = Path.Combine("doge", name + ".ico");
+            if (File.Exists(doge_file))
+                return new System.Drawing.Icon(doge_file, sz);
+            return (System.Drawing.Icon)Properties.Resources.ResourceManager.GetObject(name, Properties.Resources.Culture);
         }
 
         private void miExit_Click(object sender, RoutedEventArgs e)
@@ -119,67 +132,108 @@ namespace Dasi.CalendarSync.Tray
 
         private async Task OutlookToGoogle()
         {
-            var client_id = GoogleToken.ClientId;
-            var secret    = GoogleToken.ClientSecret;
-            var cal_name  = "GVR.Meetings";
-
+            // settings
+            var client_id = Settings.Default.ClientID;
+            var secret    = Settings.Default.ClientSecret;
+            var cal_name  = Settings.Default.CalendarName;
+            var cal_id    = Settings.Default.CalendarID;   // note: on first startup, this is null or empty.
+            if ( string.IsNullOrEmpty(client_id) )
+                client_id = GoogleToken.ClientId;
+            if ( string.IsNullOrEmpty(secret) )
+                secret    = GoogleToken.ClientSecret;
+            if (string.IsNullOrEmpty(cal_name))
+                cal_name = "GVR.Meetings";
+            //
+            ICalendar calendar;
+            //
             try
             {
                 // take events from outlook and push em to google
-                var calendar = await OutlookCalendarManager.Instance.PullAsync() as GenericCalendar;
-                //
-                var isLoggedIn = await GoogleCalendarManager.Instance.Initialize(client_id, secret, cal_name);
-                if (isLoggedIn) //logged in to google, go on!
+                calendar = await OutlookCalendarManager.Instance.PullAsync() as GenericCalendar;
+            }
+            catch (Exception ex)
+            {
+                SyncFailure(ex.Message);
+                return;
+            }
+            //
+            try
+            {
+                // if I'm not logged in
+                if (!GoogleCalendarManager.Instance.LoggedIn)
+                {
+                    var login = await GoogleCalendarManager.Instance.Login(client_id, secret);
+                }
+                // initialize google calendar (i.e.: create it if it's not present, just get it if it's present)
+                var google_cal_id = await GoogleCalendarManager.Instance.Initialize(cal_id, cal_name);
+                if (cal_id != google_cal_id) // if the calendar ids differ
+                {
+                    // update the settings, so that the next time we start, we have a calendarId
+                    Settings.Default.CalendarID = google_cal_id;
+                }
+                //logged in to google, go on!
+                if (GoogleCalendarManager.Instance.LoggedIn) 
                 {
                     try
                     {
                         var ret = await GoogleCalendarManager.Instance.PushAsync(calendar);
                         SyncSuccess(ret);
-                        //todo: do something with the list returned from PushAsync.
                     }
                     catch (PushException ex)
                     {
-                        SyncFailure();
+                        SyncFailure(ex.Message);
+                    }
+                    catch (Exception ex)
+                    {
+                        SyncFailure(ex.Message);
                     }
                 }
             }
-            catch (GoogleApiException ex)
+            catch(Exception ex)
             {
-                SyncFailure();
+                Log.Error("Exception", ex);
+                SyncFailure(ex.Message);
             }
         }
 
-        private void SyncSuccess(IEnumerable<PushedEvent> pushedEvents)
+        private void SyncSuccess(IEnumerable<UpdateOutcome> pushedEvents)
         {
-            string title = "Risultato sincronizzazione";
-            string text  = "La sincronizzazione e' terminata con successo";
-            var events = pushedEvents as List<PushedEvent>;
-            if (events != null)
-                text += "\n" + String.Format("{0} eventi aggiunti al calendario", events.Count(e => e.EventIsPushed));
-
-            //show balloon with built-in icon
-            trayIcon.ShowBalloonTip(title, text, BalloonIcon.Info);
-            
-            // hide baloon in 3 seconds
-            HideBalloonAfterSeconds(3);
+            const string title = "Risultato sincronizzazione";
+            var text  = "La sincronizzazione e' terminata con successo";
+            var events = pushedEvents as List<UpdateOutcome>;
+            if (events.Count > 0)
+            {
+                if(events.Count(e => e.Successful && e.Event.Action == EventAction.Add) > 0)
+                {
+                    text += "\n" + String.Format("{0} eventi aggiunti al calendario", events.Count(e => e.Successful && e.Event.Action == EventAction.Add));
+                }
+                if (events.Count(e => e.Successful && e.Event.Action == EventAction.Update) > 0)
+                {
+                    text += "\n" + String.Format("{0} eventi aggiornati", events.Count(e => e.Successful && e.Event.Action == EventAction.Update));
+                }
+                if (events.Count(e => e.Event.Action == EventAction.Remove) > 0)
+                {
+                    text += "\n" + String.Format("{0} eventi rimossi", events.Count(e => e.Event.Action == EventAction.Remove));
+                }
+                trayIcon.ShowBalloonTip(title, text, BalloonIcon.Info);
+                HideBalloonAfterSeconds(10);
+            }
         }
 
-        private void SyncFailure()
+        private void SyncFailure(string message)
         {
-            string title = "Risultato sincronizzazione";
-            string text = "La sincronizzazione e' fallita";
+            const string title = "Risultato sincronizzazione";
+            var text = "La sincronizzazione e' fallita\n";
+            var details = message;
+            text += details;
 
             //show balloon with built-in icon
             trayIcon.ShowBalloonTip(title, text, BalloonIcon.Error);
-
-            // hide baloon in 3 seconds
-            HideBalloonAfterSeconds(3);
         }
 
         private void HideBalloonAfterSeconds(int seconds)
         {
-            var tmr = new DispatcherTimer();
-            tmr.Interval = TimeSpan.FromSeconds(seconds);
+            var tmr = new DispatcherTimer {Interval = TimeSpan.FromSeconds(seconds)};
             tmr.Tick += delegate
             {
                 tmr.Stop();
@@ -187,6 +241,31 @@ namespace Dasi.CalendarSync.Tray
                 trayIcon.HideBalloonTip();                
             };
             tmr.Start();
+        }
+
+        private void miSettings_Click(object sender, RoutedEventArgs e)
+        {
+            var sd = new SettingsDialog(trayIcon);
+            var result = sd.ShowDialog();
+            if (result.HasValue && result.Value)
+            {
+                Settings.Default.Save();
+            }
+        }
+
+        private async void Window_Initialized(object sender, EventArgs e)
+        {
+            var client_id = Settings.Default.ClientID;
+            var secret = Settings.Default.ClientSecret;
+            if (string.IsNullOrEmpty(client_id))
+                client_id = GoogleToken.ClientId;
+            if (string.IsNullOrEmpty(secret))
+                secret = GoogleToken.ClientSecret;
+
+            if(!GoogleCalendarManager.Instance.LoggedIn)
+            {
+                var login = await GoogleCalendarManager.Instance.Login(client_id, secret);
+            }
         }
     }
 }

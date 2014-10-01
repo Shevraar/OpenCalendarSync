@@ -1,61 +1,15 @@
-﻿using Acco.Calendar.Location;
+﻿using System.Linq;
+using Acco.Calendar.Location;
 using Acco.Calendar.Person;
-using DDay.iCal;
-
-//
-//
+using MongoDB.Bson.Serialization;
+using MongoDB.Bson.Serialization.Attributes;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
-//
 
 namespace Acco.Calendar.Event
 {
-    public interface IRecurrence
-    {
-        void Parse<T>(T rules);
-
-        string Get();
-    }
-
-    public class GenericRecurrence : IRecurrence
-    {
-        protected RecurrencePattern Pattern { get; set; }
-
-        public virtual void Parse<T>(T rules)
-        {
-            throw new NotImplementedException();
-        }
-
-        public virtual string Get()
-        {
-            throw new NotImplementedException();
-        }
-
-        public override string ToString()
-        {
-            var s = "";
-            if (Pattern != null)
-            {
-                s = Pattern.ToString();
-            }
-            return s;
-        }
-    }
-
-    [Serializable]
-    public class RecurrenceParseException : Exception
-    {
-        public RecurrenceParseException(string message, Type typeOfRule) :
-            base(message)
-        {
-            TypeOfRule = typeOfRule;
-        }
-
-        public Type TypeOfRule { get; private set; }
-    }
-
     public interface IEvent
     {
         [Required(ErrorMessage = "This field is required")]
@@ -86,12 +40,13 @@ namespace Acco.Calendar.Event
 
         List<GenericAttendee> Attendees { get; set; }
 
-        EventAction EventAction { get; set; }
+        EventAction Action { get; set; }
     }
 
     public enum EventAction : sbyte
     {
         Add = 0,
+        Update,
         Remove,
         Duplicate
     }
@@ -128,12 +83,16 @@ namespace Acco.Calendar.Event
 
         public GenericPerson Creator { get; set; }
 
+        [BsonDateTimeOptions(Kind = DateTimeKind.Local)]
         public DateTime? Created { get; set; }
 
+        [BsonDateTimeOptions(Kind = DateTimeKind.Local)]
         public DateTime? LastModified { get; set; }
 
+        [BsonDateTimeOptions(Kind = DateTimeKind.Local)]
         public DateTime? Start { get; set; }
 
+        [BsonDateTimeOptions(Kind = DateTimeKind.Local)]
         public DateTime? End { get; set; }
 
         public string Summary { get; set; }
@@ -158,6 +117,52 @@ namespace Acco.Calendar.Event
             return eventString;
         }
 
-        public EventAction EventAction { get; set; }
+        [BsonIgnore]
+        public EventAction Action { get; set; }
+
+        public override bool Equals(object obj)
+        {
+            // If parameter is null return false.
+            if (obj == null)
+            {
+                return false;
+            }
+
+            // If parameter cannot be cast to Point return false.
+            var p = obj as GenericEvent;
+            if ((object)p == null)
+            {
+                return false;
+            }
+
+            // Event comparison - Id, Dates, Location, Recurrence, Attendees
+            // wip - move this somewhere else, or use an ordered list to insert attendees in a ordered manner
+            this.Attendees.Sort((a1, a2) => String.Compare(a1.Email, a2.Email, StringComparison.Ordinal));
+            p.Attendees.Sort((a1, a2) => String.Compare(a1.Email, a2.Email, StringComparison.Ordinal));
+            var idIsEqual = this.Id == p.Id;
+            var startDateIsEqual = this.Start == p.Start;
+            var endDateIsEqual = this.End == p.End;
+            var locationIsEqual = this.Location.Equals(p.Location);
+            var descriptionIsEqual = this.Description == p.Description;
+            var recurrenceIsEqual = true;
+            if(this.Recurrence != null && p.Recurrence != null)
+                recurrenceIsEqual = this.Recurrence.Pattern == p.Recurrence.Pattern;
+            var attendeesCountIsEqual = this.Attendees.Count == p.Attendees.Count /* first check if the number of attendees is the same */;
+            var attendeesAreEqual = !this.Attendees.Except(p.Attendees).Any();
+            //
+            return  (idIsEqual) &&
+                    (startDateIsEqual) &&
+                    (endDateIsEqual) &&
+                    (locationIsEqual) &&
+                    (descriptionIsEqual) &&
+                    (recurrenceIsEqual) &&
+                    (attendeesCountIsEqual) &&
+                    (attendeesAreEqual);
+        }
+
+        public override int GetHashCode()
+        {
+            return this.Id.GetHashCode();
+        }
     }
 }
