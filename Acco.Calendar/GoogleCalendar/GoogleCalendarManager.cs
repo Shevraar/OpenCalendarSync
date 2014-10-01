@@ -595,7 +595,7 @@ namespace Acco.Calendar.Manager
                     Log.Debug(String.Format("Remove event with google id [{0}]", StringHelper.GoogleBase32.ToBaseString(StringHelper.GetBytes(evt.Id))));
                     Log.Debug(String.Format("and iCalUID [{0}]", evt.Id));
                     var res = await Service.Events.Delete(googleCalendarParameters.Id, StringHelper.GoogleBase32.ToBaseString(StringHelper.GetBytes(evt.Id))).ExecuteAsync();
-                    if (res != null)
+                    if (!string.IsNullOrEmpty(res))
                     {
                         Log.Debug(res);
                     }

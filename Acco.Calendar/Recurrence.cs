@@ -11,6 +11,9 @@ namespace Acco.Calendar.Event
         string Get();
     }
 
+    /// <summary>
+    /// This is the base class for defining Recurrence behaviour
+    /// </summary>
     public class GenericRecurrence : IRecurrence
     {
         protected RecPatt _RecPatt { get; set; }
@@ -59,6 +62,11 @@ namespace Acco.Calendar.Event
     [Serializable]
     public class RecurrenceParseException : Exception
     {
+        /// <summary>
+        /// Provide a message and the type of recurrence throwing the exception
+        /// </summary>
+        /// <param name="message"></param>
+        /// <param name="typeOfRule"></param>
         public RecurrenceParseException(string message, Type typeOfRule) :
             base(message)
         {

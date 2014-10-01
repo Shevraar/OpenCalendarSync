@@ -159,17 +159,20 @@ namespace Dasi.CalendarSync.Tray
             //
             try
             {
+                // if I'm not logged in
                 if (!GoogleCalendarManager.Instance.LoggedIn)
                 {
                     var login = await GoogleCalendarManager.Instance.Login(client_id, secret);
-                    var google_cal_id = await GoogleCalendarManager.Instance.Initialize(cal_id, cal_name);
-                    if (cal_id != google_cal_id) // if the calendar ids differ
-                    { 
-                        // update the settings, so that the next time we start, we have a calendarId
-                        Settings.Default.CalendarID = google_cal_id;
-                    }
                 }
-                if (GoogleCalendarManager.Instance.LoggedIn) //logged in to google, go on!
+                // initialize google calendar (i.e.: create it if it's not present, just get it if it's present)
+                var google_cal_id = await GoogleCalendarManager.Instance.Initialize(cal_id, cal_name);
+                if (cal_id != google_cal_id) // if the calendar ids differ
+                {
+                    // update the settings, so that the next time we start, we have a calendarId
+                    Settings.Default.CalendarID = google_cal_id;
+                }
+                //logged in to google, go on!
+                if (GoogleCalendarManager.Instance.LoggedIn) 
                 {
                     try
                     {
