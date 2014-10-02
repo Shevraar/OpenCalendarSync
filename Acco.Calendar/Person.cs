@@ -102,8 +102,14 @@ namespace Acco.Calendar.Person
         NotResponded
     }
 
+    /// <summary>
+    /// Specialization of GenericPerson, with ResponseStatus as an additional parameter
+    /// </summary>
     public class GenericAttendee : GenericPerson
     {
+        /// <summary>
+        /// The response status of the meeting/event/appointment attendee
+        /// </summary>
         public ResponseStatus Response { get; set; }
 
         public override bool Equals(object obj)

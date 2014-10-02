@@ -4,17 +4,23 @@
         xmlns:w="clr-namespace:Dasi.CalendarSync.Tray"
         xmlns:av="clr-namespace:WpfAutoGrid;assembly=WpfAutoGrid"
         xmlns:tk="http://schemas.xceed.com/wpf/xaml/toolkit"
-        Title="SettingsDialog" Height="580" Width="480">
+        Title="SettingsDialog" SizeToContent="WidthAndHeight" ResizeMode="NoResize" MinWidth="480" MinHeight="600">
 
     <DockPanel>
 
-        <!-- Bottom buttons -->
-        <StackPanel Orientation="Horizontal"  Grid.ColumnSpan="2" HorizontalAlignment="Right" DockPanel.Dock="Bottom">
-            <Button x:Name="btCancel" Margin="10" Width="80" Click="btCancel_Click">Annulla</Button>
-            <Button x:Name="btSave" Margin="10" Width="80" Click="btSave_Click">Salva</Button>
-        </StackPanel>
+        <!-- Bottom button and labels bar-->
+        <DockPanel DockPanel.Dock="Bottom">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                <Label x:Name="versionLabel" FontFamily="Consolas" FontSize="11" VerticalAlignment="Center" VerticalContentAlignment="Center" Foreground="#FF686868">v</Label>
+            </StackPanel>
+            <!-- Bottom buttons -->    
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button x:Name="btCancel" Margin="10" Width="80" Click="btCancel_Click">Annulla</Button>
+                <Button x:Name="btSave" Margin="10" Width="80" Click="btSave_Click">Salva</Button>
+            </StackPanel>
+        </DockPanel>
         
-        <av:AutoGrid Margin="20" RowCount="12" RowHeight="Auto" Columns="Auto,*" ChildMargin="9">
+        <av:AutoGrid Margin="20" RowCount="16" RowHeight="Auto" Columns="Auto,*" ChildMargin="9">
                 
             <!-- Options Group -->
             <Label Grid.ColumnSpan="2" HorizontalAlignment="Center" FontWeight="Bold">Opzioni</Label>
@@ -31,19 +37,23 @@
             </DockPanel>
 
             <!-- Calendar Name -->
-            <Label>Nome calendario</Label>
-            <TextBox Text="{Binding Source={StaticResource Settings}, Path=Default.CalendarName}"></TextBox>
+            <Label>Nome del calendario</Label>
+            <TextBox x:Name="calnameTextBox" Text="{Binding Source={StaticResource Settings}, Path=Default.CalendarName}" TextChanged="calnameTextBox_TextChanged" />
+
+            <!-- Calendar ID -->
+            <Label>ID. del calendario</Label>
+            <TextBox Text="{Binding Source={StaticResource Settings}, Path=Default.CalendarID, Mode=OneWay}" FontFamily="Consolas" FontSize="11" IsReadOnly="True" />
 
             <!-- Colors Group -->
             <Label Grid.ColumnSpan="2" HorizontalAlignment="Center" FontWeight="Bold">Colori</Label>
             <Separator Grid.ColumnSpan="2" />
 
             <Label>Testo</Label>
-            <tk:ColorPicker UsingAlphaChannel="False" ShowStandardColors="False" ColorMode="ColorCanvas" 
-                            SelectedColor="{Binding Source={StaticResource Settings}, Path=Default.FgColor}"/>
+            <tk:ColorPicker x:Name="textColorComboBox" UsingAlphaChannel="False" ShowStandardColors="False" ColorMode="ColorCanvas" 
+                            SelectedColor="{Binding Source={StaticResource Settings}, Path=Default.FgColor}" LostFocus="textColorComboBox_LostFocus"/>
             <Label>Sfondo</Label>
-            <tk:ColorPicker UsingAlphaChannel="False" ShowStandardColors="False" ColorMode="ColorCanvas"
-                            SelectedColor="{Binding Source={StaticResource Settings}, Path=Default.BgColor}"/>
+            <tk:ColorPicker x:Name="backgroundColorComboBox" UsingAlphaChannel="False" ShowStandardColors="False" ColorMode="ColorCanvas"
+                            SelectedColor="{Binding Source={StaticResource Settings}, Path=Default.BgColor}" LostFocus="backgroundColorComboBox_LostFocus"/>
 
             <!-- Secrets Group -->
             <Label Grid.ColumnSpan="2" HorizontalAlignment="Center" FontWeight="Bold">Segreti</Label>
@@ -58,7 +68,9 @@
             <Label>Segreto</Label>       
             <PasswordBox w:PasswordHelper.Attach="True" 
                          w:PasswordHelper.Password="{Binding Source={StaticResource Settings}, Path=Default.ClientSecret, Mode=TwoWay}"/>
-
+            
+            <Separator Grid.ColumnSpan="2" />
+            <Button x:Name="btReset" Margin="10"  HorizontalAlignment="Stretch" Grid.ColumnSpan="2" Click="btReset_Click">Resetta</Button>
         </av:AutoGrid>
 
     </DockPanel>

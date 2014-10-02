@@ -27,7 +27,6 @@ namespace Dasi.CalendarSync.Tray
         private System.Drawing.Icon[] animation_icons;
         private System.Drawing.Icon idle_icon;
         private bool animation_stopping;
-        private bool logged_in_google;
 
         private static readonly log4net.ILog Log = log4net.LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
@@ -53,8 +52,6 @@ namespace Dasi.CalendarSync.Tray
                 try
                 {
                     var res_name = string.Format("_{0}", i + 1);
-                    //var obj = Properties.Resources.ResourceManager.GetObject(res_name, Properties.Resources.Culture);
-                    //(System.Drawing.Icon)(obj);
                     animation_icons[i] = GetAppIcon(res_name, new System.Drawing.Size(32,32));
                 }
                 catch (Exception e)
@@ -63,13 +60,11 @@ namespace Dasi.CalendarSync.Tray
                 }
             }
 
-            //idle_icon = Properties.Resources.calendar;
             idle_icon = GetAppIcon("app", new System.Drawing.Size(256, 256));
             trayIcon.Icon = idle_icon;
 
             // Create a Timer with a Normal Priority
             _timer = new DispatcherTimer {Interval = TimeSpan.FromMinutes(Settings.Default.RefreshRate)};
-            //_timer.Interval = TimeSpan.FromSeconds(10);
 
             // Set the callback to just show the time ticking away
             // NOTE: We are using a control so this has to run on 
@@ -141,6 +136,7 @@ namespace Dasi.CalendarSync.Tray
             var client_id = Settings.Default.ClientID;
             var secret    = Settings.Default.ClientSecret;
             var cal_name  = Settings.Default.CalendarName;
+            var cal_id    = Settings.Default.CalendarID;   // note: on first startup, this is null or empty.
             if ( string.IsNullOrEmpty(client_id) )
                 client_id = GoogleToken.ClientId;
             if ( string.IsNullOrEmpty(secret) )
@@ -163,11 +159,20 @@ namespace Dasi.CalendarSync.Tray
             //
             try
             {
-                if (!logged_in_google)
+                // if I'm not logged in
+                if (!GoogleCalendarManager.Instance.LoggedIn)
                 {
-                    logged_in_google = await GoogleCalendarManager.Instance.Initialize(client_id, secret, cal_name);
+                    var login = await GoogleCalendarManager.Instance.Login(client_id, secret);
                 }
-                if (logged_in_google) //logged in to google, go on!
+                // initialize google calendar (i.e.: create it if it's not present, just get it if it's present)
+                var google_cal_id = await GoogleCalendarManager.Instance.Initialize(cal_id, cal_name);
+                if (cal_id != google_cal_id) // if the calendar ids differ
+                {
+                    // update the settings, so that the next time we start, we have a calendarId
+                    Settings.Default.CalendarID = google_cal_id;
+                }
+                //logged in to google, go on!
+                if (GoogleCalendarManager.Instance.LoggedIn) 
                 {
                     try
                     {
@@ -196,7 +201,7 @@ namespace Dasi.CalendarSync.Tray
             const string title = "Risultato sincronizzazione";
             var text  = "La sincronizzazione e' terminata con successo";
             var events = pushedEvents as List<UpdateOutcome>;
-            if (events != null)
+            if (events.Count > 0)
             {
                 if(events.Count(e => e.Successful && e.Event.Action == EventAction.Add) > 0)
                 {
@@ -211,7 +216,7 @@ namespace Dasi.CalendarSync.Tray
                     text += "\n" + String.Format("{0} eventi rimossi", events.Count(e => e.Event.Action == EventAction.Remove));
                 }
                 trayIcon.ShowBalloonTip(title, text, BalloonIcon.Info);
-                HideBalloonAfterSeconds(6);
+                HideBalloonAfterSeconds(10);
             }
         }
 
@@ -238,64 +243,13 @@ namespace Dasi.CalendarSync.Tray
             tmr.Start();
         }
 
-        private async void miReset_Click(object sender, RoutedEventArgs e)
+        private void miSettings_Click(object sender, RoutedEventArgs e)
         {
-            const string title = "Risultato reset";
-            var text = "";
-            var drop = Storage.Instance.Appointments.Drop();
-            if(drop.Ok)            
-            {
-                text += "Database appuntamenti svuotato correttamente\n";
-            }
-            else
-            {
-                text += "Database appuntamenti *NON* svuotato!\n";
-                Log.Error("Failed to delete drop appointments database");
-            }
-            try
-            {
-                var clientId = GoogleToken.ClientId;
-                var secret = GoogleToken.ClientSecret;
-                var calName = Settings.Default.CalendarName;
-                if(!logged_in_google)
-                { 
-                    logged_in_google = await GoogleCalendarManager.Instance.Initialize(clientId, secret, calName);
-                }
-                var calendarDrop = await GoogleCalendarManager.Instance.DropCurrentCalendar();
-                text += "Calendario su google calendar cancellato correttamente\n";
-                text += " Dettagli operazione: " + calendarDrop + "\n";
-            }
-            catch(Exception ex)
-            {
-                text += "Calendario su google calendar *NON* cancellato\n";
-                Log.Error("Failed to delete calendar from google", ex);
-            }
-            //
-            try
-            {
-                
-                File.Delete("googlecalendar.settings");
-                text += "Impostazioni di google calendar cancellate correttamente";
-            }
-            catch(Exception ex)
-            {
-                text += "Impostazioni di google calendar *NON* cancellate!";
-                Log.Error("Failed to delete googlecalendar.settings", ex);
-            }
-            //
-            trayIcon.ShowBalloonTip(title, text, BalloonIcon.Warning);
-        }
-
-        private async void miSettings_Click(object sender, RoutedEventArgs e)
-        {
-            var sd = new SettingsDialog();
+            var sd = new SettingsDialog(trayIcon);
             var result = sd.ShowDialog();
             if (result.HasValue && result.Value)
             {
                 Settings.Default.Save();
-                var foregroundColor = System.Drawing.ColorTranslator.ToHtml(System.Drawing.Color.FromArgb(Settings.Default.FgColor.A, Settings.Default.FgColor.R, Settings.Default.FgColor.G, Settings.Default.FgColor.B));
-                var backgroundColor = System.Drawing.ColorTranslator.ToHtml(System.Drawing.Color.FromArgb(Settings.Default.BgColor.A, Settings.Default.BgColor.R, Settings.Default.BgColor.G, Settings.Default.BgColor.B));
-                var res = await GoogleCalendarManager.Instance.SetCalendarColor(backgroundColor.ToLower(), foregroundColor.ToLower());
             }
         }
 
@@ -303,22 +257,14 @@ namespace Dasi.CalendarSync.Tray
         {
             var client_id = Settings.Default.ClientID;
             var secret = Settings.Default.ClientSecret;
-            var cal_name = Settings.Default.CalendarName;
             if (string.IsNullOrEmpty(client_id))
                 client_id = GoogleToken.ClientId;
             if (string.IsNullOrEmpty(secret))
                 secret = GoogleToken.ClientSecret;
-            if (string.IsNullOrEmpty(cal_name))
-                cal_name = "GVR.Meetings";
 
-            try
+            if(!GoogleCalendarManager.Instance.LoggedIn)
             {
-                logged_in_google = await GoogleCalendarManager.Instance.Initialize(client_id, secret, cal_name);
-            }
-            catch(Exception ex)
-            {
-                Log.Error("Exception", ex);
-                logged_in_google = false;
+                var login = await GoogleCalendarManager.Instance.Login(client_id, secret);
             }
         }
     }

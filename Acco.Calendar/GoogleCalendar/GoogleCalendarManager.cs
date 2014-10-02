@@ -39,12 +39,12 @@ namespace Acco.Calendar.Manager
             get { return "outlook2googlecalendar"; }
         }
 
-        private static string SettingsPath
-        {
-            get { return "googlecalendar.settings"; }
-        }
+        //private static string SettingsPath
+        //{
+        //    get { return "googlecalendar.settings"; }
+        //}
 
-        private GoogleCalendarSettings _settings = new GoogleCalendarSettings();
+        private GoogleCalendarParameters googleCalendarParameters = new GoogleCalendarParameters();
         private static readonly GoogleCalendarManager instance = new GoogleCalendarManager();
 
         // hidden constructor
@@ -91,16 +91,16 @@ namespace Acco.Calendar.Manager
             var calendar = new GenericCalendar
             {
                 Events = await PullEvents() as DbCollection<GenericEvent>,
-                Id = _settings.CalendarId,
-                Name = _settings.CalendarName
+                Id = googleCalendarParameters.Id,
+                Name = googleCalendarParameters.Name
             };
             LastCalendar = calendar;
             return calendar;
         }
 
-        private static DbCollection<GenericEvent> RestoreEvents()
+        private static DbCollection<GenericEvent> RetrieveEvents()
         {
-            //todo: work in progress - somehow we have to retrieve appointments...
+            Log.Info("Retrieving events from database");
             var query =
             from e in Database.Storage.Instance.Appointments.AsQueryable()
             select e;
@@ -112,36 +112,99 @@ namespace Acco.Calendar.Manager
             return ret;
         }
 
-        public async Task<bool> Initialize(string clientId, string clientSecret, string calendarName)
+        /// <summary>
+        /// Authenticate to google services with the provided client id and client secret
+        /// </summary>
+        /// <param name="clientId">The client id provided by google's developer console</param>
+        /// <param name="clientSecret">The client secret provided by google's developer console</param>
+        /// <returns>True or False if authentication has been successful or not</returns>
+        public async Task<bool> Login(string clientId, string clientSecret)
         {
             if(LastCalendar == null)
             {
                 LastCalendar = new GenericCalendar
                 {
-                    Events = RestoreEvents()
+                    Events = RetrieveEvents()
                 };
             }
-            //
-            Log.Info(String.Format("Initializing google calendar [{0}]", calendarName));
-            var authenticated = await Authenticate(clientId, clientSecret);
-            if (authenticated)
+            if(!LoggedIn)
             {
-                _settings = await CreateSettings(calendarName); 
-                var theirCalendarId = (await GetCalendar(_settings.CalendarId)).Id;
-                if (_settings.CalendarId == theirCalendarId)
-                {
-                    Log.Debug(String.Format("Our calendar id matches the one on google: id[{0}]", _settings.CalendarId));
+                LoggedIn = await Authenticate(clientId, clientSecret);
+            }
+            return LoggedIn;
+        }
+
+        /// <summary>
+        /// Initialize calendar operations by checking if the provided calendar id 
+        /// exists on google calendar, if it does not, it creates the calendar and returns the calendar id.
+        /// </summary>
+        /// <param name="calendarId">Google calendar's id</param>
+        /// <param name="calendarName">The summary of google's calendar</param>
+        /// <returns>Google's calendar id</returns>
+        public async Task<string> Initialize(string calendarId, string calendarName)
+        {
+            var res = "";
+            Log.Debug("Initializing...");
+            if(LoggedIn)
+            {
+                // if passed caledar id is not valid
+                if(string.IsNullOrEmpty(calendarId))
+                { 
+                    // create the calendar
+                    var onlineCalendar = await CreateCalendar(calendarName);
+                    googleCalendarParameters.Id = onlineCalendar.Id;
+                    googleCalendarParameters.Name = onlineCalendar.Summary;
                 }
                 else
                 {
-                    throw new Exception(String.Format("Stored calendar id [{0}] doesn't match the one on google [{1}]",
-                        _settings.CalendarId, theirCalendarId));
+                    // try to get the calendar with the specified calendarDd
+                    var onlineCalendar = await GetCalendar(calendarId);
+                    try
+                    {
+                        // if the result is KO (no calendar found)
+                        if (onlineCalendar == null)
+                        {
+                            // create a new calendar, with the specified calendarName
+                            googleCalendarParameters.Id = (await CreateCalendar(calendarName)).Id;
+                            googleCalendarParameters.Name = calendarName;
+                        }
+                        else
+                        {
+                            // if the result is OK, retrieve the existing calendar
+                            googleCalendarParameters.Id = onlineCalendar.Id;
+                            googleCalendarParameters.Name = onlineCalendar.Description;
+                            if (onlineCalendar.Id == calendarId)
+                            {
+                                Log.Debug(String.Format("Calendar IDs match!", googleCalendarParameters.Id));
+                            }
+                            else
+                            {
+                                throw new Exception(String.Format("Passed calendar id [{0}] doesn't match the one on google [{1}]", calendarId, onlineCalendar.Id));
+                            }
+                            // check if passed calendar name is the same as the one online.
+                            if (calendarName != onlineCalendar.Summary)
+                            {
+                                Log.Warn(String.Format("Online calendar name[{0}] is different from the one stored[{1}]", onlineCalendar.Description, calendarName));
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error(ex.GetType().ToString(), ex);
+                        throw ex; // give the exception to the caller
+                    }
                 }
             }
-            return authenticated;
+            else
+            {
+                Log.Error("Not logged in, try to log in first");
+            }
+            res = googleCalendarParameters.Id;
+            Log.Debug("Finished initialization...");
+            return res;
         }
 
-        private async Task<bool> Authenticate(string clientId, string clientSecret)
+        private async Task<bool> Authenticate(string clientId, string clientSecret, string applicationName = "OpenCalendarSync")
         {
             Log.Info("Authenticating to google");
             var res = true;
@@ -149,11 +212,12 @@ namespace Acco.Calendar.Manager
             {
                 DataStore = new FileDataStore(DataStorePath);
                 Credential = await
-                    GoogleWebAuthorizationBroker.AuthorizeAsync(new ClientSecrets
-                    {
-                        ClientId = clientId,
-                        ClientSecret = clientSecret
-                    },
+                    GoogleWebAuthorizationBroker.AuthorizeAsync(
+                        new ClientSecrets
+                        {
+                            ClientId = clientId,
+                            ClientSecret = clientSecret
+                        },
                         new[] {CalendarService.Scope.Calendar},
                         "user",
                         CancellationToken.None,
@@ -162,7 +226,7 @@ namespace Acco.Calendar.Manager
                 Service = new CalendarService(new BaseClientService.Initializer
                 {
                     HttpClientInitializer = Credential,
-                    ApplicationName = GoogleCalendarSettings.ApplicationName
+                    ApplicationName = applicationName
                 });
             }
             catch (Exception ex)
@@ -186,7 +250,7 @@ namespace Acco.Calendar.Manager
                 return await Service.Calendars.Insert(new Google.Apis.Calendar.v3.Data.Calendar
                 {
                     Summary = calendarName,
-                    TimeZone = "Europe/Rome", //todo: configurable
+                    TimeZone = googleCalendarParameters.TimeZone,
                     Description = "Automatically created: " + DateTime.Now.ToString("g")
                 }).ExecuteAsync();
             }
@@ -321,7 +385,7 @@ namespace Acco.Calendar.Manager
                 //
                 myEvt.Reminders = new Google.Apis.Calendar.v3.Data.Event.RemindersData {UseDefault = true};
                 //
-                var createdEvent = await Service.Events.Insert(myEvt, _settings.CalendarId).ExecuteAsync();
+                var createdEvent = await Service.Events.Insert(myEvt, googleCalendarParameters.Id).ExecuteAsync();
                 //
                 if (createdEvent != null)
                 {
@@ -387,7 +451,7 @@ namespace Acco.Calendar.Manager
             var myEvts = new DbCollection<GenericEvent>();
             try
             {
-                var evts = await Service.Events.List(_settings.CalendarId).ExecuteAsync();
+                var evts = await Service.Events.List(googleCalendarParameters.Id).ExecuteAsync();
                 foreach (var evt in evts.Items)
                 {
                     var iCalUid = StringHelper.GetString(StringHelper.GoogleBase32.FromBaseString(evt.Id));
@@ -516,8 +580,8 @@ namespace Acco.Calendar.Manager
                 Events = new DbCollection<GenericEvent>()
             };
             calendar.Events = await PullEvents(from, to) as DbCollection<GenericEvent>;
-            calendar.Id = _settings.CalendarId;
-            calendar.Name = _settings.CalendarName;
+            calendar.Id = googleCalendarParameters.Id;
+            calendar.Name = googleCalendarParameters.Name;
             LastCalendar = calendar;
             return calendar;
         }
@@ -530,8 +594,8 @@ namespace Acco.Calendar.Manager
                 {
                     Log.Debug(String.Format("Remove event with google id [{0}]", StringHelper.GoogleBase32.ToBaseString(StringHelper.GetBytes(evt.Id))));
                     Log.Debug(String.Format("and iCalUID [{0}]", evt.Id));
-                    var res = await Service.Events.Delete(_settings.CalendarId, StringHelper.GoogleBase32.ToBaseString(StringHelper.GetBytes(evt.Id))).ExecuteAsync();
-                    if (res != null)
+                    var res = await Service.Events.Delete(googleCalendarParameters.Id, StringHelper.GoogleBase32.ToBaseString(StringHelper.GetBytes(evt.Id))).ExecuteAsync();
+                    if (!string.IsNullOrEmpty(res))
                     {
                         Log.Debug(res);
                     }
@@ -620,7 +684,7 @@ namespace Acco.Calendar.Manager
                 myEvt.Start = new Google.Apis.Calendar.v3.Data.EventDateTime
                 {
                     DateTime = updatedEvent.Start,
-                    TimeZone = "Europe/Rome"
+                    TimeZone = googleCalendarParameters.TimeZone
                 };
             }
             // End
@@ -629,7 +693,7 @@ namespace Acco.Calendar.Manager
                 myEvt.End = new Google.Apis.Calendar.v3.Data.EventDateTime
                 {
                     DateTime = updatedEvent.End,
-                    TimeZone = "Europe/Rome"
+                    TimeZone = googleCalendarParameters.TimeZone
                 };
             }
             else
@@ -648,21 +712,32 @@ namespace Acco.Calendar.Manager
             }
             //
             myEvt.Reminders = new Google.Apis.Calendar.v3.Data.Event.RemindersData { UseDefault = true };
-            var existingEvent = await Service.Events.Get(_settings.CalendarId, myEvt.Id).ExecuteAsync();
-            myEvt.Sequence = existingEvent.Sequence + 1; // todo: improve this shit..
+            var existingEvent = await Service.Events.Get(googleCalendarParameters.Id, myEvt.Id).ExecuteAsync();
+            if (existingEvent.Sequence.HasValue)
+            {
+                myEvt.Sequence = existingEvent.Sequence.Value + 1;
+            }
+            else
+            { 
+                throw new Exception(String.Format("Failed to get sequence number for existing event[{0}], better luck next time", existingEvent.Id));
+            }
             //
-            var createdEvent = await Service.Events.Update(myEvt, _settings.CalendarId, myEvt.Id).ExecuteAsync();
-            if (createdEvent != null)
+            var update = await Service.Events.Update(myEvt, googleCalendarParameters.Id, myEvt.Id).ExecuteAsync();
+            if (update != null)
             {
                 res.Successful = true; 
             }
             return res;
         }
 
-        public async Task<bool> SetCalendarColor(string BackgroundColor, string ForegroundColor)
+        public async Task<bool> SetCalendarColor(string foregroundColor, string backgroundColor)
         {
-            var request = Service.CalendarList.Update(new Google.Apis.Calendar.v3.Data.CalendarListEntry { BackgroundColor = BackgroundColor, ForegroundColor = ForegroundColor }, _settings.CalendarId);
-            request.ColorRgbFormat = true;
+            if (!LoggedIn)
+            { 
+                return false;
+            }
+            var request = Service.CalendarList.Update(new Google.Apis.Calendar.v3.Data.CalendarListEntry { BackgroundColor = backgroundColor, ForegroundColor = foregroundColor }, googleCalendarParameters.Id);
+            request.ColorRgbFormat = true; // if we don't do this, google wants a colorId, which we don't have.
             var ret = await request.ExecuteAsync();
             if (ret != null)
                 return true;
@@ -671,81 +746,22 @@ namespace Acco.Calendar.Manager
 
         public async Task<string> DropCurrentCalendar()
         {
-            // note: if we are not authenticated, this will throw an exception.
-            return await Service.Calendars.Delete(_settings.CalendarId).ExecuteAsync();
+            if(!LoggedIn)
+            {
+                return "not logged in";
+            }
+            return await Service.Calendars.Delete(googleCalendarParameters.Id).ExecuteAsync();
         }
 
-        private async Task<GoogleCalendarSettings> CreateSettings(string calendarName)
+        public bool LoggedIn { get; set; }
+
+        private struct GoogleCalendarParameters
         {
-            GoogleCalendarSettings temporarySettings = null;
-            if (File.Exists(SettingsPath))
-            {
-                using (var r = new StreamReader(SettingsPath))
-                {
-                    var json = r.ReadToEnd();
-                    temporarySettings = JsonConvert.DeserializeObject<GoogleCalendarSettings>(json);
-                    if (temporarySettings != null &&
-                        temporarySettings.CalendarName != calendarName)
-                    {
-                        Log.Warn(String.Format("Calendar name mismatch stored:[{0}], provided:[{1}]",
-                            temporarySettings.CalendarName, calendarName));
-                        Log.Warn("Deleting old calendar and making a new one");
-                        var isCalendarDeleted = await RemoveCalendar(temporarySettings.CalendarId);
-                        if (isCalendarDeleted)
-                        {
-                            Log.Info("Calendar successfully deleted");
-                        }
-                        else
-                        {
-                            throw new Exception(
-                                String.Format("Failed to delete calendar id[{0}] and name [{1}]",
-                                    temporarySettings.CalendarId, temporarySettings.CalendarId));
-                        }
-                    }
-                    else if(temporarySettings == null)
-                    {
-                        r.Close();
-                        File.Delete(SettingsPath);
-                        return await CreateSettings(calendarName);
-                    }
-                }
-            }
-            else
-            {
-                try
-                {
-                    var calendarId = (await CreateCalendar(calendarName)).Id;
-                    temporarySettings = new GoogleCalendarSettings
-                    {
-                        CalendarName = calendarName,
-                        CalendarId = calendarId
-                    };
-                }
-                catch (Exception ex)
-                {
-                    Log.Error("Exception", ex);
-                }
-                var jsonSettings = JsonConvert.SerializeObject(temporarySettings);
-                using (var sw = new StreamWriter(SettingsPath))
-                {
-                    await sw.WriteAsync(jsonSettings);
-                }
-            }
-            Log.Info(temporarySettings.ToJson());
-            return temporarySettings;
-        }
+            public string Id { get; set; }
 
-        [Serializable]
-        private class GoogleCalendarSettings
-        {
-            public string CalendarId { get; set; }
+            public string Name { get; set; }
 
-            public string CalendarName { get; set; }
-
-            public static string ApplicationName
-            {
-                get { return "Outlook2GoogleCalendar"; }
-            }
+            public string TimeZone { get; set; }
         }
     }
 }
