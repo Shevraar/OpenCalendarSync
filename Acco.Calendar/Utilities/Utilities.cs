@@ -64,4 +64,12 @@ namespace Acco.Calendar.Utilities
             return sf.GetMethod().Name;
         }
     }
+
+    public static class VersionHelper
+    {
+        public static string GetCurrentVersion()
+        {
+            return System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
+        }
+    }
 }

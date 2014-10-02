@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Acco.Calendar.Database;
 using System.IO;
 using System.Windows.Threading;
+using System.Diagnostics;
 
 namespace Dasi.CalendarSync.Tray
 {
@@ -31,6 +32,7 @@ namespace Dasi.CalendarSync.Tray
             InitializeComponent();
             InternalInit();
             this.trayIcon = trayIcon;
+            
         }
 
         private void InternalInit()
@@ -46,6 +48,8 @@ namespace Dasi.CalendarSync.Tray
 
             textColorComboBox.SelectedColorChanged += textColorComboBox_SelectedColorChanged;
             backgroundColorComboBox.SelectedColorChanged += backgroundColorComboBox_SelectedColorChanged;
+
+            this.versionLabel.Content = "v" + Acco.Calendar.Utilities.VersionHelper.GetCurrentVersion();
         }
 
         private void btSave_Click(object sender, RoutedEventArgs e)
@@ -69,7 +73,6 @@ namespace Dasi.CalendarSync.Tray
             var askForReset = MessageBox.Show("L'operazione di reset comporta:\n" +
                                                 "\t1. Cancellazione database appuntamenti\n" +
                                                 "\t2. Cancellazione calendario su google (opzionale)\n" +
-                                                "\t3. Cancellazione google.settings\n" +
                                                 "Vuoi proseguire?",
                                                 "Reset",
                                                 MessageBoxButton.YesNo,

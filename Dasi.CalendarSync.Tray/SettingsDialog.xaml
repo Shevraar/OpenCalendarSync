@@ -8,11 +8,17 @@
 
     <DockPanel>
 
-        <!-- Bottom buttons -->
-        <StackPanel Orientation="Horizontal"  Grid.ColumnSpan="2" HorizontalAlignment="Right" DockPanel.Dock="Bottom">
-            <Button x:Name="btCancel" Margin="10" Width="80" Click="btCancel_Click">Annulla</Button>
-            <Button x:Name="btSave" Margin="10" Width="80" Click="btSave_Click">Salva</Button>
-        </StackPanel>
+        <!-- Bottom button and labels bar-->
+        <DockPanel DockPanel.Dock="Bottom">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                <Label x:Name="versionLabel" FontFamily="Consolas" FontSize="11" VerticalAlignment="Center" VerticalContentAlignment="Center" Foreground="#FF686868">v</Label>
+            </StackPanel>
+            <!-- Bottom buttons -->    
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button x:Name="btCancel" Margin="10" Width="80" Click="btCancel_Click">Annulla</Button>
+                <Button x:Name="btSave" Margin="10" Width="80" Click="btSave_Click">Salva</Button>
+            </StackPanel>
+        </DockPanel>
         
         <av:AutoGrid Margin="20" RowCount="16" RowHeight="Auto" Columns="Auto,*" ChildMargin="9">
                 
