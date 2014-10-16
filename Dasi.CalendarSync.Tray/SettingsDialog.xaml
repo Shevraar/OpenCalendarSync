@@ -4,7 +4,7 @@
         xmlns:w="clr-namespace:Dasi.CalendarSync.Tray"
         xmlns:av="clr-namespace:WpfAutoGrid;assembly=WpfAutoGrid"
         xmlns:tk="http://schemas.xceed.com/wpf/xaml/toolkit"
-        Title="SettingsDialog" SizeToContent="WidthAndHeight" ResizeMode="NoResize" MinWidth="480" MinHeight="600">
+        Title="SettingsDialog" SizeToContent="WidthAndHeight" ResizeMode="NoResize" MinWidth="480" MinHeight="640" MaxWidth="480">
 
     <DockPanel>
 
@@ -50,10 +50,10 @@
 
             <Label>Testo</Label>
             <tk:ColorPicker x:Name="textColorComboBox" UsingAlphaChannel="False" ShowStandardColors="False" ColorMode="ColorCanvas" 
-                            SelectedColor="{Binding Source={StaticResource Settings}, Path=Default.FgColor}" LostFocus="textColorComboBox_LostFocus"/>
+                            SelectedColor="{Binding Source={StaticResource Settings}, Path=Default.FgColor}" LostFocus="textColorComboBox_LostFocus" Unloaded="textColorComboBox_Unloaded"/>
             <Label>Sfondo</Label>
             <tk:ColorPicker x:Name="backgroundColorComboBox" UsingAlphaChannel="False" ShowStandardColors="False" ColorMode="ColorCanvas"
-                            SelectedColor="{Binding Source={StaticResource Settings}, Path=Default.BgColor}" LostFocus="backgroundColorComboBox_LostFocus"/>
+                            SelectedColor="{Binding Source={StaticResource Settings}, Path=Default.BgColor}" LostFocus="backgroundColorComboBox_LostFocus" Unloaded="backgroundColorComboBox_Unloaded"/>
 
             <!-- Secrets Group -->
             <Label Grid.ColumnSpan="2" HorizontalAlignment="Center" FontWeight="Bold">Segreti</Label>
@@ -61,12 +61,12 @@
 
             <!-- Client ID -->
             <Label>ID. Client</Label>
-            <PasswordBox w:PasswordHelper.Attach="True" 
+            <PasswordBox x:Name="clientIdPwdBox" w:PasswordHelper.Attach="True" 
                          w:PasswordHelper.Password="{Binding Source={StaticResource Settings}, Path=Default.ClientID, Mode=TwoWay}"/>
 
             <!-- Client Secret -->
             <Label>Segreto</Label>       
-            <PasswordBox w:PasswordHelper.Attach="True" 
+            <PasswordBox x:Name="clientSecretPwdBox" w:PasswordHelper.Attach="True" 
                          w:PasswordHelper.Password="{Binding Source={StaticResource Settings}, Path=Default.ClientSecret, Mode=TwoWay}"/>
             
             <Separator Grid.ColumnSpan="2" />

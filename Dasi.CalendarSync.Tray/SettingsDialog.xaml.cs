@@ -46,10 +46,13 @@ namespace Dasi.CalendarSync.Tray
             if (string.IsNullOrEmpty(clientSecret))
                 clientSecret = GoogleToken.ClientSecret;
 
+            clientIdPwdBox.Password = clientId;
+            clientSecretPwdBox.Password = clientSecret;
+
             textColorComboBox.SelectedColorChanged += textColorComboBox_SelectedColorChanged;
             backgroundColorComboBox.SelectedColorChanged += backgroundColorComboBox_SelectedColorChanged;
 
-            this.versionLabel.Content = "v" + Acco.Calendar.Utilities.VersionHelper.GetCurrentVersion();
+            versionLabel.Content = "v" + Acco.Calendar.Utilities.VersionHelper.GetCurrentVersion();
         }
 
         private void btSave_Click(object sender, RoutedEventArgs e)
@@ -157,11 +160,12 @@ namespace Dasi.CalendarSync.Tray
                 {
                     var login = await GoogleCalendarManager.Instance.Login(clientId, clientSecret);
                 }
+                var initialize = await GoogleCalendarManager.Instance.Initialize(Settings.Default.CalendarID, Settings.Default.CalendarName);
                 if(GoogleCalendarManager.Instance.LoggedIn)
                 { 
                     try
                     {
-                        var res = await GoogleCalendarManager.Instance.SetCalendarColor(backgroundColor.ToLower(), foregroundColor.ToLower());
+                        var res = await GoogleCalendarManager.Instance.SetCalendarColor(foregroundColor.ToLower(), backgroundColor.ToLower());
                     }
                     catch(Exception ex)
                     {
@@ -187,17 +191,27 @@ namespace Dasi.CalendarSync.Tray
 
         private void textColorComboBox_LostFocus(object sender, RoutedEventArgs e)
         {
-            changeCalendarColor(textColorComboBox.SelectedColor, backgroundColorComboBox.SelectedColor);
+            //changeCalendarColor(textColorComboBox.SelectedColor, backgroundColorComboBox.SelectedColor);
         }
 
         private void backgroundColorComboBox_LostFocus(object sender, RoutedEventArgs e)
         {
-            changeCalendarColor(textColorComboBox.SelectedColor, backgroundColorComboBox.SelectedColor);
+            //changeCalendarColor(textColorComboBox.SelectedColor, backgroundColorComboBox.SelectedColor);
         }
 
         private void calnameTextBox_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
         {
             //todo: add summary customization here
+        }
+
+        private void textColorComboBox_Unloaded(object sender, RoutedEventArgs e)
+        {
+            changeCalendarColor(textColorComboBox.SelectedColor, backgroundColorComboBox.SelectedColor);
+        }
+
+        private void backgroundColorComboBox_Unloaded(object sender, RoutedEventArgs e)
+        {
+            changeCalendarColor(textColorComboBox.SelectedColor, backgroundColorComboBox.SelectedColor);
         }
     }
 }

@@ -170,6 +170,7 @@ namespace Dasi.CalendarSync.Tray
                 {
                     // update the settings, so that the next time we start, we have a calendarId
                     Settings.Default.CalendarID = google_cal_id;
+                    Settings.Default.Save();
                 }
                 //logged in to google, go on!
                 if (GoogleCalendarManager.Instance.LoggedIn) 
