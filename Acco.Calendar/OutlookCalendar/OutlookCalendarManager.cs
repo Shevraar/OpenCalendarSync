@@ -180,71 +180,65 @@ namespace Acco.Calendar.Manager
             {
                 Events = new DbCollection<GenericEvent>()
             };
-            try
-            {
-                myCalendar.Id = CalendarFolder.EntryID;
-                myCalendar.Name = CalendarFolder.Name;
+
+            myCalendar.Id = CalendarFolder.EntryID;
+            myCalendar.Name = CalendarFolder.Name;
 #if !OLD_OFFICE_ASSEMBLY
-                myCalendar.Creator = new GenericPerson
+            myCalendar.Creator = new GenericPerson
+            {
+                Email = CalendarFolder.Store.DisplayName
+            };
+#endif
+            //
+            var items = CalendarFolder.Items;
+            items.Sort("[Start]");
+            var filter = "[Start] >= '"
+                        + from.ToString("g")
+                        + "' AND [End] <= '"
+                        + to.ToString("g") + "'";
+            Log.Debug(String.Format("Filter string [{0}]", filter));
+            items = items.Restrict(filter);
+            //
+            foreach (AppointmentItem evt in items)
+            {
+                //
+                var myEvt = new GenericEvent(   id: evt.EntryID,
+                                                summary: evt.Subject,
+                                                description: evt.Body,
+                                                location: new GenericLocation { Name = evt.Location });
+                // Start
+                myEvt.Start = evt.Start;
+                // End
+                if (!evt.AllDayEvent)
                 {
-                    Email = CalendarFolder.Store.DisplayName
+                    myEvt.End = evt.End;
+                }
+                //
+#if !OLD_OFFICE_ASSEMBLY // this only works with office 2010
+                // Creator and organizer are the same person.
+                // Creator
+                myEvt.Creator = new GenericPerson
+                {
+                    Email = evt.GetOrganizer().Address,
+                    Name = evt.GetOrganizer().Name
+                };
+                // Organizer
+                myEvt.Organizer = new GenericPerson
+                {
+                    Email = evt.GetOrganizer().Address,
+                    Name = evt.GetOrganizer().Name
                 };
 #endif
-                //
-                var items = CalendarFolder.Items;
-                items.Sort("[Start]");
-                var filter = "[Start] >= '"
-                            + from.ToString("g")
-                            + "' AND [End] <= '"
-                            + to.ToString("g") + "'";
-                Log.Debug(String.Format("Filter string [{0}]", filter));
-                items = items.Restrict(filter);
-                //
-                foreach (AppointmentItem evt in items)
+                // Attendees
+                myEvt.Attendees = ExtractRecipientInfos(evt);
+                // Recurrence
+                if (evt.IsRecurring)
                 {
-                    //
-                    var myEvt = new GenericEvent(   id: evt.EntryID,
-                                                    summary: evt.Subject,
-                                                    description: evt.Body,
-                                                    location: new GenericLocation { Name = evt.Location });
-                    // Start
-                    myEvt.Start = evt.Start;
-                    // End
-                    if (!evt.AllDayEvent)
-                    {
-                        myEvt.End = evt.End;
-                    }
-                    //
-#if !OLD_OFFICE_ASSEMBLY // this only works with office 2010
-                    // Creator and organizer are the same person.
-                    // Creator
-                    myEvt.Creator = new GenericPerson
-                    {
-                        Email = evt.GetOrganizer().Address,
-                        Name = evt.GetOrganizer().Name
-                    };
-                    // Organizer
-                    myEvt.Organizer = new GenericPerson
-                    {
-                        Email = evt.GetOrganizer().Address,
-                        Name = evt.GetOrganizer().Name
-                    };
-#endif
-                    // Attendees
-                    myEvt.Attendees = ExtractRecipientInfos(evt);
-                    // Recurrence
-                    if (evt.IsRecurring)
-                    {
-                        myEvt.Recurrence = new OutlookRecurrence();
-                        ((OutlookRecurrence)myEvt.Recurrence).Parse(evt.GetRecurrencePattern());
-                    }
-                    // add it to calendar events.
-                    myCalendar.Events.Add(myEvt);
+                    myEvt.Recurrence = new OutlookRecurrence();
+                    ((OutlookRecurrence)myEvt.Recurrence).Parse(evt.GetRecurrencePattern());
                 }
-            }
-            catch (System.Exception ex)
-            {
-                Log.Error("Exception", ex);
+                // add it to calendar events.
+                myCalendar.Events.Add(myEvt);
             }
             LastCalendar = myCalendar;
             return myCalendar;
