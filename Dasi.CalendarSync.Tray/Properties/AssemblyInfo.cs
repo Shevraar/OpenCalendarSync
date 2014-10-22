@@ -1,16 +1,17 @@
 ﻿using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Windows;
+using System.Resources;
 
 // Le informazioni generali relative a un assembly sono controllate dal seguente 
 // set di attributi. Per modificare le informazioni associate a un assembly
 // occorre quindi modificare i valori di questi attributi.
-[assembly: AssemblyTitle("Dasi.CalendarSync.Tray")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyTitle("OpenCalendarSync")]
+[assembly: AssemblyDescription("A tool to help you manage outlook to google calendar imports")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("Dasi.CalendarSync.Tray")]
-[assembly: AssemblyCopyright("Copyright ©  2014")]
+[assembly: AssemblyProduct("OpenCalendarSync")]
+[assembly: AssemblyCopyright("Copyright © Marco Accorinti & Daniele Simonetti 2014")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -49,5 +50,7 @@ using System.Windows;
 // È possibile specificare tutti i valori oppure impostare valori predefiniti per i numeri relativi alla revisione e alla build 
 // utilizzando l'asterisco (*) come descritto di seguito:
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion("1.1.0.0")]
-[assembly: AssemblyFileVersion("1.1.0.0")]
+[assembly: AssemblyVersion("0.0.3.4")]
+[assembly: AssemblyFileVersion("0.0.3.4")]
+[assembly: AssemblyMetadata("SquirrelAwareVersion", "1")]
+[assembly: NeutralResourcesLanguageAttribute("it-IT")]
