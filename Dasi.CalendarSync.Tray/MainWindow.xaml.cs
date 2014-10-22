@@ -13,6 +13,7 @@ using System.Windows.Threading;
 using System.Collections.Generic;
 using Dasi.CalendarSync.Tray.Properties;
 using System.IO;
+using Squirrel;
 
 namespace Dasi.CalendarSync.Tray
 {
@@ -29,6 +30,10 @@ namespace Dasi.CalendarSync.Tray
         private bool animation_stopping;
 
         private static readonly log4net.ILog Log = log4net.LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+
+        static bool ShowTheWelcomeWizard;
+
+
 
         public MainWindow()
         {
@@ -92,14 +97,25 @@ namespace Dasi.CalendarSync.Tray
                 }
             };
 
+            using (var mgr = new UpdateManager("file:\\update", "OpenCalendarSync", FrameworkVersion.Net45))
+            {
+                // Note, in most of these scenarios, the app exits after this method
+                // completes!
+                SquirrelAwareApp.HandleEvents(
+                  onInitialInstall: v => mgr.CreateShortcutForThisExe(),
+                  onAppUpdate: v => mgr.CreateShortcutForThisExe(),
+                  onAppUninstall: v => mgr.RemoveShortcutForThisExe(),
+                  onFirstRun: () => ShowTheWelcomeWizard = true);
+            }
+
         }
 
         private System.Drawing.Icon GetAppIcon(string name, System.Drawing.Size sz)
         {
             // se esiste la icona "doge" usa quella :)
-            string doge_file = Path.Combine("doge", name + ".ico");
-            if (File.Exists(doge_file))
-                return new System.Drawing.Icon(doge_file, sz);
+            var dogeFile = Path.Combine("doge", name + ".ico");
+            if (File.Exists(dogeFile))
+                return new System.Drawing.Icon(dogeFile, sz);
             return (System.Drawing.Icon)Properties.Resources.ResourceManager.GetObject(name, Properties.Resources.Culture);
         }
 
