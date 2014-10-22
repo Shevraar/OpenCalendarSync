@@ -218,8 +218,10 @@ namespace Dasi.CalendarSync.Tray
                     MessageBoxImage.Information, MessageBoxResult.Yes);
 
                 if (ret != MessageBoxResult.Yes) return;
+                Hide();
                 var x = await mgr.UpdateApp();
                 Log.Debug(x);
+                Close();
             }
         }
 
