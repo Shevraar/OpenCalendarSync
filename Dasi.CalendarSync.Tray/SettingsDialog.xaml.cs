@@ -1,14 +1,15 @@
-﻿using System.Reflection;
+﻿using System.Linq;
+using System.Reflection;
 using System.Windows;
 using System.Windows.Input;
 using Acco.Calendar.Manager;
 using Dasi.CalendarSync.Tray.Properties;
 using System;
-using System.Threading.Tasks;
 using Acco.Calendar.Database;
-using System.IO;
 using System.Windows.Threading;
-using System.Diagnostics;
+using MongoDB.Driver;
+using Squirrel;
+using OldForms = System.Windows.Forms;
 
 namespace Dasi.CalendarSync.Tray
 {
@@ -18,8 +19,8 @@ namespace Dasi.CalendarSync.Tray
     public partial class SettingsDialog
     {
         private static readonly log4net.ILog Log = log4net.LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
-        private string clientId;
-        private string clientSecret;
+        private string _clientId;
+        private string _clientSecret;
 
         public SettingsDialog()
         {
@@ -31,28 +32,27 @@ namespace Dasi.CalendarSync.Tray
         {
             InitializeComponent();
             InternalInit();
-            this.trayIcon = trayIcon;
-            
+            _trayIcon = trayIcon;
         }
 
         private void InternalInit()
         {
-            colorChanged = new bool[2];
+            _colorChanged = new bool[2];
 
-            clientId = Settings.Default.ClientID;
-            clientSecret = Settings.Default.ClientSecret;
-            if (string.IsNullOrEmpty(clientId))
-                clientId = GoogleToken.ClientId;
-            if (string.IsNullOrEmpty(clientSecret))
-                clientSecret = GoogleToken.ClientSecret;
+            _clientId = Settings.Default.ClientID;
+            _clientSecret = Settings.Default.ClientSecret;
+            if (string.IsNullOrEmpty(_clientId))
+                _clientId = GoogleToken.ClientId;
+            if (string.IsNullOrEmpty(_clientSecret))
+                _clientSecret = GoogleToken.ClientSecret;
 
-            clientIdPwdBox.Password = clientId;
-            clientSecretPwdBox.Password = clientSecret;
+            ClientIdPwdBox.Password = _clientId;
+            ClientSecretPwdBox.Password = _clientSecret;
 
-            textColorComboBox.SelectedColorChanged += textColorComboBox_SelectedColorChanged;
-            backgroundColorComboBox.SelectedColorChanged += backgroundColorComboBox_SelectedColorChanged;
+            TextColorComboBox.SelectedColorChanged += textColorComboBox_SelectedColorChanged;
+            BackgroundColorComboBox.SelectedColorChanged += backgroundColorComboBox_SelectedColorChanged;
 
-            versionLabel.Content = "v" + Acco.Calendar.Utilities.VersionHelper.GetCurrentVersion();
+            VersionLabel.Content = "v" + Acco.Calendar.Utilities.VersionHelper.GetCurrentVersion();
         }
 
         private void btSave_Click(object sender, RoutedEventArgs e)
@@ -67,8 +67,8 @@ namespace Dasi.CalendarSync.Tray
 
         private void slRefreshTmo_MouseWheel(object sender, MouseWheelEventArgs e)
         {
-            if (e.Delta > 0) { slRefreshTmo.Value += slRefreshTmo.SmallChange; }
-            else { slRefreshTmo.Value -= slRefreshTmo.SmallChange; }
+            if (e.Delta > 0) { SlRefreshTmo.Value += SlRefreshTmo.SmallChange; }
+            else { SlRefreshTmo.Value -= SlRefreshTmo.SmallChange; }
         }
 
         private async void btReset_Click(object sender, RoutedEventArgs e)
@@ -82,17 +82,15 @@ namespace Dasi.CalendarSync.Tray
                                                 MessageBoxImage.Exclamation,
                                                 MessageBoxResult.No);
 
-            if (askForReset == MessageBoxResult.Yes)
+            if (askForReset != MessageBoxResult.Yes) return;
+            if (!GoogleCalendarManager.Instance.LoggedIn)
             {
-                if (!GoogleCalendarManager.Instance.LoggedIn)
-                {
-                    var res = await GoogleCalendarManager.Instance.Login(clientId, clientSecret);
-                }
-                reset();
+                var res = await GoogleCalendarManager.Instance.Login(_clientId, _clientSecret);
             }
+            Reset();
         }    
 
-        private async void reset()
+        private async void Reset()
         {
             const string title = "Risultato reset";
             var text = "";
@@ -126,17 +124,17 @@ namespace Dasi.CalendarSync.Tray
             }
             Settings.Default.CalendarID = "";
             text += "\tID del calendario resettato";
-            trayIcon.ShowBalloonTip(title, text, Hardcodet.Wpf.TaskbarNotification.BalloonIcon.Info);
+            _trayIcon.ShowBalloonTip(title, text, Hardcodet.Wpf.TaskbarNotification.BalloonIcon.Info);
             HideBalloonAfterSeconds(6);
         }
 
-        private bool[] colorChanged;
-        private Hardcodet.Wpf.TaskbarNotification.TaskbarIcon trayIcon;
+        private bool[] _colorChanged;
+        private readonly Hardcodet.Wpf.TaskbarNotification.TaskbarIcon _trayIcon;
         private void textColorComboBox_SelectedColorChanged(object sender, RoutedPropertyChangedEventArgs<System.Windows.Media.Color> e)
         {
             if(e.NewValue != e.OldValue)
             {
-                colorChanged[0] = true;
+                _colorChanged[0] = true;
             }
         }
 
@@ -144,35 +142,28 @@ namespace Dasi.CalendarSync.Tray
         {
             if (e.NewValue != e.OldValue)
             {
-                colorChanged[1] = true;
+                _colorChanged[1] = true;
             }
         }
 
-        private async void changeCalendarColor(System.Windows.Media.Color fg, System.Windows.Media.Color bg)
+        private async void ChangeCalendarColor(System.Windows.Media.Color fg, System.Windows.Media.Color bg)
         {
-            if(colorChanged[0] && colorChanged[1])
+            if(_colorChanged[0] && _colorChanged[1])
             {
-                colorChanged[0] = false;
-                colorChanged[1] = false;
+                _colorChanged[0] = false;
+                _colorChanged[1] = false;
                 var foregroundColor =  "#" + fg.ToString().Substring(3); // remove alpha channel, we don't want that shit
                 var backgroundColor = "#" + bg.ToString().Substring(3); 
                 if(!GoogleCalendarManager.Instance.LoggedIn)
                 {
-                    var login = await GoogleCalendarManager.Instance.Login(clientId, clientSecret);
+                    var login = await GoogleCalendarManager.Instance.Login(_clientId, _clientSecret);
                 }
                 var initialize = await GoogleCalendarManager.Instance.Initialize(Settings.Default.CalendarID, Settings.Default.CalendarName);
                 if(GoogleCalendarManager.Instance.LoggedIn)
                 { 
-                    try
-                    {
-                        var res = await GoogleCalendarManager.Instance.SetCalendarColor(foregroundColor.ToLower(), backgroundColor.ToLower());
-                    }
-                    catch(Exception ex)
-                    {
-                        throw ex;
-                    }
+                    await GoogleCalendarManager.Instance.SetCalendarColor(foregroundColor.ToLower(), backgroundColor.ToLower());
                 }
-                trayIcon.ShowBalloonTip("Colore calendario", "Il colore del tuo calendario su google e' stato cambiato correttamente", Hardcodet.Wpf.TaskbarNotification.BalloonIcon.Info);
+                _trayIcon.ShowBalloonTip("Colore calendario", "Il colore del tuo calendario su google e' stato cambiato correttamente", Hardcodet.Wpf.TaskbarNotification.BalloonIcon.Info);
                 HideBalloonAfterSeconds(6);
             }
         }
@@ -184,7 +175,7 @@ namespace Dasi.CalendarSync.Tray
             {
                 tmr.Stop();
                 //hide balloon
-                trayIcon.HideBalloonTip();
+                _trayIcon.HideBalloonTip();
             };
             tmr.Start();
         }
@@ -206,12 +197,39 @@ namespace Dasi.CalendarSync.Tray
 
         private void textColorComboBox_Unloaded(object sender, RoutedEventArgs e)
         {
-            changeCalendarColor(textColorComboBox.SelectedColor, backgroundColorComboBox.SelectedColor);
+            ChangeCalendarColor(TextColorComboBox.SelectedColor, BackgroundColorComboBox.SelectedColor);
         }
 
         private void backgroundColorComboBox_Unloaded(object sender, RoutedEventArgs e)
         {
-            changeCalendarColor(textColorComboBox.SelectedColor, backgroundColorComboBox.SelectedColor);
+            ChangeCalendarColor(TextColorComboBox.SelectedColor, BackgroundColorComboBox.SelectedColor);
+        }
+
+        private async void Window_Loaded(object sender, RoutedEventArgs e)
+        {
+            if (string.IsNullOrEmpty(Settings.Default.UpdateRepositoryPath)) return;
+
+            using (var mgr = new UpdateManager(Settings.Default.UpdateRepositoryPath, "OpenCalendarSync", FrameworkVersion.Net45))
+            {
+                var updateInfo = await mgr.CheckForUpdate();
+                if (!updateInfo.ReleasesToApply.Any()) return;
+
+                var ret = MessageBox.Show("Nuova versione disponibile", "Nuova Versione", MessageBoxButton.YesNo,
+                    MessageBoxImage.Information, MessageBoxResult.Yes);
+
+                if (ret != MessageBoxResult.Yes) return;
+                var x = await mgr.UpdateApp();
+                Log.Debug(x);
+            }
+        }
+
+        private void UpdatesRepositoryTextBox_PreviewMouseUp(object sender, MouseButtonEventArgs e)
+        {
+            var dialog = new OldForms.FolderBrowserDialog();
+            var result = dialog.ShowDialog();
+            if (result != OldForms.DialogResult.OK) return;
+            Settings.Default.UpdateRepositoryPath = dialog.SelectedPath;
+            Settings.Default.Save();
         }
     }
 }
