@@ -7,7 +7,6 @@ using Dasi.CalendarSync.Tray.Properties;
 using System;
 using Acco.Calendar.Database;
 using System.Windows.Threading;
-using MongoDB.Driver;
 using Squirrel;
 using OldForms = System.Windows.Forms;
 
@@ -220,7 +219,7 @@ namespace Dasi.CalendarSync.Tray
                 if (ret != MessageBoxResult.Yes) return;
                 Hide();
                 var x = await mgr.UpdateApp();
-                Log.Debug(x);
+                Log.Debug(x.EntryAsString);
                 Close();
             }
         }
@@ -228,6 +227,8 @@ namespace Dasi.CalendarSync.Tray
         private void UpdatesRepositoryTextBox_PreviewMouseUp(object sender, MouseButtonEventArgs e)
         {
             var dialog = new OldForms.FolderBrowserDialog();
+            if (!string.IsNullOrEmpty(Settings.Default.UpdateRepositoryPath))
+                dialog.SelectedPath = Settings.Default.UpdateRepositoryPath;
             var result = dialog.ShowDialog();
             if (result != OldForms.DialogResult.OK) return;
             Settings.Default.UpdateRepositoryPath = dialog.SelectedPath;

@@ -7,12 +7,9 @@ using Google.Apis.Auth.OAuth2;
 using Google.Apis.Calendar.v3;
 using Google.Apis.Services;
 using Google.Apis.Util.Store;
-using MongoDB.Bson;
 using MongoDB.Driver.Linq;
-using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -143,7 +140,6 @@ namespace Acco.Calendar.Manager
         /// <returns>Google's calendar id</returns>
         public async Task<string> Initialize(string calendarId, string calendarName)
         {
-            var res = "";
             Log.Debug("Initializing...");
             if(LoggedIn)
             {
@@ -159,39 +155,32 @@ namespace Acco.Calendar.Manager
                 {
                     // try to get the calendar with the specified calendarDd
                     var onlineCalendar = await GetCalendar(calendarId);
-                    try
+
+                    // if the result is KO (no calendar found)
+                    if (onlineCalendar == null)
                     {
-                        // if the result is KO (no calendar found)
-                        if (onlineCalendar == null)
+                        // create a new calendar, with the specified calendarName
+                        _googleCalendarParameters.Id = (await CreateCalendar(calendarName)).Id;
+                        _googleCalendarParameters.Name = calendarName;
+                    }
+                    else
+                    {
+                        // if the result is OK, retrieve the existing calendar
+                        _googleCalendarParameters.Id = onlineCalendar.Id;
+                        _googleCalendarParameters.Name = onlineCalendar.Description;
+                        if (onlineCalendar.Id == calendarId)
                         {
-                            // create a new calendar, with the specified calendarName
-                            _googleCalendarParameters.Id = (await CreateCalendar(calendarName)).Id;
-                            _googleCalendarParameters.Name = calendarName;
+                            Log.Debug("Calendar IDs match!");
                         }
                         else
                         {
-                            // if the result is OK, retrieve the existing calendar
-                            _googleCalendarParameters.Id = onlineCalendar.Id;
-                            _googleCalendarParameters.Name = onlineCalendar.Description;
-                            if (onlineCalendar.Id == calendarId)
-                            {
-                                Log.Debug(String.Format("Calendar IDs match!", _googleCalendarParameters.Id));
-                            }
-                            else
-                            {
-                                throw new Exception(String.Format("Passed calendar id [{0}] doesn't match the one on google [{1}]", calendarId, onlineCalendar.Id));
-                            }
-                            // check if passed calendar name is the same as the one online.
-                            if (calendarName != onlineCalendar.Summary)
-                            {
-                                Log.Warn(String.Format("Online calendar name[{0}] is different from the one stored[{1}]", onlineCalendar.Description, calendarName));
-                            }
+                            throw new Exception(String.Format("Passed calendar id [{0}] doesn't match the one on google [{1}]", calendarId, onlineCalendar.Id));
                         }
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Error(ex.GetType().ToString(), ex);
-                        throw ex; // give the exception to the caller
+                        // check if passed calendar name is the same as the one online.
+                        if (calendarName != onlineCalendar.Summary)
+                        {
+                            Log.Warn(String.Format("Online calendar name[{0}] is different from the one stored[{1}]", onlineCalendar.Description, calendarName));
+                        }
                     }
                 }
             }
@@ -199,9 +188,8 @@ namespace Acco.Calendar.Manager
             {
                 Log.Error("Not logged in, try to log in first");
             }
-            res = _googleCalendarParameters.Id;
             Log.Debug("Finished initialization...");
-            return res;
+            return _googleCalendarParameters.Id;
         }
 
         private async Task<bool> Authenticate(string clientId, string clientSecret, string applicationName = "OpenCalendarSync")
@@ -263,22 +251,6 @@ namespace Acco.Calendar.Manager
                 Log.Error("Exception", ex);
             }
             return null;
-        }
-
-        private async Task<bool> RemoveCalendar(string calendarId)
-        {
-            Log.Info(String.Format("Removing calendar [{0}]", calendarId));
-            var res = false;
-            var deleteResult = await Service.Calendars.Delete(calendarId).ExecuteAsync();
-            if (deleteResult == "")
-            {
-                res = true;
-            }
-            else
-            {
-                Log.Error(String.Format("Error removing calendar [{0}], deleteResult [{1}]", calendarId, deleteResult));
-            }
-            return res;
         }
 
         private async Task<UpdateOutcome> PushEvent(IEvent evt)

@@ -1,7 +1,6 @@
 ﻿using System.Linq;
 using Acco.Calendar.Location;
 using Acco.Calendar.Person;
-using MongoDB.Bson.Serialization;
 using MongoDB.Bson.Serialization.Attributes;
 using System;
 using System.Collections.Generic;
