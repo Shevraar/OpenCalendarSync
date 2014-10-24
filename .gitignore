@@ -5,7 +5,7 @@ packages
 obj
 bin
 /Acco.Calendar.Console
-/OpenCalendarSync/Acco.Calendar.work.csproj
+/OpenCalendarSync.Lib/Acco.Calendar.work.csproj
 /CalendarApi.work.sln
 /OpenCalendarSync.Lib/GoogleCalendar/*.TMP
 /OpenCalendarSync.Lib/OutlookCalendar/*.TMP
