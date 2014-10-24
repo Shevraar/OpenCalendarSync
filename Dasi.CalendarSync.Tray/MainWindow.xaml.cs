@@ -14,6 +14,7 @@ using System.Collections.Generic;
 using Dasi.CalendarSync.Tray.Properties;
 using System.IO;
 using Squirrel;
+using Ookii.Dialogs.Wpf;
 
 namespace Dasi.CalendarSync.Tray
 {
@@ -32,8 +33,6 @@ namespace Dasi.CalendarSync.Tray
         private static readonly log4net.ILog Log = log4net.LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
         static bool ShowTheWelcomeWizard;
-
-
 
         public MainWindow()
         {
@@ -96,18 +95,6 @@ namespace Dasi.CalendarSync.Tray
                     trayIcon.Icon = animation_icons[current_icon_index];
                 }
             };
-
-            using (var mgr = new UpdateManager("file:\\update", "OpenCalendarSync", FrameworkVersion.Net45))
-            {
-                // Note, in most of these scenarios, the app exits after this method
-                // completes!
-                SquirrelAwareApp.HandleEvents(
-                  onInitialInstall: v => mgr.CreateShortcutForThisExe(),
-                  onAppUpdate: v => mgr.CreateShortcutForThisExe(),
-                  onAppUninstall: v => mgr.RemoveShortcutForThisExe(),
-                  onFirstRun: () => ShowTheWelcomeWizard = true);
-            }
-
         }
 
         private System.Drawing.Icon GetAppIcon(string name, System.Drawing.Size sz)
@@ -272,6 +259,18 @@ namespace Dasi.CalendarSync.Tray
 
         private async void Window_Initialized(object sender, EventArgs e)
         {
+            if (string.IsNullOrEmpty(Settings.Default.UpdateRepositoryPath)) return;
+            using (var mgr = new UpdateManager(Settings.Default.UpdateRepositoryPath, "OpenCalendarSync", FrameworkVersion.Net45))
+            {
+                // Note, in most of these scenarios, the app exits after this method
+                // completes!
+                SquirrelAwareApp.HandleEvents(
+                  onInitialInstall: v => mgr.CreateShortcutForThisExe(),
+                  onAppUpdate: v => mgr.CreateShortcutForThisExe(),
+                  onAppUninstall: v => mgr.RemoveShortcutForThisExe(),
+                  onFirstRun: () => ShowTheWelcomeWizard = true);
+            }
+            //
             var client_id = Settings.Default.ClientID;
             var secret = Settings.Default.ClientSecret;
             if (string.IsNullOrEmpty(client_id))
@@ -282,6 +281,20 @@ namespace Dasi.CalendarSync.Tray
             if(!GoogleCalendarManager.Instance.LoggedIn)
             {
                 var login = await GoogleCalendarManager.Instance.Login(client_id, secret);
+            }
+        }
+
+        private void trayIcon_Loaded(object sender, RoutedEventArgs e)
+        {
+            if (!ShowTheWelcomeWizard) return;
+            using(var welcomeDialog = new TaskDialog())
+            {
+                welcomeDialog.Buttons.Add(new TaskDialogButton(ButtonType.Ok));
+                welcomeDialog.WindowTitle = "Primo avvio di OpenCalendarSync (o aggiornamento)";
+                welcomeDialog.Content += "Questo programma serve per importare il tuo calendario Microsoft Outlook nel servizio Google Calendar\n";
+                welcomeDialog.Content += "Successivamente sara' possibile il colore da assegnare al calendario, cosi' come il nome\n";
+                var res = welcomeDialog.ShowDialog();
+                if (res.ButtonType != ButtonType.Ok) return;
             }
         }
     }

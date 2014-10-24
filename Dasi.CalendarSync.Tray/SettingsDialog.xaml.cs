@@ -8,7 +8,7 @@ using System;
 using Acco.Calendar.Database;
 using System.Windows.Threading;
 using Squirrel;
-using OldForms = System.Windows.Forms;
+using Ookii.Dialogs.Wpf;
 
 namespace Dasi.CalendarSync.Tray
 {
@@ -226,11 +226,12 @@ namespace Dasi.CalendarSync.Tray
 
         private void UpdatesRepositoryTextBox_PreviewMouseUp(object sender, MouseButtonEventArgs e)
         {
-            var dialog = new OldForms.FolderBrowserDialog();
+            var dialog = new VistaFolderBrowserDialog();
             if (!string.IsNullOrEmpty(Settings.Default.UpdateRepositoryPath))
                 dialog.SelectedPath = Settings.Default.UpdateRepositoryPath;
             var result = dialog.ShowDialog();
-            if (result != OldForms.DialogResult.OK) return;
+            if (!result.HasValue) return;
+            else if (!result.Value) return;
             Settings.Default.UpdateRepositoryPath = dialog.SelectedPath;
             Settings.Default.Save();
         }
