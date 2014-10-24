@@ -256,7 +256,7 @@
     <Resource Include="calendar.ico" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Acco.Calendar\OpenCalendarSync.Lib.csproj">
+    <ProjectReference Include="..\OpenCalendarSync.Lib\OpenCalendarSync.Lib.csproj">
       <Project>{65997903-f6ad-4e4e-8c75-14703819882b}</Project>
       <Name>OpenCalendarSync.Lib</Name>
     </ProjectReference>
