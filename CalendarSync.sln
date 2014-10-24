@@ -1,11 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
-VisualStudioVersion = 12.0.21005.1
+VisualStudioVersion = 12.0.30723.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Acco.Calendar", "Acco.Calendar\Acco.Calendar.csproj", "{65997903-F6AD-4E4E-8C75-14703819882B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenCalendarSync.Lib", "OpenCalendarSync\OpenCalendarSync.Lib.csproj", "{65997903-F6AD-4E4E-8C75-14703819882B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dasi.CalendarSync.Tray", "Dasi.CalendarSync.Tray\Dasi.CalendarSync.Tray.csproj", "{E8561D8E-715B-487E-900C-29CEB6AFA2B8}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenCalendarSync.App", "OpenCalendarSync\OpenCalendarSync.App.csproj", "{E8561D8E-715B-487E-900C-29CEB6AFA2B8}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

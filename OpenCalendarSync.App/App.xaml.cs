@@ -1,7 +1,7 @@
 ﻿using System.Windows;
 
 [assembly: log4net.Config.XmlConfigurator(Watch = true)]
-namespace Dasi.CalendarSync.Tray
+namespace OpenCalendarSync.App.Tray
 {
    
     /// <summary>

@@ -1,7 +1,7 @@
-﻿<Window x:Class="Dasi.CalendarSync.Tray.SettingsDialog"
+﻿<Window x:Class="OpenCalendarSync.App.Tray.SettingsDialog"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"        
-        xmlns:w="clr-namespace:Dasi.CalendarSync.Tray"
+        xmlns:w="clr-namespace:OpenCalendarSync.App.Tray"
         xmlns:av="clr-namespace:WpfAutoGrid;assembly=WpfAutoGrid"
         xmlns:tk="http://schemas.xceed.com/wpf/xaml/toolkit"
         Title="SettingsDialog" SizeToContent="WidthAndHeight" ResizeMode="NoResize" MinWidth="480" MinHeight="640" MaxWidth="480" Loaded="Window_Loaded">
@@ -50,10 +50,10 @@
 
             <Label>Testo</Label>
             <tk:ColorPicker x:Name="TextColorComboBox" UsingAlphaChannel="False" ShowStandardColors="False" ColorMode="ColorCanvas" 
-                            SelectedColor="{Binding Source={StaticResource Settings}, Path=Default.FgColor}" LostFocus="textColorComboBox_LostFocus" Unloaded="textColorComboBox_Unloaded"/>
+                            SelectedColor="{Binding Source={StaticResource Settings}, Path=Default.FgColor}" Unloaded="textColorComboBox_Unloaded"/>
             <Label>Sfondo</Label>
             <tk:ColorPicker x:Name="BackgroundColorComboBox" UsingAlphaChannel="False" ShowStandardColors="False" ColorMode="ColorCanvas"
-                            SelectedColor="{Binding Source={StaticResource Settings}, Path=Default.BgColor}" LostFocus="backgroundColorComboBox_LostFocus" Unloaded="backgroundColorComboBox_Unloaded"/>
+                            SelectedColor="{Binding Source={StaticResource Settings}, Path=Default.BgColor}" Unloaded="backgroundColorComboBox_Unloaded"/>
 
             <!-- Secrets Group -->
             <Label Grid.ColumnSpan="2" HorizontalAlignment="Center" FontWeight="Bold">Segreti</Label>

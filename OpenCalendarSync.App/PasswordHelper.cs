@@ -1,7 +1,7 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
 
-namespace Dasi.CalendarSync.Tray
+namespace OpenCalendarSync.App.Tray
 {
     public static class PasswordHelper
     {

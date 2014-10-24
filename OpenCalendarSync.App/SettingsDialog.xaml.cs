@@ -2,15 +2,15 @@
 using System.Reflection;
 using System.Windows;
 using System.Windows.Input;
-using Acco.Calendar.Manager;
-using Dasi.CalendarSync.Tray.Properties;
+using OpenCalendarSync.App.Tray.Properties;
+using OpenCalendarSync.Lib.Manager;
 using System;
-using Acco.Calendar.Database;
+using OpenCalendarSync.Lib.Database;
 using System.Windows.Threading;
 using Squirrel;
 using Ookii.Dialogs.Wpf;
 
-namespace Dasi.CalendarSync.Tray
+namespace OpenCalendarSync.App.Tray
 {
     /// <summary>
     /// Logica di interazione per SettingsDialog.xaml
@@ -51,7 +51,7 @@ namespace Dasi.CalendarSync.Tray
             TextColorComboBox.SelectedColorChanged += textColorComboBox_SelectedColorChanged;
             BackgroundColorComboBox.SelectedColorChanged += backgroundColorComboBox_SelectedColorChanged;
 
-            VersionLabel.Content = "v" + Acco.Calendar.Utilities.VersionHelper.GetCurrentVersion();
+            VersionLabel.Content = "v" + Lib.Utilities.VersionHelper.GetCurrentVersion();
         }
 
         private void btSave_Click(object sender, RoutedEventArgs e)
@@ -179,16 +179,6 @@ namespace Dasi.CalendarSync.Tray
             tmr.Start();
         }
 
-        private void textColorComboBox_LostFocus(object sender, RoutedEventArgs e)
-        {
-            //changeCalendarColor(textColorComboBox.SelectedColor, backgroundColorComboBox.SelectedColor);
-        }
-
-        private void backgroundColorComboBox_LostFocus(object sender, RoutedEventArgs e)
-        {
-            //changeCalendarColor(textColorComboBox.SelectedColor, backgroundColorComboBox.SelectedColor);
-        }
-
         private void calnameTextBox_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
         {
             //todo: add summary customization here
@@ -231,7 +221,7 @@ namespace Dasi.CalendarSync.Tray
                 dialog.SelectedPath = Settings.Default.UpdateRepositoryPath;
             var result = dialog.ShowDialog();
             if (!result.HasValue) return;
-            else if (!result.Value) return;
+            if (!result.Value) return;
             Settings.Default.UpdateRepositoryPath = dialog.SelectedPath;
             Settings.Default.Save();
         }
