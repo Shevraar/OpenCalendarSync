@@ -66,7 +66,7 @@ namespace OpenCalendarSync.App.Tray
             trayIcon.Icon = _idleIcon;
 
             // Create a Timer with a Normal Priority
-            DispatcherTimer timer = new DispatcherTimer {Interval = TimeSpan.FromMinutes(Settings.Default.RefreshRate)};
+            var timer = new DispatcherTimer {Interval = TimeSpan.FromMinutes(Settings.Default.RefreshRate)};
 
             // Set the callback to just show the time ticking away
             // NOTE: We are using a control so this has to run on 

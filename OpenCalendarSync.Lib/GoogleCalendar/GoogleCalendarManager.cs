@@ -33,7 +33,7 @@ namespace OpenCalendarSync.Lib.Manager
 
         private static string DataStorePath
         {
-            get { return "outlook2googlecalendar"; }
+            get { return "OpenCalendarSync"; }
         }
 
         //private static string SettingsPath
