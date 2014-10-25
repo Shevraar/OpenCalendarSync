@@ -711,9 +711,7 @@ namespace OpenCalendarSync.Lib.Manager
             var request = Service.CalendarList.Update(new Google.Apis.Calendar.v3.Data.CalendarListEntry { BackgroundColor = backgroundColor, ForegroundColor = foregroundColor }, _googleCalendarParameters.Id);
             request.ColorRgbFormat = true; // if we don't do this, google wants a colorId, which we don't have.
             var ret = await request.ExecuteAsync();
-            if (ret != null)
-                return true;
-            return false;
+            return ret != null;
         }
 
         public async Task<string> DropCurrentCalendar()
