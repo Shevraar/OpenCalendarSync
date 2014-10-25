@@ -10,8 +10,11 @@
 
         <!-- Bottom button and labels bar-->
         <DockPanel DockPanel.Dock="Bottom">
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
-                <Label x:Name="VersionLabel" FontFamily="Consolas" FontSize="11" VerticalAlignment="Center" VerticalContentAlignment="Center" Foreground="#FF686868">v</Label>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" >
+                <StackPanel Orientation="Vertical">
+                    <Label x:Name="LibraryVersionLabel" FontFamily="Consolas" FontSize="9" VerticalAlignment="Center" VerticalContentAlignment="Center" Foreground="#FF686868">v</Label>
+                    <Label x:Name="ExecutingAssemblyVersionLabel" FontFamily="Consolas" FontSize="9" VerticalAlignment="Center" VerticalContentAlignment="Center" Foreground="#FF686868">v</Label>
+                </StackPanel>
             </StackPanel>
             <!-- Bottom buttons -->    
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">

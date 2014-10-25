@@ -58,8 +58,8 @@ namespace OpenCalendarSync.Lib.Utilities
         [MethodImpl(MethodImplOptions.NoInlining)]
         public static string GetCurrentMethod()
         {
-            StackTrace st = new StackTrace();
-            StackFrame sf = st.GetFrame(1);
+            var st = new StackTrace();
+            var sf = st.GetFrame(1);
 
             return sf.GetMethod().Name;
         }
@@ -67,9 +67,52 @@ namespace OpenCalendarSync.Lib.Utilities
 
     public static class VersionHelper
     {
-        public static string GetCurrentVersion()
+        public static string LibraryVersion()
         {
             return System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
+        }
+
+        public static DateTime LibraryBuildTime()
+        {
+            return GetBuildTimeForAssembly(System.Reflection.Assembly.GetExecutingAssembly().Location);
+        }
+
+        public static string ExecutingAssemblyVersion()
+        {
+            return System.Reflection.Assembly.GetCallingAssembly().GetName().Version.ToString();
+        }
+
+        public static DateTime ExecutingAssemblyBuildTime()
+        {
+            return GetBuildTimeForAssembly(System.Reflection.Assembly.GetCallingAssembly().Location);
+        }
+
+        private static DateTime GetBuildTimeForAssembly(string assemblyPath)
+        {
+            const int cPeHeaderOffset = 60;
+            const int cLinkerTimestampOffset = 8;
+            var b = new byte[2048];
+            System.IO.Stream s = null;
+
+            try
+            {
+                s = new System.IO.FileStream(assemblyPath, System.IO.FileMode.Open, System.IO.FileAccess.Read);
+                s.Read(b, 0, 2048);
+            }
+            finally
+            {
+                if (s != null)
+                {
+                    s.Close();
+                }
+            }
+
+            var i = BitConverter.ToInt32(b, cPeHeaderOffset);
+            var secondsSince1970 = BitConverter.ToInt32(b, i + cLinkerTimestampOffset);
+            var dt = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            dt = dt.AddSeconds(secondsSince1970);
+            dt = dt.ToLocalTime();
+            return dt;
         }
     }
 }

@@ -51,7 +51,10 @@ namespace OpenCalendarSync.App.Tray
             TextColorComboBox.SelectedColorChanged += textColorComboBox_SelectedColorChanged;
             BackgroundColorComboBox.SelectedColorChanged += backgroundColorComboBox_SelectedColorChanged;
 
-            VersionLabel.Content = "v" + Lib.Utilities.VersionHelper.GetCurrentVersion();
+            LibraryVersionLabel.Content =   "Lib v" + Lib.Utilities.VersionHelper.LibraryVersion() +
+                                            ", built " +  Lib.Utilities.VersionHelper.LibraryBuildTime().ToString("s");
+            ExecutingAssemblyVersionLabel.Content = "App v" + Lib.Utilities.VersionHelper.ExecutingAssemblyVersion() +
+                                                    ", built " + Lib.Utilities.VersionHelper.ExecutingAssemblyBuildTime().ToString("s");
         }
 
         private void btSave_Click(object sender, RoutedEventArgs e)
@@ -173,7 +176,6 @@ namespace OpenCalendarSync.App.Tray
             tmr.Tick += delegate
             {
                 tmr.Stop();
-                //hide balloon
                 _trayIcon.HideBalloonTip();
             };
             tmr.Start();
