@@ -26,6 +26,7 @@ namespace OpenCalendarSync.App.Tray.Properties {
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("GVR.Meetings")]
+        [global::System.Configuration.SettingsManageabilityAttribute(global::System.Configuration.SettingsManageability.Roaming)]
         public string CalendarName {
             get {
                 return ((string)(this["CalendarName"]));
@@ -50,6 +51,7 @@ namespace OpenCalendarSync.App.Tray.Properties {
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("")]
+        [global::System.Configuration.SettingsManageabilityAttribute(global::System.Configuration.SettingsManageability.Roaming)]
         public string ClientID {
             get {
                 return ((string)(this["ClientID"]));
@@ -62,6 +64,7 @@ namespace OpenCalendarSync.App.Tray.Properties {
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("")]
+        [global::System.Configuration.SettingsManageabilityAttribute(global::System.Configuration.SettingsManageability.Roaming)]
         public string ClientSecret {
             get {
                 return ((string)(this["ClientSecret"]));
@@ -98,6 +101,7 @@ namespace OpenCalendarSync.App.Tray.Properties {
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("")]
+        [global::System.Configuration.SettingsManageabilityAttribute(global::System.Configuration.SettingsManageability.Roaming)]
         public string CalendarID {
             get {
                 return ((string)(this["CalendarID"]));
@@ -110,6 +114,7 @@ namespace OpenCalendarSync.App.Tray.Properties {
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("")]
+        [global::System.Configuration.SettingsManageabilityAttribute(global::System.Configuration.SettingsManageability.Roaming)]
         public string UpdateRepositoryPath {
             get {
                 return ((string)(this["UpdateRepositoryPath"]));
