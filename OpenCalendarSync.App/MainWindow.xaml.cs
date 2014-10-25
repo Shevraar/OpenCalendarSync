@@ -63,7 +63,7 @@ namespace OpenCalendarSync.App.Tray
             }
 
             _idleIcon = GetAppIcon("app", new System.Drawing.Size(256, 256));
-            trayIcon.Icon = _idleIcon;
+            TrayIcon.Icon = _idleIcon;
 
             // Create a Timer with a Normal Priority
             var timer = new DispatcherTimer {Interval = TimeSpan.FromMinutes(Settings.Default.RefreshRate)};
@@ -85,12 +85,12 @@ namespace OpenCalendarSync.App.Tray
                 {
                     _animationStopping = false;
                     _iconAnimationTimer.Stop();
-                    trayIcon.Icon = _idleIcon;
+                    TrayIcon.Icon = _idleIcon;
                 }
                 else
                 {
                     _currentIconIndex = ++_currentIconIndex % 11;
-                    trayIcon.Icon = _animationIcons[_currentIconIndex];
+                    TrayIcon.Icon = _animationIcons[_currentIconIndex];
                 }
             };
         }
@@ -116,7 +116,7 @@ namespace OpenCalendarSync.App.Tray
 
         private async void StartSync()
         {
-            miStatus.Header = "Sincronizzazione in corso...";
+            MiStatus.Header = "Sincronizzazione in corso...";
 
             _currentIconIndex = 0;
             _iconAnimationTimer.Start();
@@ -127,7 +127,7 @@ namespace OpenCalendarSync.App.Tray
 
         private void EndSync()
         {
-            miStatus.Header = "In attesa...";
+            MiStatus.Header = "In attesa...";
             _animationStopping = true;            
         }
 
@@ -217,7 +217,7 @@ namespace OpenCalendarSync.App.Tray
                 {
                     text += "\n" + String.Format("{0} eventi rimossi", events.Count(e => e.Event.Action == EventAction.Remove));
                 }
-                trayIcon.ShowBalloonTip(title, text, BalloonIcon.Info);
+                TrayIcon.ShowBalloonTip(title, text, BalloonIcon.Info);
                 HideBalloonAfterSeconds(10);
             }
         }
@@ -230,7 +230,7 @@ namespace OpenCalendarSync.App.Tray
             text += details;
 
             //show balloon with built-in icon
-            trayIcon.ShowBalloonTip(title, text, BalloonIcon.Error);
+            TrayIcon.ShowBalloonTip(title, text, BalloonIcon.Error);
         }
 
         private void HideBalloonAfterSeconds(int seconds)
@@ -240,14 +240,14 @@ namespace OpenCalendarSync.App.Tray
             {
                 tmr.Stop();
                 //hide balloon
-                trayIcon.HideBalloonTip();                
+                TrayIcon.HideBalloonTip();                
             };
             tmr.Start();
         }
 
         private void miSettings_Click(object sender, RoutedEventArgs e)
         {
-            var sd = new SettingsDialog(trayIcon);
+            var sd = new SettingsDialog(TrayIcon);
             var result = sd.ShowDialog();
             if (result.HasValue && result.Value)
             {
@@ -269,8 +269,11 @@ namespace OpenCalendarSync.App.Tray
                 var login = await GoogleCalendarManager.Instance.Login(clientId, secret);
             }
 
-            if (string.IsNullOrEmpty(Settings.Default.UpdateRepositoryPath)) return;
-            using (var mgr = new UpdateManager(Settings.Default.UpdateRepositoryPath, "OpenCalendarSync", FrameworkVersion.Net45))
+            var repo = Settings.Default.UpdateRepositoryPath;
+            if (string.IsNullOrEmpty(Settings.Default.UpdateRepositoryPath))
+                repo = "null";
+
+            using (var mgr = new UpdateManager(repo, "OpenCalendarSync", FrameworkVersion.Net45))
             {
                 // Note, in most of these scenarios, the app exits after this method
                 // completes!
@@ -280,17 +283,18 @@ namespace OpenCalendarSync.App.Tray
                   onAppUninstall: v => { if (mgr != null) mgr.RemoveShortcutForThisExe(); },
                   onFirstRun: () => _showTheWelcomeWizard = true);
             }
-        }
 
-        private void trayIcon_Loaded(object sender, RoutedEventArgs e)
-        {
             if (!_showTheWelcomeWizard) return;
-            using(var welcomeDialog = new TaskDialog())
+            using (var welcomeDialog = new TaskDialog())
             {
                 welcomeDialog.Buttons.Add(new TaskDialogButton(ButtonType.Ok));
-                welcomeDialog.WindowTitle = "Primo avvio di OpenCalendarSync (o aggiornamento)";
-                welcomeDialog.Content += "Questo programma serve per importare il tuo calendario Microsoft Outlook nel servizio Google Calendar\n";
-                welcomeDialog.Content += "Successivamente sara' possibile il colore da assegnare al calendario, cosi' come il nome\n";
+                welcomeDialog.WindowTitle = "Primo avvio di OpenCalendarSync";
+                welcomeDialog.MainIcon = TaskDialogIcon.Information;
+                welcomeDialog.MainInstruction +=
+                    "Questo programma serve per importare il tuo calendario Microsoft Outlook nel servizio Google Calendar";
+                welcomeDialog.Content += 
+                    "Successivamente sara' possibile il colore da assegnare al calendario, cosi' come il nome";
+
                 var res = welcomeDialog.ShowDialog();
                 //if (res.ButtonType != ButtonType.Ok) return;
             }

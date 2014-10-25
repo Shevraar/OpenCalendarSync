@@ -10,19 +10,19 @@
       declaration
     -->
         <tb:TaskbarIcon
-            x:Name="trayIcon"
+            x:Name="TrayIcon"
             IconSource="/icons/calendar.ico"
             ToolTipText="Sincronizza il calendario di Outlook con quello di Google"
-            MenuActivation="LeftOrRightClick" Loaded="trayIcon_Loaded">
+            MenuActivation="LeftOrRightClick">
 
             <!-- Set a simple context menu  -->
             <tb:TaskbarIcon.ContextMenu>
                 <ContextMenu>
-                    <MenuItem Header="In attesa..." x:Name="miStatus" IsEnabled="False"/>
-                    <MenuItem Header="Sincronizza ora" x:Name="miSync" Click="miSync_Click"/>
-                    <MenuItem Header="Impostazioni..." x:Name="miSettings" Click="miSettings_Click"/>
+                    <MenuItem Header="In attesa..." x:Name="MiStatus" IsEnabled="False"/>
+                    <MenuItem Header="Sincronizza ora" x:Name="MiSync" Click="miSync_Click"/>
+                    <MenuItem Header="Impostazioni..." x:Name="MiSettings" Click="miSettings_Click"/>
                     <Separator/>
-                    <MenuItem Header="Esci" x:Name="miExit" Click="miExit_Click"/>
+                    <MenuItem Header="Esci" x:Name="MiExit" Click="miExit_Click"/>
                 </ContextMenu>
             </tb:TaskbarIcon.ContextMenu>
         </tb:TaskbarIcon>
