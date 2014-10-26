@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using MongoDB.Driver.Builders;
 using OpenCalendarSync.App.Tray.Properties;
 using OpenCalendarSync.Lib;
 using OpenCalendarSync.Lib.Event;
@@ -255,8 +256,13 @@ namespace OpenCalendarSync.App.Tray
             }
         }
 
+        private UpdateManager _mgr;
+
         private async void Window_Initialized(object sender, EventArgs e)
         {
+            Log.Debug(String.Format("Window_Initialized: sender[{0}], args [{1}]", sender, e));
+
+            // todo: avoid to login to google if there's any squirrel event
             var clientId = Settings.Default.ClientID;
             var secret = Settings.Default.ClientSecret;
             if (string.IsNullOrEmpty(clientId))
@@ -273,30 +279,123 @@ namespace OpenCalendarSync.App.Tray
             if (string.IsNullOrEmpty(Settings.Default.UpdateRepositoryPath))
                 repo = "null";
 
-            using (var mgr = new UpdateManager(repo, "OpenCalendarSync", FrameworkVersion.Net45))
+            _mgr = new UpdateManager(repo, "OpenCalendarSync", FrameworkVersion.Net45);
+            // Note, in most of these scenarios, the app exits after this method
+            // completes!
+            SquirrelAwareApp.HandleEvents(
+            onInitialInstall: v =>
             {
-                // Note, in most of these scenarios, the app exits after this method
-                // completes!
-                SquirrelAwareApp.HandleEvents(
-                  onInitialInstall: v => { if (mgr != null) mgr.CreateShortcutForThisExe(); },
-                  onAppUpdate: v => { if (mgr != null) mgr.CreateShortcutForThisExe(); },
-                  onAppUninstall: v => { if (mgr != null) mgr.RemoveShortcutForThisExe(); },
-                  onFirstRun: () => _showTheWelcomeWizard = true);
-            }
+                Log.Info(String.Format("Application installed {0}", v.ToString()));
+                TrayIcon.ShowBalloonTip("Installazione", String.Format("OpenCalendarSync {0} installato.", v.ToString()), BalloonIcon.Info);
+                HideBalloonAfterSeconds(10);
+                _mgr.CreateShortcutForThisExe();
+            },
+            onAppUpdate: v =>
+            {
+                Log.Info(String.Format("Application updated to {0}, trying to upgrade settings", v.ToString()));
+                try
+                {
+                    Settings.Default.Upgrade();
+                    Settings.Default.Save();
+                }
+                catch (Exception ex)
+                {
+                    Log.Error("Error while upgrading settings, you'll have to merge them manually", ex);
+                }
+                TrayIcon.ShowBalloonTip("Aggiornamento", String.Format("OpenCalendarSync aggiornato alla versione {0}", v.ToString()), BalloonIcon.Info);
+                _mgr.CreateShortcutForThisExe();
+            },
+            onAppUninstall: v => _mgr.RemoveShortcutForThisExe(),
+            onFirstRun: () => _showTheWelcomeWizard = true);
 
             if (!_showTheWelcomeWizard) return;
             using (var welcomeDialog = new TaskDialog())
             {
                 welcomeDialog.Buttons.Add(new TaskDialogButton(ButtonType.Ok));
-                welcomeDialog.WindowTitle = "Primo avvio di OpenCalendarSync";
+                welcomeDialog.WindowTitle = "Primo Avvio";
                 welcomeDialog.MainIcon = TaskDialogIcon.Information;
                 welcomeDialog.MainInstruction +=
-                    "Questo programma serve per importare il tuo calendario Microsoft Outlook nel servizio Google Calendar";
-                welcomeDialog.Content += 
-                    "Successivamente sara' possibile il colore da assegnare al calendario, cosi' come il nome";
+                    "Benvenuto in OpenCalendarSync";
+                welcomeDialog.Content +=
+                    "Questo programma serve per importare il tuo calendario Microsoft Outlook nel servizio Google Calendar\n\n" +
+                    "Per iniziare basta premere con qualsiasi tasto del mouse sull'icona che e' apparsa nella barra delle notifiche e\n" +
+                    "e selezionare \"Sincronizza ora\", questo creera' un calendario su Google Calendar e procedera'\n" +
+                    "con l'importazione del calendario attuale di Microsoft Outlook\n";
 
-                var res = welcomeDialog.ShowDialog();
-                //if (res.ButtonType != ButtonType.Ok) return;
+                welcomeDialog.ShowDialog();
+            }
+        }
+
+        private ProgressDialog _updateDialog;
+        private static bool _updateFinished;
+
+        private async void MiUpdate_OnClick(object sender, RoutedEventArgs e)
+        {
+            if (string.IsNullOrEmpty(Settings.Default.UpdateRepositoryPath))
+            { 
+                Log.Info("No repository path is set, won't update");
+                return;
+            }
+
+            try
+            {
+                _mgr.Dispose();
+                _mgr = new UpdateManager(Settings.Default.UpdateRepositoryPath, "OpenCalendarSync", FrameworkVersion.Net45);
+                var updateInfo = await _mgr.CheckForUpdate();
+                if (!updateInfo.ReleasesToApply.Any())
+                {
+                    Log.Info("No newer version found");
+                    return;
+                }
+
+                Log.Info(String.Format("Newer version found => [{0}]", updateInfo.FutureReleaseEntry.EntryAsString));
+
+                var updateAvailableDialog = new TaskDialog
+                {
+                    MainIcon = TaskDialogIcon.Information,
+                    WindowTitle = "Nuova versione disponibile",
+                    MainInstruction = "Procedere con l'installazione?",
+                    Content = String.Format("Versione {0} disponibile.\nSelezionare una delle due opzioni.", updateInfo.FutureReleaseEntry.EntryAsString)
+                };
+                updateAvailableDialog.Buttons.Add(new TaskDialogButton(ButtonType.Yes));
+                updateAvailableDialog.Buttons.Add(new TaskDialogButton(ButtonType.No));
+                var userDecision = updateAvailableDialog.Show();
+
+                if (userDecision.ButtonType != ButtonType.Yes)
+                { 
+                    Log.Info("User has selected to abort the update");
+                    return;
+                }
+
+                Log.Info("User has selected to proceed with the update");
+
+                _updateDialog = new ProgressDialog();
+                _updateDialog.WindowTitle += "Aggiornamento a nuova versione";
+                _updateDialog.Text += "Installazione in corso dell'ultima versione...";
+                _updateDialog.DoWork += (o, args) =>
+                {
+                    _updateFinished = false;
+                    var updateAppTask = _mgr.UpdateApp(i =>
+                    {
+                        if ((i >= 0 && i <= 100) && !_updateFinished)
+                        { 
+                            _updateDialog.ReportProgress(i);
+                        }
+                    });
+                    Log.Debug(String.Format("{0} applied.", updateAppTask.Result.EntryAsString));
+                };
+                _updateDialog.RunWorkerCompleted += (o, args) =>
+                {
+                    Log.Info("Finished updating app to the latest version.");
+                    _updateFinished = true;
+                };
+                _updateDialog.Show();
+            }
+            catch (Exception ex)
+            {
+                Log.Error("Failed to check or apply update", ex);
+                TrayIcon.ShowBalloonTip("Errore", "Ricerca aggiornamenti o applicazione aggiornamento fallita", BalloonIcon.Error);
+                HideBalloonAfterSeconds(10);
             }
         }
     }

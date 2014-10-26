@@ -4,7 +4,7 @@
         xmlns:w="clr-namespace:OpenCalendarSync.App.Tray"
         xmlns:av="clr-namespace:WpfAutoGrid;assembly=WpfAutoGrid"
         xmlns:tk="http://schemas.xceed.com/wpf/xaml/toolkit"
-        Title="SettingsDialog" SizeToContent="WidthAndHeight" ResizeMode="NoResize" MinWidth="480" MinHeight="640" MaxWidth="480" Loaded="Window_Loaded">
+        Title="OpenCalendarSync - Opzioni" SizeToContent="WidthAndHeight" ResizeMode="NoResize" MinWidth="480" MinHeight="640" MaxWidth="480">
 
     <DockPanel>
 

@@ -1,5 +1,4 @@
-﻿using System.Linq;
-using System.Reflection;
+﻿using System.Reflection;
 using System.Windows;
 using System.Windows.Input;
 using OpenCalendarSync.App.Tray.Properties;
@@ -7,7 +6,6 @@ using OpenCalendarSync.Lib.Manager;
 using System;
 using OpenCalendarSync.Lib.Database;
 using System.Windows.Threading;
-using Squirrel;
 using Ookii.Dialogs.Wpf;
 
 namespace OpenCalendarSync.App.Tray
@@ -88,6 +86,13 @@ namespace OpenCalendarSync.App.Tray
             if (!GoogleCalendarManager.Instance.LoggedIn)
             {
                 var res = await GoogleCalendarManager.Instance.Login(_clientId, _clientSecret);
+                if(!res)
+                { 
+                    Log.Error("Couldn't log in to google services with the provided clientId and clientSecret");
+                    _trayIcon.ShowBalloonTip("Errore", "Login a servizi google non effettuato.", Hardcodet.Wpf.TaskbarNotification.BalloonIcon.Error);
+                    HideBalloonAfterSeconds(6);
+                    return;
+                }
             }
             Reset();
         }    
@@ -160,7 +165,11 @@ namespace OpenCalendarSync.App.Tray
                 {
                     var login = await GoogleCalendarManager.Instance.Login(_clientId, _clientSecret);
                 }
-                var initialize = await GoogleCalendarManager.Instance.Initialize(Settings.Default.CalendarID, Settings.Default.CalendarName);
+                var calendarId = await GoogleCalendarManager.Instance.Initialize(Settings.Default.CalendarID, Settings.Default.CalendarName);
+                if (Settings.Default.CalendarID != null && Settings.Default.CalendarID != calendarId)
+                { 
+                    Settings.Default.CalendarID = calendarId;
+                }
                 if(GoogleCalendarManager.Instance.LoggedIn)
                 { 
                     await GoogleCalendarManager.Instance.SetCalendarColor(foregroundColor.ToLower(), backgroundColor.ToLower());
@@ -196,26 +205,6 @@ namespace OpenCalendarSync.App.Tray
             ChangeCalendarColor(TextColorComboBox.SelectedColor, BackgroundColorComboBox.SelectedColor);
         }
 
-        private async void Window_Loaded(object sender, RoutedEventArgs e)
-        {
-            if (string.IsNullOrEmpty(Settings.Default.UpdateRepositoryPath)) return;
-
-            using (var mgr = new UpdateManager(Settings.Default.UpdateRepositoryPath, "OpenCalendarSync", FrameworkVersion.Net45))
-            {
-                var updateInfo = await mgr.CheckForUpdate();
-                if (!updateInfo.ReleasesToApply.Any()) return;
-
-                var ret = MessageBox.Show("Nuova versione disponibile", "Nuova Versione", MessageBoxButton.YesNo,
-                    MessageBoxImage.Information, MessageBoxResult.Yes);
-
-                if (ret != MessageBoxResult.Yes) return;
-                Hide();
-                var x = await mgr.UpdateApp();
-                Log.Debug(x.EntryAsString);
-                Close();
-            }
-        }
-
         private void UpdatesRepositoryTextBox_PreviewMouseUp(object sender, MouseButtonEventArgs e)
         {
             var dialog = new VistaFolderBrowserDialog();
@@ -225,7 +214,6 @@ namespace OpenCalendarSync.App.Tray
             if (!result.HasValue) return;
             if (!result.Value) return;
             Settings.Default.UpdateRepositoryPath = dialog.SelectedPath;
-            Settings.Default.Save();
         }
     }
 }

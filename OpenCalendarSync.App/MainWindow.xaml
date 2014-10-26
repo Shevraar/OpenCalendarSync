@@ -22,6 +22,8 @@
                     <MenuItem Header="Sincronizza ora" x:Name="MiSync" Click="miSync_Click"/>
                     <MenuItem Header="Impostazioni..." x:Name="MiSettings" Click="miSettings_Click"/>
                     <Separator/>
+                    <MenuItem Header="Controlla aggiornamenti" x:Name="MiUpdate" Click="MiUpdate_OnClick"/>
+                    <Separator/>
                     <MenuItem Header="Esci" x:Name="MiExit" Click="miExit_Click"/>
                 </ContextMenu>
             </tb:TaskbarIcon.ContextMenu>
