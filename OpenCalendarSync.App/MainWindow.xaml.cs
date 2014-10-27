@@ -279,34 +279,36 @@ namespace OpenCalendarSync.App.Tray
             if (string.IsNullOrEmpty(Settings.Default.UpdateRepositoryPath))
                 repo = "null";
 
-            _mgr = new UpdateManager(repo, "OpenCalendarSync", FrameworkVersion.Net45);
-            // Note, in most of these scenarios, the app exits after this method
-            // completes!
-            SquirrelAwareApp.HandleEvents(
-            onInitialInstall: v =>
+            using (var manager = new UpdateManager(repo, "OpenCalendarSync", FrameworkVersion.Net45))
             {
-                Log.Info(String.Format("Application installed {0}", v.ToString()));
-                TrayIcon.ShowBalloonTip("Installazione", String.Format("OpenCalendarSync {0} installato.", v.ToString()), BalloonIcon.Info);
-                HideBalloonAfterSeconds(10);
-                _mgr.CreateShortcutForThisExe();
-            },
-            onAppUpdate: v =>
-            {
-                Log.Info(String.Format("Application updated to {0}, trying to upgrade settings", v.ToString()));
-                try
+                // Note, in most of these scenarios, the app exits after this method
+                // completes!
+                SquirrelAwareApp.HandleEvents(
+                onInitialInstall: v =>
                 {
-                    Settings.Default.Upgrade();
-                    Settings.Default.Save();
-                }
-                catch (Exception ex)
+                    Log.Info(String.Format("Application installed {0}", v.ToString()));
+                    TrayIcon.ShowBalloonTip("Installazione", String.Format("OpenCalendarSync {0} installato.", v.ToString()), BalloonIcon.Info);
+                    HideBalloonAfterSeconds(10);
+                    manager.CreateShortcutForThisExe();
+                },
+                onAppUpdate: v =>
                 {
-                    Log.Error("Error while upgrading settings, you'll have to merge them manually", ex);
-                }
-                TrayIcon.ShowBalloonTip("Aggiornamento", String.Format("OpenCalendarSync aggiornato alla versione {0}", v.ToString()), BalloonIcon.Info);
-                _mgr.CreateShortcutForThisExe();
-            },
-            onAppUninstall: v => _mgr.RemoveShortcutForThisExe(),
-            onFirstRun: () => _showTheWelcomeWizard = true);
+                    Log.Info(String.Format("Application updated to {0}, trying to upgrade settings", v.ToString()));
+                    try
+                    {
+                        Settings.Default.Upgrade();
+                        Settings.Default.Save();
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error("Error while upgrading settings, you'll have to merge them manually", ex);
+                    }
+                    TrayIcon.ShowBalloonTip("Aggiornamento", String.Format("OpenCalendarSync aggiornato alla versione {0}", v.ToString()), BalloonIcon.Info);
+                    manager.CreateShortcutForThisExe();
+                },
+                onAppUninstall: v => manager.RemoveShortcutForThisExe(),
+                onFirstRun: () => _showTheWelcomeWizard = true);
+            }
 
             if (!_showTheWelcomeWizard) return;
             using (var welcomeDialog = new TaskDialog())
@@ -339,7 +341,6 @@ namespace OpenCalendarSync.App.Tray
 
             try
             {
-                _mgr.Dispose();
                 _mgr = new UpdateManager(Settings.Default.UpdateRepositoryPath, "OpenCalendarSync", FrameworkVersion.Net45);
                 var updateInfo = await _mgr.CheckForUpdate();
                 if (!updateInfo.ReleasesToApply.Any())
@@ -388,6 +389,7 @@ namespace OpenCalendarSync.App.Tray
                 {
                     Log.Info("Finished updating app to the latest version.");
                     _updateFinished = true;
+                    _mgr = null;
                 };
                 _updateDialog.Show();
             }
