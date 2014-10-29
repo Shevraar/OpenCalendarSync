@@ -347,7 +347,7 @@ namespace OpenCalendarSync.Lib.Manager
                 // Recurrency
                 if (evt.Recurrence != null)
                 {
-                    myEvt.Recurrence = new List<string> {evt.Recurrence.Get()};
+                    myEvt.Recurrence = evt.Recurrence.Pattern;
                 }
                 // Creation date
                 if (evt.Created.HasValue)
@@ -468,8 +468,7 @@ namespace OpenCalendarSync.Lib.Manager
                     if (evt.Recurrence != null)
                     {
                         myEvt.Recurrence = new GoogleRecurrence();
-                        ((GoogleRecurrence) myEvt.Recurrence).Parse(evt.Recurrence[0]);
-                            //warning: this only parses one line inside Recurrence...
+                        ((GoogleRecurrence) myEvt.Recurrence).Parse(evt.Recurrence);
                     }
                     // Attendees
                     if (evt.Attendees != null)
@@ -675,7 +674,7 @@ namespace OpenCalendarSync.Lib.Manager
             // Recurrency
             if (updatedEvent.Recurrence != null)
             {
-                myEvt.Recurrence = new List<string> { updatedEvent.Recurrence.Get() };
+                myEvt.Recurrence = updatedEvent.Recurrence.Pattern;
             }
             // Creation date
             if (updatedEvent.Created.HasValue)

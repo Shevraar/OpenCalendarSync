@@ -55,10 +55,10 @@ namespace OpenCalendarSync.Lib
                 Log.Debug(String.Format("[{0}] was not found", item.Id));
                 isPresent = false;
             }
-            else 
-            { 
-                // todo: add item comparison here
-                if((appointment as GenericEvent).Equals(item as GenericEvent))
+            else
+            {
+                var genericEvent = appointment as GenericEvent;
+                if(genericEvent != null && genericEvent.Equals(item as GenericEvent))
                 {
                     Log.Info(String.Format("[{0}] is a duplicate", item.Id));
                     isPresent = true;
@@ -70,8 +70,7 @@ namespace OpenCalendarSync.Lib
                     Log.Info(String.Format("[{0}] has to be updated", item.Id));
                     item.Action = EventAction.Update;
                     //todo: more specifically -> update only needed fields.. and use the update function..
-                    //var update = Update<T>.Set(x => x, item); 
-                    var saveResult = Storage.Instance.Appointments.Save(item); // todo: parse the result and gg - also change 
+                    var saveResult = Storage.Instance.Appointments.Save(item); // todo: parse the result
                 }
             }
             return isPresent;

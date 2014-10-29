@@ -130,6 +130,7 @@ namespace OpenCalendarSync.App.Tray
                 Log.Error("Failed to delete calendar from google", ex);
             }
             Settings.Default.CalendarID = "";
+            Settings.Default.Save();
             text += "\tID del calendario resettato";
             _trayIcon.ShowBalloonTip(title, text, Hardcodet.Wpf.TaskbarNotification.BalloonIcon.Info);
             HideBalloonAfterSeconds(6);

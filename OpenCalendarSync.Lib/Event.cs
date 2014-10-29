@@ -136,18 +136,18 @@ namespace OpenCalendarSync.Lib.Event
 
             // Event comparison - Id, Dates, Location, Recurrence, Attendees
             // wip - move this somewhere else, or use an ordered list to insert attendees in a ordered manner
-            this.Attendees.Sort((a1, a2) => String.Compare(a1.Email, a2.Email, StringComparison.Ordinal));
+            Attendees.Sort((a1, a2) => String.Compare(a1.Email, a2.Email, StringComparison.Ordinal));
             p.Attendees.Sort((a1, a2) => String.Compare(a1.Email, a2.Email, StringComparison.Ordinal));
-            var idIsEqual = this.Id == p.Id;
-            var startDateIsEqual = this.Start == p.Start;
-            var endDateIsEqual = this.End == p.End;
-            var locationIsEqual = this.Location.Equals(p.Location);
-            var descriptionIsEqual = this.Description == p.Description;
+            var idIsEqual = Id == p.Id;
+            var startDateIsEqual = Start == p.Start;
+            var endDateIsEqual = End == p.End;
+            var locationIsEqual = Location.Equals(p.Location);
+            var descriptionIsEqual = Description == p.Description;
             var recurrenceIsEqual = true;
-            if(this.Recurrence != null && p.Recurrence != null)
-                recurrenceIsEqual = this.Recurrence.Pattern == p.Recurrence.Pattern;
-            var attendeesCountIsEqual = this.Attendees.Count == p.Attendees.Count /* first check if the number of attendees is the same */;
-            var attendeesAreEqual = !this.Attendees.Except(p.Attendees).Any();
+            if(Recurrence != null && p.Recurrence != null)
+                recurrenceIsEqual = Recurrence.Pattern == p.Recurrence.Pattern;
+            var attendeesCountIsEqual = Attendees.Count == p.Attendees.Count /* first check if the number of attendees is the same */;
+            var attendeesAreEqual = !Attendees.Except(p.Attendees).Any();
             //
             return  (idIsEqual) &&
                     (startDateIsEqual) &&
@@ -161,7 +161,7 @@ namespace OpenCalendarSync.Lib.Event
 
         public override int GetHashCode()
         {
-            return this.Id.GetHashCode();
+            return Id.GetHashCode();
         }
     }
 }

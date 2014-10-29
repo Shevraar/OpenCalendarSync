@@ -1,6 +1,8 @@
 ﻿//
 
 //
+
+using System.Runtime.InteropServices;
 using Microsoft.Office.Interop.Outlook;
 
 //
@@ -235,6 +237,8 @@ namespace OpenCalendarSync.Lib.Manager
                     myEvt.Recurrence = new OutlookRecurrence();
                     ((OutlookRecurrence)myEvt.Recurrence).Parse(evt.GetRecurrencePattern());
                 }
+                evt.Close(OlInspectorClose.olDiscard);
+                Marshal.ReleaseComObject(evt);
                 // add it to calendar events.
                 myCalendar.Events.Add(myEvt);
             }
