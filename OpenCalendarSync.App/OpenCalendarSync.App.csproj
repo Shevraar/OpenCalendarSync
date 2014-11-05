@@ -50,7 +50,7 @@
     </Reference>
     <Reference Include="ICSharpCode.SharpZipLib, Version=0.86.0.518, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\squirrel.windows.0.5.5\lib\Net45\ICSharpCode.SharpZipLib.dll</HintPath>
+      <HintPath>..\packages\squirrel.windows.0.6.0.1\lib\Net45\ICSharpCode.SharpZipLib.dll</HintPath>
     </Reference>
     <Reference Include="log4net, Version=1.2.13.0, Culture=neutral, PublicKeyToken=669e0ddf0bb1aa2a, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -102,9 +102,9 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\Splat.1.5.1\lib\Net45\Splat.dll</HintPath>
     </Reference>
-    <Reference Include="Squirrel, Version=0.5.5.0, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="Squirrel, Version=0.6.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\squirrel.windows.0.5.5\lib\Net45\Squirrel.dll</HintPath>
+      <HintPath>..\packages\squirrel.windows.0.6.0.1\lib\Net45\Squirrel.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
