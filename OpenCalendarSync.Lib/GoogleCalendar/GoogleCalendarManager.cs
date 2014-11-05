@@ -119,10 +119,17 @@ namespace OpenCalendarSync.Lib.Manager
         {
             if(LastCalendar == null)
             {
-                LastCalendar = new GenericCalendar
+                try
                 {
-                    Events = RetrieveEvents()
-                };
+                    LastCalendar = new GenericCalendar
+                    {
+                        Events = RetrieveEvents()
+                    };
+                }
+                catch(Exception ex)
+                {
+                    Log.Error("Couldn't retrieve existing events, something went wrong", ex);
+                }
             }
             if(!LoggedIn)
             {
