@@ -1,0 +1,83 @@
+﻿<Window x:Class="OpenCalendarSync.App.Tray.SettingsDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"        
+        xmlns:w="clr-namespace:OpenCalendarSync.App.Tray"
+        xmlns:av="clr-namespace:WpfAutoGrid;assembly=WpfAutoGrid"
+        xmlns:tk="http://schemas.xceed.com/wpf/xaml/toolkit"
+        Title="OpenCalendarSync - Opzioni" SizeToContent="WidthAndHeight" ResizeMode="NoResize" MinWidth="480" MinHeight="640" MaxWidth="480">
+
+    <DockPanel>
+
+        <!-- Bottom button and labels bar-->
+        <DockPanel DockPanel.Dock="Bottom">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" >
+                <StackPanel Orientation="Vertical">
+                    <Label x:Name="LibraryVersionLabel" FontFamily="Consolas" FontSize="9" VerticalAlignment="Center" VerticalContentAlignment="Center" Foreground="#FF686868">v</Label>
+                    <Label x:Name="ExecutingAssemblyVersionLabel" FontFamily="Consolas" FontSize="9" VerticalAlignment="Center" VerticalContentAlignment="Center" Foreground="#FF686868">v</Label>
+                </StackPanel>
+            </StackPanel>
+            <!-- Bottom buttons -->    
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button x:Name="BtCancel" Margin="10" Width="80" Click="btCancel_Click">Annulla</Button>
+                <Button x:Name="BtSave" Margin="10" Width="80" Click="btSave_Click">Salva</Button>
+            </StackPanel>
+        </DockPanel>
+        
+        <av:AutoGrid Margin="20" RowCount="17" RowHeight="Auto" Columns="Auto,*" ChildMargin="9">
+                
+            <!-- Options Group -->
+            <Label Grid.ColumnSpan="2" HorizontalAlignment="Center" FontWeight="Bold">Opzioni</Label>
+            <Separator Grid.ColumnSpan="2" />           
+      
+            <!-- Refresh Rate -->
+            <Label>Aggiorna ogni</Label>
+            <DockPanel LastChildFill="True">
+                <Label Content="{Binding ElementName=SlRefreshTmo, Path=Value}" DockPanel.Dock="Left" Width="60" ContentStringFormat="{}{0:N0} min"/>
+                <Slider x:Name="SlRefreshTmo" 
+                        Value="{Binding Source={StaticResource Settings}, Path=Default.RefreshRate}"
+                        Minimum="5" LargeChange="15" Maximum="300" SmallChange="5" TickPlacement="TopLeft" 
+                        TickFrequency="15" AutoToolTipPlacement="TopLeft" MouseWheel="slRefreshTmo_MouseWheel"/>
+            </DockPanel>
+
+            <!-- Calendar Name -->
+            <Label>Nome del calendario</Label>
+            <TextBox x:Name="CalnameTextBox" Text="{Binding Source={StaticResource Settings}, Path=Default.CalendarName}" TextChanged="calnameTextBox_TextChanged" />
+
+            <!-- Calendar ID -->
+            <Label>ID. del calendario</Label>
+            <TextBox Text="{Binding Source={StaticResource Settings}, Path=Default.CalendarID, Mode=OneWay}" FontFamily="Consolas" FontSize="11" IsReadOnly="True" />
+
+            <!-- Colors Group -->
+            <Label Grid.ColumnSpan="2" HorizontalAlignment="Center" FontWeight="Bold">Colori</Label>
+            <Separator Grid.ColumnSpan="2" />
+
+            <Label>Testo</Label>
+            <tk:ColorPicker x:Name="TextColorComboBox" UsingAlphaChannel="False" ShowStandardColors="False" ColorMode="ColorCanvas" 
+                            SelectedColor="{Binding Source={StaticResource Settings}, Path=Default.FgColor}" Unloaded="textColorComboBox_Unloaded"/>
+            <Label>Sfondo</Label>
+            <tk:ColorPicker x:Name="BackgroundColorComboBox" UsingAlphaChannel="False" ShowStandardColors="False" ColorMode="ColorCanvas"
+                            SelectedColor="{Binding Source={StaticResource Settings}, Path=Default.BgColor}" Unloaded="backgroundColorComboBox_Unloaded"/>
+
+            <!-- Secrets Group -->
+            <Label Grid.ColumnSpan="2" HorizontalAlignment="Center" FontWeight="Bold">Segreti</Label>
+            <Separator Grid.ColumnSpan="2" />
+
+            <!-- Client ID -->
+            <Label>ID. Client</Label>
+            <PasswordBox x:Name="ClientIdPwdBox" w:PasswordHelper.Attach="True" 
+                         w:PasswordHelper.Password="{Binding Source={StaticResource Settings}, Path=Default.ClientID, Mode=TwoWay}"/>
+
+            <!-- Client Secret -->
+            <Label>Segreto</Label>       
+            <PasswordBox x:Name="ClientSecretPwdBox" w:PasswordHelper.Attach="True" 
+                         w:PasswordHelper.Password="{Binding Source={StaticResource Settings}, Path=Default.ClientSecret, Mode=TwoWay}"/>
+            
+            <Separator Grid.ColumnSpan="2" />
+            <Label>Percorso repository update</Label>
+            <TextBox x:Name="UpdatesRepositoryTextBox" Text="{Binding Source={StaticResource Settings}, Path=Default.UpdateRepositoryPath, Mode=TwoWay}" PreviewMouseUp="UpdatesRepositoryTextBox_PreviewMouseUp"/>
+            <Button x:Name="BtReset" Margin="10"  HorizontalAlignment="Stretch" Grid.ColumnSpan="2" Click="btReset_Click">Resetta</Button>
+        </av:AutoGrid>
+
+    </DockPanel>
+
+</Window>
