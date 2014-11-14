@@ -140,18 +140,18 @@ namespace OpenCalendarSync.Lib.Event
                         //exdate     = "EXDATE" exdtparam ":" exdtval *("," exdtval) CRLF
                         //EXDATE:19960402T010000Z,19960403T010000Z,19960404T010000Z
                         excludedDatesList.Add(String.Format("{0}T{1}Z", oldDate.ToUniversalTime().ToString("yyyyMMdd"),
-                                                                        oldDate.ToUniversalTime().ToString("hhmmss")));
+                                                                        oldDate.ToUniversalTime().TimeOfDay.ToString("hhmmss")));
                         if (newStartDate.HasValue && newEndDate.HasValue) // we got a PERIOD value type - http://www.kanzaki.com/docs/ical/period.html
                         {
                             includedDatesList.Add(String.Format("{0}T{1}Z/{2}T{3}Z",newStartDate.Value.ToUniversalTime().ToString("yyyyMMdd"),
-                                                                                    newStartDate.Value.ToUniversalTime().ToString("hhmmss"),
+                                                                                    newStartDate.Value.ToUniversalTime().TimeOfDay.ToString("hhmmss"),
                                                                                     newEndDate.Value.ToUniversalTime().ToString("yyyyMMdd"),
-                                                                                    newEndDate.Value.ToUniversalTime().ToString("hhmmss")));    
+                                                                                    newEndDate.Value.ToUniversalTime().TimeOfDay.ToString("hhmmss")));    
                         }
                         else if(newStartDate.HasValue)
                         {
                             includedDatesList.Add(String.Format("{0}T{1}Z", newStartDate.Value.ToString("yyyyMMdd"),
-                                                                            newStartDate.Value.ToString("hhmmss")));
+                                                                            newStartDate.Value.TimeOfDay.ToString("hhmmss")));
                         }
                     }
                     Exdate += String.Join(",", excludedDatesList.ToArray());
