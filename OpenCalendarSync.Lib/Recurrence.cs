@@ -18,6 +18,7 @@ namespace OpenCalendarSync.Lib.Event
     {
         protected RecPatt RecurrencePattern { get; set; }
         protected string Exdate { get; set; }
+        protected string Rdate { get; set; }
 
         protected GenericRecurrence()
         {
@@ -39,13 +40,15 @@ namespace OpenCalendarSync.Lib.Event
                 return new List<string>
                 {
                     "RRULE:" + RecurrencePattern,
-                    Exdate
+                    Exdate,
+                    Rdate
                 };
             }
             set
             {
                 RecurrencePattern = new RecPatt(value[0]);
                 Exdate = value[1];
+                Rdate = value[2];
             }
         }
     }

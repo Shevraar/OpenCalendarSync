@@ -3,12 +3,15 @@ using Google.Apis.Auth.OAuth2;
 using Google.Apis.Calendar.v3;
 using Google.Apis.Services;
 using Google.Apis.Util.Store;
+using MongoDB.Bson;
+using MongoDB.Bson.IO;
 using MongoDB.Driver.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
 using OpenCalendarSync.Lib.Event;
 using OpenCalendarSync.Lib.Location;
 using OpenCalendarSync.Lib.Person;
@@ -188,6 +191,7 @@ namespace OpenCalendarSync.Lib.Manager
             {
                 Log.Error("Not logged in, try to log in first");
             }
+            _googleCalendarParameters.TimeZone = "Europe/Rome";
             Log.Debug("Finished initialization...");
             return _googleCalendarParameters.Id;
         }
@@ -357,7 +361,11 @@ namespace OpenCalendarSync.Lib.Manager
                 //
                 myEvt.Reminders = new Google.Apis.Calendar.v3.Data.Event.RemindersData {UseDefault = true};
                 //
+                System.IO.File.WriteAllText (String.Format(@"request_{0}_{1}.json", DateTime.Now.ToString("yyyyMMddThhmmss"), myEvt.Summary), 
+                    JsonConvert.SerializeObject(myEvt, Formatting.Indented, new JsonSerializerSettings{ NullValueHandling = NullValueHandling.Ignore }));
                 var createdEvent = await Service.Events.Insert(myEvt, _googleCalendarParameters.Id).ExecuteAsync();
+                System.IO.File.WriteAllText(String.Format(@"response_{0}_{1}.json", DateTime.Now.ToString("yyyyMMddThhmmss"), createdEvent.Summary),
+                    JsonConvert.SerializeObject(createdEvent, Formatting.Indented, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore }));
                 //
                 if (createdEvent != null)
                 {
@@ -693,7 +701,11 @@ namespace OpenCalendarSync.Lib.Manager
                 throw new Exception(String.Format("Failed to get sequence number for existing event[{0}], better luck next time", existingEvent.Id));
             }
             //
+            System.IO.File.WriteAllText(String.Format(@"request_{0}_{1}.json", DateTime.Now.ToString("yyyyMMddThhmmss"), myEvt.Summary),
+                JsonConvert.SerializeObject(myEvt, Formatting.Indented, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore }));
             var update = await Service.Events.Update(myEvt, _googleCalendarParameters.Id, myEvt.Id).ExecuteAsync();
+            System.IO.File.WriteAllText(String.Format(@"response_{0}_{1}.json", DateTime.Now.ToString("yyyyMMddThhmmss"), update.Summary),
+                JsonConvert.SerializeObject(update, Formatting.Indented, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore }));
             if (update != null)
             {
                 res.Successful = true; 

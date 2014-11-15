@@ -1,6 +1,5 @@
 ﻿//
 
-using System.Diagnostics.Eventing.Reader;
 using System.Linq;
 using System.Runtime.InteropServices;
 using RecPatt = DDay.iCal.RecurrencePattern;
@@ -116,10 +115,9 @@ namespace OpenCalendarSync.Lib.Event
                 // EXDATE and RDATE down here
                 if(outlookRp.Exceptions.Count > 0) // there are some exceptions to the occurrences found above.
                 {
-                    //todo: add exception parsing here... then save it somewhere.
-                    Exdate += "EXDATE:";
                     var excludedDatesList = new List<string>();
                     var includedDatesList = new List<string>();
+                    Exdate += "EXDATE;VALUE=DATE-TIME;TZID=Europe/Rome:";
                     foreach(RecurrenceException recurrenceException in outlookRp.Exceptions)
                     {
                         // old date
@@ -139,24 +137,37 @@ namespace OpenCalendarSync.Lib.Event
                         
                         //exdate     = "EXDATE" exdtparam ":" exdtval *("," exdtval) CRLF
                         //EXDATE:19960402T010000Z,19960403T010000Z,19960404T010000Z
-                        excludedDatesList.Add(String.Format("{0}T{1}Z", oldDate.ToUniversalTime().ToString("yyyyMMdd"),
-                                                                        oldDate.ToUniversalTime().TimeOfDay.ToString("hhmmss")));
+                        if (oldDate.TimeOfDay != TimeSpan.MinValue)
+                        {
+                            excludedDatesList.Add(String.Format("{0}T{1}",
+                                oldDate.ToUniversalTime().ToString("yyyyMMdd"),
+                                oldDate.ToUniversalTime().TimeOfDay.ToString("hhmmss")));
+                        }
+                        else
+                        {
+                            // todo: change Exdate to a list of excluded date tipes, same with Rdate
+                        }
+
                         if (newStartDate.HasValue && newEndDate.HasValue) // we got a PERIOD value type - http://www.kanzaki.com/docs/ical/period.html
                         {
-                            includedDatesList.Add(String.Format("{0}T{1}Z/{2}T{3}Z",newStartDate.Value.ToUniversalTime().ToString("yyyyMMdd"),
+                            if(string.IsNullOrEmpty(Rdate)) Rdate += "RDATE;VALUE=PERIOD;TZID=Europe/Rome:";
+                            includedDatesList.Add(String.Format("{0}T{1}/{2}T{3}",  newStartDate.Value.ToUniversalTime().ToString("yyyyMMdd"),
                                                                                     newStartDate.Value.ToUniversalTime().TimeOfDay.ToString("hhmmss"),
                                                                                     newEndDate.Value.ToUniversalTime().ToString("yyyyMMdd"),
                                                                                     newEndDate.Value.ToUniversalTime().TimeOfDay.ToString("hhmmss")));    
                         }
                         else if(newStartDate.HasValue)
                         {
-                            includedDatesList.Add(String.Format("{0}T{1}Z", newStartDate.Value.ToString("yyyyMMdd"),
-                                                                            newStartDate.Value.TimeOfDay.ToString("hhmmss")));
+                            if (string.IsNullOrEmpty(Rdate)) Rdate += "RDATE;VALUE=DATE-TIME;TZID=Europe/Rome:";
+                            includedDatesList.Add(String.Format("{0}T{1}", newStartDate.Value.ToUniversalTime().ToString("yyyyMMdd"),
+                                                                           newStartDate.Value.ToUniversalTime().TimeOfDay.ToString("hhmmss")));
                         }
                     }
                     Exdate += String.Join(",", excludedDatesList.ToArray());
+                    if (!string.IsNullOrEmpty(Rdate)) Rdate += String.Join(",", includedDatesList.ToArray());
                 }
-                Log.Debug(String.Format("Recurrence pattern is [{0}]", string.Join(";", Pattern.ToArray())));
+                Log.Debug(String.Format("Recurrence pattern is [{0}]",
+                    string.Join(";", Pattern.Where(str => !string.IsNullOrEmpty(str)))));
             }
             else
             {

@@ -86,6 +86,7 @@ namespace OpenCalendarSync.App.Tray
             if (!GoogleCalendarManager.Instance.LoggedIn)
             {
                 var res = await GoogleCalendarManager.Instance.Login(_clientId, _clientSecret);
+
                 if(!res)
                 { 
                     Log.Error("Couldn't log in to google services with the provided clientId and clientSecret");
@@ -118,6 +119,11 @@ namespace OpenCalendarSync.App.Tray
                                            MessageBoxButton.YesNo, MessageBoxImage.Exclamation, MessageBoxResult.No);
                 if(res == MessageBoxResult.Yes)
                 {
+                    var calendarId = await GoogleCalendarManager.Instance.Initialize(Settings.Default.CalendarID, Settings.Default.CalendarName);
+                    if (Settings.Default.CalendarID != null && Settings.Default.CalendarID != calendarId)
+                    {
+                        Settings.Default.CalendarID = calendarId;
+                    }
                     var calendarDrop = await GoogleCalendarManager.Instance.DropCurrentCalendar();
                     text += "\tCalendario su google calendar cancellato correttamente\n";
                     if(!string.IsNullOrEmpty(calendarDrop))
