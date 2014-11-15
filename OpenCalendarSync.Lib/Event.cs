@@ -145,7 +145,11 @@ namespace OpenCalendarSync.Lib.Event
             var descriptionIsEqual = Description == p.Description;
             var recurrenceIsEqual = true;
             if(Recurrence != null && p.Recurrence != null)
-                recurrenceIsEqual = Recurrence.Pattern == p.Recurrence.Pattern;
+            {
+                var rp1 = string.Join(";", Recurrence.Pattern.Where(str => !string.IsNullOrEmpty(str)));
+                var rp2 = string.Join(";", p.Recurrence.Pattern.Where(str => !string.IsNullOrEmpty(str)));
+                recurrenceIsEqual = rp1 == rp2;
+            }
             var attendeesCountIsEqual = Attendees.Count == p.Attendees.Count /* first check if the number of attendees is the same */;
             var attendeesAreEqual = !Attendees.Except(p.Attendees).Any();
             //
