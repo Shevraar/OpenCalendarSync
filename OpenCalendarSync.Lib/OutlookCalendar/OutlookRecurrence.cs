@@ -117,7 +117,6 @@ namespace OpenCalendarSync.Lib.Event
                 {
                     var excludedDatesList = new List<string>();
                     var includedDatesList = new List<string>();
-                    Exdate += "EXDATE;VALUE=DATE-TIME;TZID=Europe/Rome:";
                     foreach(RecurrenceException recurrenceException in outlookRp.Exceptions)
                     {
                         // old date
@@ -139,32 +138,33 @@ namespace OpenCalendarSync.Lib.Event
                         //EXDATE:19960402T010000Z,19960403T010000Z,19960404T010000Z
                         if (oldDate.TimeOfDay != TimeSpan.MinValue)
                         {
-                            excludedDatesList.Add(String.Format("{0}T{1}",
-                                oldDate.ToUniversalTime().ToString("yyyyMMdd"),
-                                oldDate.ToUniversalTime().TimeOfDay.ToString("hhmmss")));
+                            excludedDatesList.Add(String.Format("EXDATE;VALUE=DATE-TIME;TZID=Europe/Rome:{0}T{1}",
+                                                                oldDate.ToString("yyyyMMdd"),
+                                                                oldDate.TimeOfDay.ToString("hhmmss")));
                         }
                         else
                         {
-                            // todo: change Exdate to a list of excluded date tipes, same with Rdate
+                            excludedDatesList.Add(String.Format("EXDATE;VALUE=DATE;TZID=Europe/Rome:{0}",
+                                                                oldDate.ToString("yyyyMMdd")));
                         }
 
                         if (newStartDate.HasValue && newEndDate.HasValue) // we got a PERIOD value type - http://www.kanzaki.com/docs/ical/period.html
                         {
-                            if(string.IsNullOrEmpty(Rdate)) Rdate += "RDATE;VALUE=PERIOD;TZID=Europe/Rome:";
-                            includedDatesList.Add(String.Format("{0}T{1}/{2}T{3}",  newStartDate.Value.ToUniversalTime().ToString("yyyyMMdd"),
-                                                                                    newStartDate.Value.ToUniversalTime().TimeOfDay.ToString("hhmmss"),
-                                                                                    newEndDate.Value.ToUniversalTime().ToString("yyyyMMdd"),
-                                                                                    newEndDate.Value.ToUniversalTime().TimeOfDay.ToString("hhmmss")));    
+                            includedDatesList.Add(String.Format("RDATE;VALUE=PERIOD;TZID=Europe/Rome:{0}T{1}/{2}T{3}", 
+                                                                newStartDate.Value.ToString("yyyyMMdd"),
+                                                                newStartDate.Value.TimeOfDay.ToString("hhmmss"),
+                                                                newEndDate.Value.ToString("yyyyMMdd"),
+                                                                newEndDate.Value.TimeOfDay.ToString("hhmmss")));    
                         }
                         else if(newStartDate.HasValue)
                         {
-                            if (string.IsNullOrEmpty(Rdate)) Rdate += "RDATE;VALUE=DATE-TIME;TZID=Europe/Rome:";
-                            includedDatesList.Add(String.Format("{0}T{1}", newStartDate.Value.ToUniversalTime().ToString("yyyyMMdd"),
-                                                                           newStartDate.Value.ToUniversalTime().TimeOfDay.ToString("hhmmss")));
+                            includedDatesList.Add(String.Format("RDATE;VALUE=DATE-TIME;TZID=Europe/Rome:{0}T{1}", 
+                                                                newStartDate.Value.ToString("yyyyMMdd"),
+                                                                newStartDate.Value.TimeOfDay.ToString("hhmmss")));
                         }
                     }
-                    Exdate += String.Join(",", excludedDatesList.ToArray());
-                    if (!string.IsNullOrEmpty(Rdate)) Rdate += String.Join(",", includedDatesList.ToArray());
+                    Exdate = excludedDatesList;
+                    Rdate = includedDatesList;
                 }
                 Log.Debug(String.Format("Recurrence pattern is [{0}]",
                     string.Join(";", Pattern.Where(str => !string.IsNullOrEmpty(str)))));
